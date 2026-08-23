@@ -1,0 +1,40 @@
+# Rust build and profiling output
+/target/
+*.profraw
+*.profdata
+
+# Release, documentation, and generated reports
+/dist/
+/dist-final/
+**/dist/
+/site/
+/output/
+/artifacts/
+
+# Runtime sessions and temporary workspaces
+/sessions/
+/tmp/
+/.t32perf/
+/.cache/
+
+# Python environments and tool caches
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+**/.ruff_cache/
+**/.mypy_cache/
+**/.pyright/
+**/.coverage
+**/.coverage.*
+**/htmlcov/
+coverage.xml
+
+# Local VCS and IDE state
+/.jj/
+/.idea/
+
+# Generic temporary and platform files
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
