@@ -1,0 +1,41 @@
+{
+  "$defs": {
+    "EndpointFingerprintScheme": {
+      "description": "Algorithm used to derive a TRACE32 endpoint fingerprint.\n\nThis is independent of the document schema version: it identifies the\ncryptographic endpoint-binding algorithm.",
+      "oneOf": [
+        {
+          "const": "t32perf.endpoint-fingerprint/v2",
+          "description": "Canonical endpoint identity bound to the observed TRACE32 probe.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.sampling-endpoint-binding/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Binds a sampling-only process to exactly one TRACE32 endpoint identity.",
+  "properties": {
+    "endpoint_fingerprint": {
+      "description": "SHA-256 fingerprint for the exclusively leased TRACE32 endpoint.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "endpoint_fingerprint_scheme": {
+      "$ref": "#/$defs/EndpointFingerprintScheme",
+      "description": "Fixed algorithm used for [`Self::endpoint_fingerprint`]."
+    },
+    "schema": {
+      "const": "t32perf.sampling-endpoint-binding/v1",
+      "description": "The endpoint-binding schema version.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "endpoint_fingerprint",
+    "endpoint_fingerprint_scheme"
+  ],
+  "title": "SamplingEndpointBinding",
+  "type": "object"
+}

@@ -1,0 +1,27 @@
+[project]
+name = "lauterbach-sampling-mcp"
+version = "0.3.0"
+description = "Sampling-only MCP server for bounded TRACE32 PERF PC histograms"
+readme = "README.md"
+authors = [{ name = "T32Perf contributors" }]
+requires-python = ">=3.10"
+dependencies = [
+    "jsonschema>=4.26,<5",
+    "lauterbach-trace32-rcl==1.1.6",
+    "mcp>=1.29,<2",
+]
+
+[project.scripts]
+lauterbach-sampling-mcp = "lauterbach_sampling_mcp:main"
+lauterbach-stack-sampling-mcp = "lauterbach_sampling_mcp.stack_server:main"
+
+[build-system]
+requires = ["uv_build>=0.11.28,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1,<2",
+    "pytest>=9,<10",
+    "ruff>=0.16,<0.17",
+]

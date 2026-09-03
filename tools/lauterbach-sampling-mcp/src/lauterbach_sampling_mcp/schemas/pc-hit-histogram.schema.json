@@ -1,0 +1,452 @@
+{
+  "$defs": {
+    "EndpointFingerprintScheme": {
+      "description": "Algorithm used to derive a TRACE32 endpoint fingerprint.\n\nThis is independent of the document schema version: it identifies the\ncryptographic endpoint-binding algorithm.",
+      "oneOf": [
+        {
+          "const": "t32perf.endpoint-fingerprint/v2",
+          "description": "Canonical endpoint identity bound to the observed TRACE32 probe.",
+          "type": "string"
+        }
+      ]
+    },
+    "FirmwareBinding": {
+      "additionalProperties": false,
+      "description": "Firmware identity evidence recorded with a histogram.",
+      "properties": {
+        "elf_sha256": {
+          "description": "Digest of the executable used for address and symbol attribution.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "proof": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FirmwareBindingProof"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Evidence proving how the firmware binding was established."
+        },
+        "status": {
+          "$ref": "#/$defs/FirmwareBindingStatus",
+          "description": "Confidence/status of the executable association."
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "type": "object"
+    },
+    "FirmwareBindingProof": {
+      "description": "Evidence type used to establish a firmware binding.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "description": "A deployment artifact bound the executable digest to the target image.",
+          "properties": {
+            "evidence_artifact_sha256": {
+              "description": "SHA-256 digest of the immutable deployment evidence artifact.",
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "kind": {
+              "const": "digest_bound_deployment",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "evidence_artifact_sha256"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "An immutable capture request asserted the deployed executable digest without comparing\nthe target image.",
+          "properties": {
+            "evidence_artifact_sha256": {
+              "description": "SHA-256 digest of the immutable assertion evidence artifact.",
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "kind": {
+              "const": "precommitted_elf_assertion",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "evidence_artifact_sha256"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "A target-image comparison established or rejected the binding.",
+          "properties": {
+            "evidence_artifact_sha256": {
+              "description": "SHA-256 digest of the immutable target-comparison evidence artifact.",
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "kind": {
+              "const": "target_image_comparison",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "evidence_artifact_sha256"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "FirmwareBindingStatus": {
+      "description": "The confidence of the firmware identity bound to a capture.",
+      "oneOf": [
+        {
+          "const": "verified",
+          "description": "The loaded executable and capture target were verified to match.",
+          "type": "string"
+        },
+        {
+          "const": "deployment_asserted",
+          "description": "An immutable capture request asserted the deployed executable, but the target image was\nnot compared.",
+          "type": "string"
+        },
+        {
+          "const": "unverified",
+          "description": "No target-side identity proof was available.",
+          "type": "string"
+        },
+        {
+          "const": "mismatch",
+          "description": "Target-side identity proof disagreed with the executable.",
+          "type": "string"
+        }
+      ]
+    },
+    "PcHitBucket": {
+      "additionalProperties": false,
+      "description": "One half-open address interval and its PC-hit count.",
+      "properties": {
+        "end_address": {
+          "description": "Exclusive end address.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "hits": {
+          "description": "Samples whose PC lies in this interval.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "start_address": {
+          "description": "Inclusive start address.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start_address",
+        "end_address",
+        "hits"
+      ],
+      "type": "object"
+    },
+    "DebuggerSymbolization": {
+      "additionalProperties": false,
+      "description": "Optional best-effort symbol labels reported by TRACE32 against its stopped PERF result buffer. These labels do not establish firmware identity.",
+      "properties": {
+        "locations": {
+          "items": {
+            "$ref": "#/$defs/DebuggerSymbolizedLocation"
+          },
+          "maxItems": 10,
+          "minItems": 1,
+          "type": "array"
+        },
+        "refinement_granularity_bytes": {
+          "const": 4,
+          "type": "integer"
+        },
+        "source": {
+          "const": "trace32_symbol_table",
+          "type": "string"
+        },
+        "trust": {
+          "const": "debugger_reported",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source",
+        "trust",
+        "refinement_granularity_bytes",
+        "locations"
+      ],
+      "type": "object"
+    },
+    "DebuggerSymbolizedLocation": {
+      "additionalProperties": false,
+      "anyOf": [
+        { "required": ["function_name"] },
+        { "required": ["source_file", "source_line"] }
+      ],
+      "description": "A hottest original bucket narrowed to at most four bytes and optionally labeled by TRACE32.",
+      "properties": {
+        "bucket_end_address": { "format": "uint64", "minimum": 0, "type": "integer" },
+        "hits": { "format": "uint64", "minimum": 0, "type": "integer" },
+        "bucket_start_address": { "format": "uint64", "minimum": 0, "type": "integer" },
+        "dominant_end_address": { "format": "uint64", "minimum": 0, "type": "integer" },
+        "dominant_hits": { "format": "uint64", "minimum": 0, "type": "integer" },
+        "dominant_start_address": { "format": "uint64", "minimum": 0, "type": "integer" },
+        "function_name": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[^/\\\\\\u0000-\\u001f\\u007f-\\u009f]+$",
+          "type": "string"
+        },
+        "source_file": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[^/\\\\\\u0000-\\u001f\\u007f-\\u009f]+$",
+          "type": "string"
+        },
+        "source_line": { "format": "uint32", "maximum": 4294967295, "minimum": 1, "type": "integer" }
+      },
+      "required": [
+        "bucket_start_address",
+        "bucket_end_address",
+        "hits",
+        "dominant_start_address",
+        "dominant_end_address",
+        "dominant_hits"
+      ],
+      "type": "object"
+    },
+    "PcSamplingMethod": {
+      "description": "The TRACE32 sampling method that produced a histogram.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "description": "Runtime PC snooping without stopping the target.",
+          "properties": {
+            "kind": {
+              "const": "realtime",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Periodically stopping and restarting the target to read its PC.",
+          "properties": {
+            "configured_retained_runtime_percent": {
+              "description": "Retained runtime percentage configured before sampling started.",
+              "format": "double",
+              "maximum": 100.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            "kind": {
+              "const": "stop_and_go",
+              "type": "string"
+            },
+            "observed_retained_runtime_percent": {
+              "description": "Retained runtime percentage observed after sampling stopped.",
+              "format": "double",
+              "maximum": 100.0,
+              "minimum": 0.0,
+              "type": "number"
+            }
+          },
+          "required": [
+            "kind",
+            "configured_retained_runtime_percent",
+            "observed_retained_runtime_percent"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "TargetExecutionState": {
+      "additionalProperties": false,
+      "description": "A target execution-state observation taken at a capture boundary.",
+      "properties": {
+        "halted": {
+          "description": "Whether TRACE32 reported that the target was halted.",
+          "type": "boolean"
+        },
+        "powered": {
+          "description": "Whether TRACE32 reported target power as available.",
+          "type": "boolean"
+        },
+        "running": {
+          "description": "Whether TRACE32 reported that the target was running.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "powered",
+        "running",
+        "halted"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "t32perf.pc-hit-histogram/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A bounded PC-hit histogram obtained from TRACE32 PERF sampling.",
+  "properties": {
+    "address_space": {
+      "description": "Address-space identity used for every bucket.",
+      "maxLength": 256,
+      "minLength": 1,
+      "type": "string"
+    },
+    "buckets": {
+      "description": "Sorted, pairwise disjoint half-open address buckets.",
+      "items": {
+        "$ref": "#/$defs/PcHitBucket"
+      },
+      "maxItems": 16384,
+      "minItems": 1,
+      "type": "array"
+    },
+    "cleanup_complete": {
+      "description": "Whether cleanup completed before the successful histogram was emitted.",
+      "type": "boolean"
+    },
+    "core_id": {
+      "description": "Core that supplied the sampled program counters.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "cpu": {
+      "description": "CPU identity reported by TRACE32.",
+      "maxLength": 256,
+      "minLength": 1,
+      "type": "string"
+    },
+    "endpoint_fingerprint": {
+      "description": "SHA-256 fingerprint for the exclusively leased TRACE32 endpoint.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "endpoint_fingerprint_scheme": {
+      "$ref": "#/$defs/EndpointFingerprintScheme",
+      "description": "Fixed algorithm used for [`Self::endpoint_fingerprint`]."
+    },
+    "debugger_symbolization": {
+      "$ref": "#/$defs/DebuggerSymbolization",
+      "description": "Optional TRACE32-reported labels for refined high-hit locations; firmware remains independently unverified."
+    },
+    "firmware": {
+      "$ref": "#/$defs/FirmwareBinding",
+      "description": "Firmware identity evidence for symbol attribution."
+    },
+    "in_scope_hits": {
+      "description": "Total hits within the declared address scope.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "intrusive": {
+      "description": "Whether sampling disturbed target execution.",
+      "type": "boolean"
+    },
+    "last_sample_rate_hz": {
+      "description": "Last observed sampling-rate snapshot in hertz; this is not an average.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "method": {
+      "$ref": "#/$defs/PcSamplingMethod",
+      "description": "Sampling method actually reported by TRACE32."
+    },
+    "observed_duration_ns": {
+      "description": "Observed host duration from arming PERF to stopping it.",
+      "format": "uint64",
+      "minimum": 1,
+      "type": "integer"
+    },
+    "requested_duration_ns": {
+      "description": "Requested capture duration measured on the host.",
+      "format": "uint64",
+      "minimum": 1,
+      "type": "integer"
+    },
+    "schema": {
+      "const": "t32perf.pc-hit-histogram/v1",
+      "description": "The PC-hit histogram schema version.",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "Portable capture session identifier.",
+      "maxLength": 64,
+      "minLength": 1,
+      "type": "string"
+    },
+    "snoop_failures": {
+      "description": "TRACE32 PC-snoop failures observed during this capture.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "target_state_after": {
+      "$ref": "#/$defs/TargetExecutionState",
+      "description": "Target state immediately after stopping PERF."
+    },
+    "target_state_before": {
+      "$ref": "#/$defs/TargetExecutionState",
+      "description": "Target state immediately before configuring PERF."
+    },
+    "trace32": {
+      "description": "TRACE32 software/build identity observed during capture.",
+      "maxLength": 256,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "session_id",
+    "endpoint_fingerprint",
+    "endpoint_fingerprint_scheme",
+    "trace32",
+    "cpu",
+    "address_space",
+    "core_id",
+    "method",
+    "intrusive",
+    "requested_duration_ns",
+    "observed_duration_ns",
+    "last_sample_rate_hz",
+    "snoop_failures",
+    "target_state_before",
+    "target_state_after",
+    "firmware",
+    "cleanup_complete",
+    "in_scope_hits",
+    "buckets"
+  ],
+  "title": "PcHitHistogram",
+  "type": "object"
+}

@@ -1,0 +1,116 @@
+{
+  "$defs": {
+    "SamplingAddressRange": {
+      "additionalProperties": false,
+      "description": "One nonempty half-open address range requested for PC-hit sampling.",
+      "properties": {
+        "end_address": {
+          "description": "Exclusive range end.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "start_address": {
+          "description": "Inclusive range start.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "start_address",
+        "end_address"
+      ],
+      "type": "object"
+    },
+    "SamplingAddressSpace": {
+      "description": "TRACE32 address space supported by the sampling sidecar.",
+      "oneOf": [
+        {
+          "const": "P",
+          "description": "TRACE32 program address space.",
+          "type": "string"
+        }
+      ]
+    },
+    "SamplingMethodPolicy": {
+      "description": "Sampling-method policy selected before capability probing.",
+      "oneOf": [
+        {
+          "const": "realtime_only",
+          "description": "Permit only non-intrusive runtime PC snooping.",
+          "type": "string"
+        },
+        {
+          "const": "allow_stop_and_go",
+          "description": "Permit explicitly requested Stop-and-Go sampling when realtime is unavailable.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.sampling-capture-request/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Bounded request for one aggregate TRACE32 PERF sampling capture.",
+  "properties": {
+    "address_space": {
+      "$ref": "#/$defs/SamplingAddressSpace",
+      "description": "Required TRACE32 program address space."
+    },
+    "bucket_size": {
+      "description": "Width of each exact half-open PC-hit bucket in bytes.",
+      "format": "uint64",
+      "maximum": 1048576,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "core_id": {
+      "description": "Core supplying sampled program counters.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "deployed_firmware_elf_sha256": {
+      "description": "Optional SHA-256 assertion for the deployed ELF used by later function attribution.\n\nAddress-only heatmaps intentionally omit this assertion.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "duration_ms": {
+      "description": "Requested aggregate sampling duration in milliseconds.",
+      "format": "uint32",
+      "maximum": 60000,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "method_policy": {
+      "$ref": "#/$defs/SamplingMethodPolicy",
+      "description": "Permitted acquisition methods."
+    },
+    "ranges": {
+      "description": "Sorted, non-overlapping nonempty ranges to sample.",
+      "items": {
+        "$ref": "#/$defs/SamplingAddressRange"
+      },
+      "maxItems": 256,
+      "minItems": 1,
+      "type": "array"
+    },
+    "schema": {
+      "const": "t32perf.sampling-capture-request/v1",
+      "description": "The sampling-capture request schema version.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "ranges",
+    "bucket_size",
+    "duration_ms",
+    "method_policy",
+    "core_id",
+    "address_space"
+  ],
+  "title": "SamplingCaptureRequest",
+  "type": "object"
+}
