@@ -1,0 +1,106 @@
+:root {
+  --t32perf-primary: #253166;
+  --t32perf-primary-dark: #1e2853;
+  --t32perf-primary-light: #2c3a79;
+  --t32perf-accent: #ffad36;
+  --t32perf-text: #2b3136;
+  --t32perf-surface: #f9f9f9;
+  --t32perf-surface-muted: #ebebed;
+  --t32perf-border: #bcc1c7;
+  --t32perf-info: #26b6cf;
+  --t32perf-success: #3cc261;
+  --t32perf-warning: #ffbd5d;
+  --t32perf-danger: #e52427;
+}
+
+:root > *,
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: var(--t32perf-primary);
+  --md-primary-fg-color--light: var(--t32perf-primary-light);
+  --md-primary-fg-color--dark: var(--t32perf-primary-dark);
+  --md-primary-bg-color: #fff;
+  --md-primary-bg-color--light: rgb(255 255 255 / 78%);
+  --md-accent-fg-color: var(--t32perf-accent);
+  --md-typeset-a-color: var(--t32perf-primary);
+}
+
+[data-md-color-scheme="slate"] {
+  --md-hue: 229;
+  --md-primary-fg-color: var(--t32perf-primary);
+  --md-primary-fg-color--light: #cfd7e3;
+  --md-primary-fg-color--dark: var(--t32perf-primary-dark);
+  --md-primary-bg-color: #fff;
+  --md-primary-bg-color--light: rgb(255 255 255 / 78%);
+  --md-accent-fg-color: var(--t32perf-accent);
+  --md-typeset-a-color: var(--t32perf-accent);
+}
+
+.md-header,
+.md-tabs {
+  color: #fff;
+  background: linear-gradient(115deg, var(--t32perf-primary-dark), var(--t32perf-primary));
+}
+
+.md-header__title,
+.md-header__button,
+.md-header .md-search__button,
+.md-tabs__link {
+  color: inherit;
+}
+
+.md-tabs__link {
+  opacity: 0.78;
+}
+
+.md-tabs__link:hover,
+.md-tabs__link:focus,
+.md-tabs__item--active .md-tabs__link {
+  color: #fff;
+  opacity: 1;
+}
+
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg {
+  border-radius: 0.35rem;
+}
+
+.t32perf-architecture {
+  margin-inline: auto;
+}
+
+.t32perf-architecture--mobile {
+  display: none;
+}
+
+.md-typeset .grid.cards > ul > li {
+  border-color: color-mix(in srgb, var(--t32perf-primary), transparent 76%);
+  border-radius: 0.65rem;
+  transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+
+.md-typeset .grid.cards > ul > li:hover {
+  border-color: var(--t32perf-accent);
+  box-shadow: 0 0.7rem 1.6rem rgb(30 40 83 / 12%);
+  transform: translateY(-0.12rem);
+}
+
+.md-typeset .admonition,
+.md-typeset details {
+  border-radius: 0.5rem;
+}
+
+@media screen and (max-width: 44.984375em) {
+  .t32perf-architecture--desktop {
+    display: none;
+  }
+
+  .t32perf-architecture--mobile {
+    display: block;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .md-typeset .grid.cards > ul > li {
+    transition: none;
+  }
+}

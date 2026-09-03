@@ -1,0 +1,139 @@
+[project]
+site_name = "T32Perf"
+site_description = "Evidence-aware TRACE32 performance observation and analysis"
+docs_dir = "docs"
+site_dir = "site"
+strict = true
+use_directory_urls = true
+extra_css = ["stylesheets/extra.css"]
+
+nav = [
+  { "Home" = "index.md" },
+  { "Get started" = [
+    { "Quickstart" = "getting-started.md" },
+    { "User guide" = "user-guide.md" },
+  ] },
+  { "Concepts" = [
+    { "System architecture" = "architecture.md" },
+    { "Data and session contracts" = "contracts.md" },
+    { "Implementation status" = "implementation-status.md" },
+  ] },
+  { "Operations" = [
+    { "Deployment and recovery" = "operations.md" },
+    { "Security model" = "security.md" },
+  ] },
+  { "TRACE32 integration" = [
+    { "Integration runbook" = "trace32-runbook.md" },
+    { "Sampling architecture" = "sampling-architecture.md" },
+    { "Export formats" = "trace32-export-formats.md" },
+    { "Hardware verification" = "hardware-verification.md" },
+    { "Platform capability matrix" = "platform-capability-matrix.md" },
+  ] },
+  { "Development" = [
+    { "Developer guide" = "development.md" },
+    { "Schema catalog" = "schema-catalog.md" },
+    { "Plan conformance" = "plan-conformance.md" },
+    { "Verification evidence" = "verification-evidence.md" },
+  ] },
+  { "Decisions" = [
+    { "ADR 0001 - Host language" = "adr/0001-host-language.md" },
+    { "ADR 0002 - Parser architecture" = "adr/0002-parser-architecture.md" },
+    { "ADR 0003 - Perfetto format" = "adr/0003-perfetto-format.md" },
+    { "ADR 0004 - MCP integration" = "adr/0004-mcp-integration.md" },
+    { "ADR 0005 - Generic PC sampling" = "adr/0005-generic-pc-sampling.md" },
+    { "ADR 0006 - Intrusive stack sampling" = "adr/0006-intrusive-stack-sampling.md" },
+    { "ADR 0007 - Host MCP service" = "adr/0007-host-mcp-service.md" },
+  ] },
+]
+
+[project.validation]
+invalid_links = true
+invalid_link_anchors = true
+
+[project.extra.status]
+new = "Recently added"
+experimental = "Experimental"
+
+[project.theme]
+variant = "modern"
+language = "en"
+font = false
+logo = "assets/t32perf-mark.svg"
+favicon = "assets/t32perf-mark.svg"
+features = [
+  "announce.dismiss",
+  "content.code.annotate",
+  "content.code.copy",
+  "content.code.select",
+  "content.footnote.tooltips",
+  "content.tabs.link",
+  "content.tooltips",
+  "navigation.footer",
+  "navigation.indexes",
+  "navigation.path",
+  "navigation.sections",
+  "navigation.tabs",
+  "navigation.tabs.sticky",
+  "navigation.top",
+  "navigation.tracking",
+  "search.highlight",
+  "toc.follow",
+]
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme)"
+toggle.icon = "lucide/sun-moon"
+toggle.name = "Switch to light mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "custom"
+accent = "custom"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "custom"
+accent = "custom"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to system preference"
+
+[project.markdown_extensions]
+abbr = {}
+admonition = {}
+attr_list = {}
+def_list = {}
+footnotes = {}
+md_in_html = {}
+tables = {}
+toc.permalink = true
+pymdownx.arithmatex.generic = true
+pymdownx.betterem.smart_enable = "all"
+pymdownx.blocks.caption = {}
+pymdownx.caret = {}
+pymdownx.details = {}
+pymdownx.emoji.emoji_generator = "zensical.extensions.emoji.to_svg"
+pymdownx.emoji.emoji_index = "zensical.extensions.emoji.twemoji"
+pymdownx.highlight.anchor_linenums = true
+pymdownx.highlight.line_spans = "__span"
+pymdownx.highlight.pygments_lang_class = true
+pymdownx.inlinehilite = {}
+pymdownx.keys = {}
+pymdownx.magiclink = {}
+pymdownx.mark = {}
+pymdownx.smartsymbols = {}
+pymdownx.snippets.auto_append = ["docs/includes/abbreviations.md"]
+pymdownx.superfences.custom_fences = [
+  { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
+]
+pymdownx.tabbed.alternate_style = true
+pymdownx.tabbed.combine_header_slug = true
+pymdownx.tabbed.slugify.object = "pymdownx.slugs.slugify"
+pymdownx.tabbed.slugify.kwds.case = "lower"
+pymdownx.tasklist.custom_checkbox = true
+pymdownx.tilde = {}
+zensical.extensions.glightbox.auto_caption = true
+zensical.extensions.glightbox.auto_themed = true
