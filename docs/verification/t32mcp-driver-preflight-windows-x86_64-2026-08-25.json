@@ -1,0 +1,56 @@
+{
+  "format": "t32perf-t32mcp-driver-preflight-evidence-v1",
+  "status": "VALID",
+  "scope": "software-only",
+  "recorded_at_utc": "2026-08-25T13:42:40.0846873Z",
+  "host": {
+    "os_caption": "Microsoft Windows 11 Pro for Workstations Insider Preview",
+    "os_version": "10.0.28120",
+    "os_build": "28120",
+    "architecture": "x86_64",
+    "rustc_version": "1.95.0",
+    "rust_host": "x86_64-pc-windows-msvc"
+  },
+  "driver": {
+    "command": "target/debug/t32perf.exe --artifact-root <temporary-root> --json controller driver-preflight",
+    "binary_size_bytes": 32105984,
+    "binary_sha256": "5f54eb89db2dca5d21575cfe888de2b931b4d8d170820252fa7a1de1466134a7",
+    "config_schema": "t32perf.t32mcp-driver-config/v1",
+    "config_size_bytes": 546,
+    "config_sha256": "adb8c8fe69eef1e05b957a16a761f3e8a8dfe8ae81b65e1b26677829f27081df",
+    "exit_code": 0
+  },
+  "t32mcp": {
+    "source": "https://github.com/lauterbach-mirror/t32mcp",
+    "version": "0.2.2",
+    "binary_size_bytes": 6357504,
+    "binary_sha256": "31f4983a4e7a60a5025e8334e95e6ecb4bd242ce6bc9705f81cdf081af05dec2",
+    "server_name": "t32mcp",
+    "required_tool_inventory": [
+      "abort_practice_skill",
+      "collect_practice_skill_response",
+      "execute_practice_skill"
+    ]
+  },
+  "adapter_bundle": {
+    "file_count": 28,
+    "implementation_sha256": "feb46173441d2225b522a03cfae2486031fb72c6d8170baf374038848dcb2293",
+    "manifest_size_bytes": 3550,
+    "manifest_sha256": "de5d569d8f2d0ab7e40909fb81ad805e24ba6c799759c7479bb87abf297646d6"
+  },
+  "result": {
+    "version_probe_passed": true,
+    "mcp_initialize_passed": true,
+    "exact_tool_inventory_passed": true,
+    "graceful_shutdown_passed": true,
+    "tools_invoked": false,
+    "trace32_connection_attempted": false,
+    "official_t32mcp_process_remaining_after_shutdown": false
+  },
+  "limitations": [
+    "The preflight did not call execute_practice_skill, collect_practice_skill_response, or abort_practice_skill.",
+    "The inspected upstream implementation establishes the TRACE32 RCL connection inside practice tool handlers, so this preflight did not connect to TRACE32.",
+    "This record is not probe, MCU, board, firmware execution, RTOS, native differential, or fault-injection evidence.",
+    "This record covers one Windows x86_64 build of official t32mcp v0.2.2 only; another build requires a separately approved executable digest."
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "format": "t32perf-benchmark-evidence-v1",
+  "recorded_at": "2026-08-23",
+  "environment": {
+    "os": "Microsoft Windows 11 Pro for Workstations Insider Preview 10.0.28120",
+    "architecture": "x86_64-pc-windows-msvc",
+    "cpu": "AMD Ryzen 7 8745H w/ Radeon 780M Graphics",
+    "physical_cores": 8,
+    "logical_processors": 16,
+    "physical_memory_bytes": 29803528192,
+    "rustc": "1.95.0 (59807616e 2026-04-14)",
+    "python": "3.13.3"
+  },
+  "parser_candidates": {
+    "command": "uv run --no-project tools/bench/run_candidates.py <observations.ndjson>",
+    "rss_sample_interval_ms": 100,
+    "datasets": [
+      {
+        "observations": 1000000,
+        "bytes": 185636063,
+        "rust": {
+          "elapsed_seconds": 3.0944646,
+          "observations_per_second": 323157.67968391045,
+          "bytes_per_second": 59989719.38473622,
+          "peak_rss_bytes_external": 5337088
+        },
+        "python": {
+          "elapsed_seconds": 4.840241700003389,
+          "observations_per_second": 206601.25299100246,
+          "bytes_per_second": 38352643.21611667,
+          "peak_rss_bytes_self": 19034112,
+          "peak_rss_bytes_external": 19050496
+        }
+      },
+      {
+        "observations": 10000000,
+        "bytes": 1886354813,
+        "rust": {
+          "elapsed_seconds": 34.1134753,
+          "observations_per_second": 293139.2920849668,
+          "bytes_per_second": 55296471.450389,
+          "peak_rss_bytes_external": 5357568
+        },
+        "python": {
+          "elapsed_seconds": 48.78571649999503,
+          "observations_per_second": 204978.02876382924,
+          "bytes_per_second": 38666129.11179017,
+          "peak_rss_bytes_self": 19406848,
+          "peak_rss_bytes_external": 19419136
+        }
+      },
+      {
+        "observations": 20000000,
+        "bytes": 3803542312,
+        "rust": {
+          "elapsed_seconds": 64.0311975,
+          "observations_per_second": 312347.74267652887,
+          "bytes_per_second": 59401392.76639328,
+          "peak_rss_bytes_external": 5365760
+        },
+        "python": {
+          "elapsed_seconds": 97.76884830000199,
+          "observations_per_second": 204564.1362024676,
+          "bytes_per_second": 38903417.37819082,
+          "peak_rss_bytes_self": 19013632,
+          "peak_rss_bytes_external": 19013632
+        }
+      }
+    ]
+  },
+  "streaming_analyzer": {
+    "command": "$env:T32PERF_BENCH_10M='1'; cargo bench -p t32perf-analysis --bench streaming -- --noplot",
+    "one_million": {
+      "time_seconds_interval": [0.76776, 0.79579],
+      "throughput_events_per_second_interval": [1256600, 1302500]
+    },
+    "ten_million": {
+      "time_seconds_interval": [7.7024, 7.8182],
+      "throughput_events_per_second_interval": [1279100, 1298300]
+    }
+  },
+  "limitations": [
+    "All datasets are deterministic synthetic canonical NDJSON, not TRACE32 exports.",
+    "Parser measurements exclude normalization, analysis, artifact hashing, and Perfetto export.",
+    "Analyzer measurements generate observations in process and exclude parser I/O.",
+    "External RSS polling can underestimate a peak shorter than 100 ms.",
+    "No Linux, real multi-GB TRACE32, native-statistic, or hardware measurements are represented."
+  ]
+}

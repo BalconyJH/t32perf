@@ -1,0 +1,119 @@
+{
+  "format": "t32perf-perfetto-import-evidence-v1",
+  "status": "VALID",
+  "scope": "software-only",
+  "recorded_at_utc": "2026-08-24T06:33:51.9980199Z",
+  "host": {
+    "os_caption": "Microsoft Windows 11 Pro for Workstations Insider Preview",
+    "os_version": "10.0.28120",
+    "os_build": "28120",
+    "architecture": "x86_64",
+    "uv_version": "0.11.28",
+    "rustc_version": "1.95.0",
+    "rust_host": "x86_64-pc-windows-msvc"
+  },
+  "perfetto": {
+    "python_package": {
+      "name": "perfetto",
+      "version": "0.57.2",
+      "home_page": "https://perfetto.dev/"
+    },
+    "release": {
+      "repository": "https://github.com/google/perfetto",
+      "tag": "v56.1",
+      "release_url": "https://github.com/google/perfetto/releases/tag/v56.1",
+      "release_api_url": "https://api.github.com/repos/google/perfetto/releases/337193974",
+      "asset_url": "https://github.com/google/perfetto/releases/download/v56.1/windows-amd64.zip",
+      "asset_api_url": "https://api.github.com/repos/google/perfetto/releases/assets/443900436",
+      "asset_size_bytes": 76021076,
+      "asset_sha256_from_release_api": "dd4f6c2d5cc9bd5f4fea32ea1c3402fa2291626fc4dd6501dfcaf8b406c8fdbb",
+      "asset_sha256_observed": "dd4f6c2d5cc9bd5f4fea32ea1c3402fa2291626fc4dd6501dfcaf8b406c8fdbb",
+      "asset_sha256_match": true
+    },
+    "trace_processor_shell": {
+      "archive_member": "windows-amd64/trace_processor_shell.exe",
+      "version": "Perfetto v56.1-c794fceab",
+      "commit": "c794fceabe584dc9172e5512aaaeecc21019a635",
+      "rpc_api_version": 14,
+      "size_bytes": 13313024,
+      "manifest_source": "perfetto==0.57.2:perfetto/prebuilts/manifests/trace_processor_shell.py",
+      "sha256_from_perfetto_0_57_2_manifest": "9ac8c04ca44cc22f0aa6eff2ff8d25c3a87011b48aca554e7a10f677cbbfaaa0",
+      "sha256_observed": "9ac8c04ca44cc22f0aa6eff2ff8d25c3a87011b48aca554e7a10f677cbbfaaa0",
+      "manifest_sha256_match": true,
+      "binary_committed": false
+    }
+  },
+  "acquisition": {
+    "local_cache_probe": {
+      "path": "~/.local/share/perfetto/prebuilts",
+      "shell_found": false
+    },
+    "package_pinned_download_attempt": {
+      "url": "https://commondatastorage.googleapis.com/perfetto-luci-artifacts/v56.1/windows-amd64/trace_processor_shell.exe",
+      "started_at_utc": "2026-08-24T06:11:22.9677162Z",
+      "ended_at_utc": "2026-08-24T06:12:01.1916020Z",
+      "result": "failed",
+      "curl_exit_code": 28,
+      "reason": "connection timeout"
+    },
+    "official_release_download": {
+      "result": "success",
+      "note": "The exact v56.1 official GitHub release asset and the package-manifest shell digest were both verified."
+    }
+  },
+  "input": {
+    "session_id": "perfetto-final",
+    "trace_path": "target/perfetto-final/perfetto-final/report/trace.json",
+    "trace_size_bytes": 19558,
+    "trace_sha256": "348a9252dce409a1662862bed41e6f5cdd315474f56cbae13428b6661b0a9982",
+    "trace_event_counts": {
+      "total": 68,
+      "complete": 1,
+      "counter": 31,
+      "instant": 31,
+      "metadata": 5
+    },
+    "session_deep_validation": {
+      "started_at_utc": "2026-08-24T06:21:02.1373316Z",
+      "ended_at_utc": "2026-08-24T06:21:02.2301257Z",
+      "exit_code": 0,
+      "valid": true,
+      "health_verdict": "VALID",
+      "trust_status": "VALID",
+      "artifact_count": 9
+    }
+  },
+  "validator": {
+    "path": "tools/validate_perfetto.py",
+    "sha256": "79ea729c278088bf7ef27e67dd64737b3eec1cc22562f6da787f26a44a826ea4",
+    "command": "uv run --no-project --with perfetto==0.57.2 tools/validate_perfetto.py --trace-processor <verified-v56.1-shell> target/perfetto-final/perfetto-final/report/trace.json",
+    "started_at_utc": "2026-08-24T06:29:02.9406768Z",
+    "ended_at_utc": "2026-08-24T06:29:05.4102448Z",
+    "exit_code": 0,
+    "result": {
+      "ok": true,
+      "slices": 32,
+      "counters": 31,
+      "tracks": 3
+    },
+    "ruff_check_exit_code": 0
+  },
+  "independent_shell_query": {
+    "command": "trace_processor_shell.exe query <trace> <bounded-count-and-stats-sql>",
+    "started_at_utc": "2026-08-24T06:33:51.8363478Z",
+    "ended_at_utc": "2026-08-24T06:33:51.9980199Z",
+    "exit_code": 0,
+    "result": {
+      "slices": 32,
+      "counters": 31,
+      "tracks": 3,
+      "warning_or_error_stats": 0
+    }
+  },
+  "limitations": [
+    "The input is a host-generated synthetic trace and is not TRACE32, probe, MCU, RTOS, or target capability evidence.",
+    "This record covers Windows x86_64 only and does not establish Linux or other-platform importer behavior.",
+    "The checks establish official trace import and the recorded SQL counts; they do not establish Perfetto UI visual stability or hardware metric correctness.",
+    "The verified Perfetto binary is intentionally not stored in the repository."
+  ]
+}
