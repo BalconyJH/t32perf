@@ -1,0 +1,156 @@
+{
+  "$defs": {
+    "ControllerHealthOperation": {
+      "description": "Fixed hardware-health operation marker.",
+      "oneOf": [
+        {
+          "const": "perf_get_health",
+          "description": "The only supported version or operation marker.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerHealthSignal": {
+      "description": "Hardware-health facts that a capability adapter can export reliably.",
+      "oneOf": [
+        {
+          "const": "trace_overflow",
+          "description": "Trace-buffer or transport overflow.",
+          "type": "string"
+        },
+        {
+          "const": "flow_error",
+          "description": "Trace flow error.",
+          "type": "string"
+        },
+        {
+          "const": "trace_gap",
+          "description": "Explicit trace gap.",
+          "type": "string"
+        },
+        {
+          "const": "truncation",
+          "description": "Truncated raw export.",
+          "type": "string"
+        },
+        {
+          "const": "timestamp_discontinuity",
+          "description": "Unexplained timestamp discontinuity.",
+          "type": "string"
+        },
+        {
+          "const": "elf_mismatch",
+          "description": "ELF and executing firmware identity mismatch.",
+          "type": "string"
+        },
+        {
+          "const": "program_flow_closure",
+          "description": "Program-flow closure or equivalent completeness check.",
+          "type": "string"
+        },
+        {
+          "const": "sampling_buffer_full",
+          "description": "Sampling stopped because its bounded Stack buffer became full.",
+          "type": "string"
+        },
+        {
+          "const": "sampling_unexpected_stop",
+          "description": "SNOOPer stopped before the request for a reason the adapter cannot classify.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerProgramFlowHealthEvidenceSchemaVersion": {
+      "description": "Supported stop-bound program-flow health evidence schema version.",
+      "oneOf": [
+        {
+          "const": "t32perf.controller-health-evidence/v3",
+          "description": "The only supported version or operation marker.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.controller-health-evidence/v3",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Stop-bound, signal-scoped health for complete TASKEVENTS program flow.",
+  "properties": {
+    "binding_sha256": {
+      "description": "Exact controller binding echoed by the adapter.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "capture_stopped": {
+      "description": "Must remain true while health is collected for an exportable capture.",
+      "type": "boolean"
+    },
+    "elf_matches_firmware": {
+      "description": "Whether the executing firmware matched the declared ELF.",
+      "type": "boolean"
+    },
+    "flow_error": {
+      "description": "Whether the TRACE32 decoder reported a flow error.",
+      "type": "boolean"
+    },
+    "operation": {
+      "$ref": "#/$defs/ControllerHealthOperation",
+      "description": "Fixed operation marker."
+    },
+    "program_flow_closed": {
+      "description": "Whether the adapter's program-flow completeness check passed.",
+      "type": "boolean"
+    },
+    "schema": {
+      "$ref": "#/$defs/ControllerProgramFlowHealthEvidenceSchemaVersion",
+      "description": "Versioned document family."
+    },
+    "stop_evidence_sha256": {
+      "description": "Exact immutable Stop evidence artifact digest.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "supported_signals": {
+      "description": "Exact closed program-flow signal set.",
+      "items": {
+        "$ref": "#/$defs/ControllerHealthSignal"
+      },
+      "maxItems": 7,
+      "minItems": 7,
+      "type": "array"
+    },
+    "timestamp_discontinuity": {
+      "description": "Whether an unexplained timestamp discontinuity was observed.",
+      "type": "boolean"
+    },
+    "trace_gap": {
+      "description": "Whether an explicit trace gap was observed.",
+      "type": "boolean"
+    },
+    "trace_overflow": {
+      "description": "Whether trace-buffer or transport overflow was observed.",
+      "type": "boolean"
+    },
+    "truncated": {
+      "description": "Whether the raw capture or export was truncated.",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "schema",
+    "operation",
+    "binding_sha256",
+    "capture_stopped",
+    "supported_signals",
+    "stop_evidence_sha256",
+    "trace_overflow",
+    "flow_error",
+    "trace_gap",
+    "truncated",
+    "timestamp_discontinuity",
+    "elf_matches_firmware",
+    "program_flow_closed"
+  ],
+  "title": "ControllerProgramFlowHealthEvidence",
+  "type": "object"
+}

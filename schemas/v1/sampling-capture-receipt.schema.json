@@ -1,0 +1,182 @@
+{
+  "$defs": {
+    "EndpointFingerprintScheme": {
+      "description": "Algorithm used to derive a TRACE32 endpoint fingerprint.\n\nThis is independent of the document schema version: it identifies the\ncryptographic endpoint-binding algorithm.",
+      "oneOf": [
+        {
+          "const": "t32perf.endpoint-fingerprint/v2",
+          "description": "Canonical endpoint identity bound to the observed TRACE32 probe.",
+          "type": "string"
+        }
+      ]
+    },
+    "SamplingDriverEventName": {
+      "description": "Event name used by the receipt's digest claims.",
+      "oneOf": [
+        {
+          "const": "configure_intent",
+          "description": "Configure intent event.",
+          "type": "string"
+        },
+        {
+          "const": "configure_observed",
+          "description": "Configure observed event.",
+          "type": "string"
+        },
+        {
+          "const": "start_intent",
+          "description": "Start intent event.",
+          "type": "string"
+        },
+        {
+          "const": "start_observed",
+          "description": "Start observed event.",
+          "type": "string"
+        },
+        {
+          "const": "stop_intent",
+          "description": "Stop intent event.",
+          "type": "string"
+        },
+        {
+          "const": "stop_observed",
+          "description": "Stop observed event.",
+          "type": "string"
+        },
+        {
+          "const": "cleanup_intent",
+          "description": "Cleanup intent event.",
+          "type": "string"
+        },
+        {
+          "const": "cleanup_observed",
+          "description": "Cleanup observed event.",
+          "type": "string"
+        },
+        {
+          "const": "cleanup_failed",
+          "description": "Cleanup failed event.",
+          "type": "string"
+        },
+        {
+          "const": "recovery_observed",
+          "description": "Recovery observed event.",
+          "type": "string"
+        },
+        {
+          "const": "export_intent",
+          "description": "Export intent event.",
+          "type": "string"
+        },
+        {
+          "const": "export_observed",
+          "description": "Export observed event.",
+          "type": "string"
+        }
+      ]
+    },
+    "SamplingJournalEventClaim": {
+      "additionalProperties": false,
+      "description": "Content-addressed claim for one durable driver-journal event.",
+      "properties": {
+        "event": {
+          "$ref": "#/$defs/SamplingDriverEventName",
+          "description": "Event named by the claimed bytes."
+        },
+        "sequence": {
+          "description": "Event sequence in the sidecar journal.",
+          "format": "uint64",
+          "maximum": 10,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "sha256": {
+          "description": "SHA-256 digest of the exact serialized journal event bytes.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sequence",
+        "event",
+        "sha256"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "t32perf.sampling-capture-receipt/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Host-derived receipt proving a complete successful sampling transaction.",
+  "properties": {
+    "endpoint_fingerprint": {
+      "description": "SHA-256 fingerprint for the exclusively leased TRACE32 endpoint.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "endpoint_fingerprint_scheme": {
+      "$ref": "#/$defs/EndpointFingerprintScheme",
+      "description": "Fixed algorithm used for [`Self::endpoint_fingerprint`]."
+    },
+    "histogram_sha256": {
+      "description": "SHA-256 digest of the accepted PC-hit histogram artifact.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "histogram_size_bytes": {
+      "description": "Nonzero byte size of the accepted PC-hit histogram artifact.",
+      "format": "uint64",
+      "minimum": 1,
+      "type": "integer"
+    },
+    "journal_event_claims": {
+      "description": "Exact successful sidecar event sequence and byte digests.",
+      "items": {
+        "$ref": "#/$defs/SamplingJournalEventClaim"
+      },
+      "maxItems": 10,
+      "minItems": 10,
+      "type": "array"
+    },
+    "schema": {
+      "const": "t32perf.sampling-capture-receipt/v1",
+      "description": "The sampling-capture receipt schema version.",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "Portable Session identifier owning the capture.",
+      "maxLength": 64,
+      "minLength": 1,
+      "type": "string"
+    },
+    "session_operation_id": {
+      "description": "Current host Session operation identifier as 32 lowercase hexadecimal characters.",
+      "pattern": "^[0-9a-f]{32}$",
+      "type": "string"
+    },
+    "session_request_sha256": {
+      "description": "SHA-256 digest of the exact session-owned sampling capture request.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "transaction_id": {
+      "description": "Canonical lowercase UUID v4 for the completed transaction.",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "session_id",
+    "session_operation_id",
+    "transaction_id",
+    "endpoint_fingerprint",
+    "endpoint_fingerprint_scheme",
+    "session_request_sha256",
+    "histogram_sha256",
+    "histogram_size_bytes",
+    "journal_event_claims"
+  ],
+  "title": "SamplingCaptureReceipt",
+  "type": "object"
+}

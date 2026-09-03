@@ -1,0 +1,694 @@
+{
+  "$defs": {
+    "CaptureCapabilities": {
+      "description": "Evidence support for the observation families a capture can provide.",
+      "properties": {
+        "context_switches": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "RTOS or scheduler context-switch evidence."
+        },
+        "counters": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Numeric resource and application counters."
+        },
+        "custom_events": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Target-provided custom instant and span events."
+        },
+        "function_events": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Complete function enter/exit evidence."
+        },
+        "interrupt_events": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Interrupt enter/exit evidence."
+        },
+        "samples": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Statistical program-counter samples."
+        }
+      },
+      "required": [
+        "function_events",
+        "context_switches",
+        "interrupt_events",
+        "samples",
+        "custom_events",
+        "counters"
+      ],
+      "type": "object"
+    },
+    "ControllerHealthSignal": {
+      "description": "Hardware-health facts that a capability adapter can export reliably.",
+      "oneOf": [
+        {
+          "const": "trace_overflow",
+          "description": "Trace-buffer or transport overflow.",
+          "type": "string"
+        },
+        {
+          "const": "flow_error",
+          "description": "Trace flow error.",
+          "type": "string"
+        },
+        {
+          "const": "trace_gap",
+          "description": "Explicit trace gap.",
+          "type": "string"
+        },
+        {
+          "const": "truncation",
+          "description": "Truncated raw export.",
+          "type": "string"
+        },
+        {
+          "const": "timestamp_discontinuity",
+          "description": "Unexplained timestamp discontinuity.",
+          "type": "string"
+        },
+        {
+          "const": "elf_mismatch",
+          "description": "ELF and executing firmware identity mismatch.",
+          "type": "string"
+        },
+        {
+          "const": "program_flow_closure",
+          "description": "Program-flow closure or equivalent completeness check.",
+          "type": "string"
+        },
+        {
+          "const": "sampling_buffer_full",
+          "description": "Sampling stopped because its bounded Stack buffer became full.",
+          "type": "string"
+        },
+        {
+          "const": "sampling_unexpected_stop",
+          "description": "SNOOPer stopped before the request for a reason the adapter cannot classify.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerTargetState": {
+      "description": "Target execution state observed by a verified adapter.",
+      "oneOf": [
+        {
+          "const": "running",
+          "description": "The target was running.",
+          "type": "string"
+        },
+        {
+          "const": "halted",
+          "description": "The target was halted.",
+          "type": "string"
+        }
+      ]
+    },
+    "MetricSupportEntry": {
+      "description": "Support and explanatory reasons for one metric.",
+      "properties": {
+        "reasons": {
+          "description": "Stable or human-readable reasons for the declared level.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "support": {
+          "$ref": "#/$defs/MetricSupportLevel",
+          "description": "Available support level."
+        }
+      },
+      "required": [
+        "support",
+        "reasons"
+      ],
+      "type": "object"
+    },
+    "MetricSupportLevel": {
+      "description": "The support level for one analysis metric.",
+      "oneOf": [
+        {
+          "const": "exact",
+          "description": "The capture directly supports exact computation.",
+          "type": "string"
+        },
+        {
+          "const": "inferred",
+          "description": "The metric can be deterministically inferred with documented caveats.",
+          "type": "string"
+        },
+        {
+          "const": "statistical",
+          "description": "Only a statistical estimate is available.",
+          "type": "string"
+        },
+        {
+          "const": "unavailable",
+          "description": "The capture cannot support this metric.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetAdapterBuildGate": {
+      "additionalProperties": false,
+      "description": "Exact TRACE32/build/architecture compatibility gate.",
+      "properties": {
+        "architecture_package": {
+          "description": "Exact architecture-package identity.",
+          "type": "string"
+        },
+        "maximum_build": {
+          "description": "Inclusive nonzero maximum build.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "minimum_build": {
+          "description": "Inclusive nonzero minimum build.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "trace32_release": {
+          "description": "Exact TRACE32 release label.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "trace32_release",
+        "minimum_build",
+        "maximum_build",
+        "architecture_package"
+      ],
+      "type": "object"
+    },
+    "TargetAdapterCaptureContract": {
+      "additionalProperties": false,
+      "description": "Fixed capture configuration enforced by compiled adapter code.",
+      "properties": {
+        "capture_kind": {
+          "$ref": "#/$defs/TargetAdapterCaptureKind",
+          "description": "Explicit capture-family contract."
+        },
+        "capture_mode": {
+          "description": "Exact capture mode.",
+          "type": "string"
+        },
+        "configuration_sha256_by_initial_state": {
+          "additionalProperties": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "description": "Semantic configuration SHA-256 for every supported initial state.",
+          "type": "object"
+        },
+        "covered_cores": {
+          "description": "Exact covered cores.",
+          "items": {
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "maxItems": 256,
+          "minItems": 1,
+          "type": "array"
+        },
+        "supported_initial_states": {
+          "description": "Initial target states with explicitly implemented semantics.",
+          "items": {
+            "$ref": "#/$defs/ControllerTargetState"
+          },
+          "maxItems": 2,
+          "minItems": 1,
+          "type": "array"
+        },
+        "timestamp_enabled": {
+          "description": "Whether timestamps are required.",
+          "type": "boolean"
+        },
+        "trace_sink": {
+          "description": "Exact trace sink.",
+          "type": "string"
+        },
+        "workload_identity": {
+          "description": "Fixed workload identity.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "configuration_sha256_by_initial_state",
+        "capture_mode",
+        "trace_sink",
+        "capture_kind",
+        "timestamp_enabled",
+        "workload_identity",
+        "covered_cores",
+        "supported_initial_states"
+      ],
+      "type": "object"
+    },
+    "TargetAdapterCaptureKind": {
+      "description": "Capture-family-specific contract without cross-family placeholder fields.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "description": "Bounded statistical sampling where Stack capacity is measured in records.",
+          "properties": {
+            "capacity_records": {
+              "description": "Exact SNOOPer Stack capacity in records.",
+              "format": "uint64",
+              "minimum": 1,
+              "type": "integer"
+            },
+            "kind": {
+              "const": "sampling",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "capacity_records"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Complete program-flow capture exported through the strict TASKEVENTS profile.",
+          "properties": {
+            "export_profile_id": {
+              "description": "Exact deployment-owned TASKEVENTS mapping/export profile identifier.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "program_flow_task_events",
+              "type": "string"
+            },
+            "orti_artifact_id": {
+              "description": "Immutable ORTI metadata artifact identifier.",
+              "type": "string"
+            },
+            "rtos_awareness": {
+              "description": "Exact RTOS-awareness package identity verified by the adapter.",
+              "type": "string"
+            },
+            "task_marker_artifact_id": {
+              "description": "Immutable task/ISR/runnable marker metadata artifact identifier.",
+              "type": "string"
+            },
+            "timestamp_clock_id": {
+              "description": "Exact timestamp clock identity used by the TASKEVENTS export.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "export_profile_id",
+            "rtos_awareness",
+            "timestamp_clock_id",
+            "orti_artifact_id",
+            "task_marker_artifact_id"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "TargetAdapterControllerProtocol": {
+      "description": "Closed Controller request/response protocol selected by one adapter profile.",
+      "oneOf": [
+        {
+          "const": "v1",
+          "description": "Single-output Controller request/response protocol.",
+          "type": "string"
+        },
+        {
+          "const": "v2_custom_events_export",
+          "description": "Multi-output Controller V2 with one trace export and one custom-event export.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetAdapterCustomEventClockContract": {
+      "additionalProperties": false,
+      "description": "Exact shared clock domain used by one custom-event collector.",
+      "properties": {
+        "clock_id": {
+          "description": "Stable clock-domain identity shared with the program-flow export.",
+          "type": "string"
+        },
+        "frequency_hz": {
+          "description": "Integer raw-tick frequency.",
+          "format": "uint64",
+          "maximum": 1000000000000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "max_forward_ticks": {
+          "description": "Maximum accepted forward step between adjacent raw records.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "origin_ns": {
+          "description": "Session-relative nanoseconds assigned to `origin_ticks`.",
+          "format": "int64",
+          "type": "integer"
+        },
+        "origin_ticks": {
+          "description": "Exact raw timestamp assigned to the session origin.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "timestamp_modulus": {
+          "description": "Raw timestamp modulus used for bounded wrap expansion.",
+          "format": "uint64",
+          "minimum": 2,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "clock_id",
+        "frequency_hz",
+        "timestamp_modulus",
+        "max_forward_ticks",
+        "origin_ticks",
+        "origin_ns"
+      ],
+      "type": "object"
+    },
+    "TargetAdapterCustomEventCollectorContract": {
+      "additionalProperties": false,
+      "description": "Adapter-owned custom-event collection and normalization contract.",
+      "properties": {
+        "clock": {
+          "$ref": "#/$defs/TargetAdapterCustomEventClockContract",
+          "description": "Exact clock-domain conversion and origin."
+        },
+        "core_id": {
+          "description": "Core affinity assigned to emitted custom events.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "instrumentation_overhead_artifact_id": {
+          "description": "Fixed immutable instrumentation-overhead evidence identity.",
+          "type": "string"
+        },
+        "mapping_artifact_id": {
+          "description": "Fixed immutable deployment mapping artifact identity.",
+          "type": "string"
+        },
+        "max_output_bytes": {
+          "description": "Independent bound for the raw custom-event output slot.",
+          "format": "uint64",
+          "maximum": 1099511627776,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "merge_order": {
+          "$ref": "#/$defs/TargetAdapterCustomEventMergeOrder",
+          "description": "Exact cross-source ordering policy."
+        },
+        "source_id": {
+          "description": "Stable normalized source identity.",
+          "type": "string"
+        },
+        "transport": {
+          "description": "Versioned target-to-host transport identity.",
+          "type": "string"
+        },
+        "wire_protocol": {
+          "$ref": "#/$defs/TargetAdapterCustomEventWireProtocol",
+          "description": "Exact target-side wire representation."
+        }
+      },
+      "required": [
+        "wire_protocol",
+        "source_id",
+        "core_id",
+        "clock",
+        "transport",
+        "mapping_artifact_id",
+        "instrumentation_overhead_artifact_id",
+        "max_output_bytes",
+        "merge_order"
+      ],
+      "type": "object"
+    },
+    "TargetAdapterCustomEventMergeOrder": {
+      "description": "Closed merge-order policy for combining custom events with program flow.",
+      "oneOf": [
+        {
+          "const": "reject_ambiguous_ties",
+          "description": "Reject equal-timestamp records whose cross-source order is not authoritative.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetAdapterCustomEventWireProtocol": {
+      "description": "Closed raw custom-event wire representation emitted by an adapter collector.",
+      "oneOf": [
+        {
+          "const": "c_wire_v1",
+          "description": "T32Perf C SDK wire format version 1.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetAdapterFaultPoint": {
+      "description": "The operation at which an interruption scenario is injected.",
+      "oneOf": [
+        {
+          "const": "configure",
+          "description": "During fixed target configuration.",
+          "type": "string"
+        },
+        {
+          "const": "start",
+          "description": "During capture start or workload launch.",
+          "type": "string"
+        },
+        {
+          "const": "stop",
+          "description": "During workload completion or capture stop.",
+          "type": "string"
+        },
+        {
+          "const": "health",
+          "description": "During build-gated health collection.",
+          "type": "string"
+        },
+        {
+          "const": "export",
+          "description": "During fixed trace export.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetAdapterProfileSchemaVersion": {
+      "description": "Supported target-adapter profile schema.",
+      "oneOf": [
+        {
+          "const": "t32perf.target-adapter-profile/v1",
+          "description": "Version 1.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetAdapterScenario": {
+      "description": "A fixed target-adapter execution scenario.",
+      "oneOf": [
+        {
+          "const": "normal",
+          "description": "Normal capture without injected faults.",
+          "type": "string"
+        },
+        {
+          "const": "trace_overflow",
+          "description": "Deliberately force trace-buffer or transport overflow.",
+          "type": "string"
+        },
+        {
+          "const": "flow_error",
+          "description": "Deliberately force a TRACE32 flow error.",
+          "type": "string"
+        },
+        {
+          "const": "sampling_buffer_full",
+          "description": "Use a fixed small SNOOPer Stack buffer and let it stop at capacity.",
+          "type": "string"
+        },
+        {
+          "const": "sampling_unexpected_stop",
+          "description": "Observe an unclassified early SNOOPer stop.",
+          "type": "string"
+        },
+        {
+          "const": "trace32_disconnect",
+          "description": "Disconnect TRACE32 during a fixed operation.",
+          "type": "string"
+        },
+        {
+          "const": "driver_disconnect",
+          "description": "Disconnect the deployment driver during a fixed operation.",
+          "type": "string"
+        },
+        {
+          "const": "cmm_abort",
+          "description": "Abort the active CMM transaction through the fixed t32mcp abort flow.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetAdapterScenarioContract": {
+      "additionalProperties": false,
+      "description": "Fixed behavior for one adapter scenario.",
+      "properties": {
+        "capture": {
+          "$ref": "#/$defs/TargetAdapterCaptureContract",
+          "description": "Complete fixed capture contract for this scenario."
+        },
+        "fault_point": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TargetAdapterFaultPoint"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Interruption point for disconnect and abort scenarios."
+        },
+        "scenario": {
+          "$ref": "#/$defs/TargetAdapterScenario",
+          "description": "Scenario selected by trusted deployment code."
+        }
+      },
+      "required": [
+        "scenario",
+        "capture"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "t32perf.target-adapter-profile/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A qualified target-adapter profile.",
+  "properties": {
+    "adapter_id": {
+      "description": "Stable compiled adapter identifier.",
+      "type": "string"
+    },
+    "adapter_version": {
+      "description": "Exact compiled adapter version.",
+      "type": "string"
+    },
+    "build_gate": {
+      "$ref": "#/$defs/TargetAdapterBuildGate",
+      "description": "Exact TRACE32 compatibility gate."
+    },
+    "capabilities": {
+      "$ref": "#/$defs/CaptureCapabilities",
+      "description": "Observation-family capability ceiling for this adapter."
+    },
+    "controller_protocol": {
+      "$ref": "#/$defs/TargetAdapterControllerProtocol",
+      "description": "Explicit Controller request/response protocol; never inferred from evidence versions."
+    },
+    "custom_event_collector": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/TargetAdapterCustomEventCollectorContract"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Exact custom-event collector contract, absent for adapters without custom-event support."
+    },
+    "firmware_elf_sha256": {
+      "description": "Exact firmware ELF artifact SHA-256 qualified for this adapter profile.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "health_signals": {
+      "description": "Health facts this exact build adapter can obtain without inference.",
+      "items": {
+        "$ref": "#/$defs/ControllerHealthSignal"
+      },
+      "maxItems": 16,
+      "minItems": 1,
+      "type": "array"
+    },
+    "implementation_sha256": {
+      "description": "Deployment-verified expected SHA-256 of the release bundle manifest.\n\nThis is not runtime attestation of the skill bytes resolved by t32mcp.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "license_features": {
+      "description": "Exact license features required by compiled adapter code.",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "type": "array"
+    },
+    "probe_identifier": {
+      "description": "Exact probe identity expected by this deployment profile.",
+      "type": "string"
+    },
+    "qualification_sha256": {
+      "description": "SHA-256 of the immutable qualification receipt admitted by deployment.\n\nA missing value denotes a software-complete candidate that cannot be\nregistered for production selection.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "scenarios": {
+      "description": "Scenarios implemented by compiled adapter code.",
+      "items": {
+        "$ref": "#/$defs/TargetAdapterScenarioContract"
+      },
+      "maxItems": 16,
+      "minItems": 1,
+      "type": "array"
+    },
+    "schema": {
+      "$ref": "#/$defs/TargetAdapterProfileSchemaVersion",
+      "description": "Versioned document family."
+    },
+    "target_identifier": {
+      "description": "Exact target identity.",
+      "type": "string"
+    },
+    "trace_routing": {
+      "description": "Exact target-to-probe routing identities.",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "minItems": 1,
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema",
+    "adapter_id",
+    "adapter_version",
+    "implementation_sha256",
+    "build_gate",
+    "target_identifier",
+    "probe_identifier",
+    "license_features",
+    "trace_routing",
+    "firmware_elf_sha256",
+    "health_signals",
+    "capabilities",
+    "scenarios"
+  ],
+  "title": "TargetAdapterProfile",
+  "type": "object"
+}

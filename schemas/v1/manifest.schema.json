@@ -1,0 +1,657 @@
+{
+  "$defs": {
+    "AdapterInfo": {
+      "description": "Capture-adapter identity recorded in a manifest.",
+      "properties": {
+        "id": {
+          "description": "Stable adapter identifier.",
+          "type": "string"
+        },
+        "version": {
+          "description": "Adapter contract or implementation version.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "type": "object"
+    },
+    "Artifact": {
+      "description": "One immutable file artifact and its provenance.",
+      "properties": {
+        "id": {
+          "description": "Stable artifact identifier unique within the session.",
+          "type": "string"
+        },
+        "input_artifact_ids": {
+          "description": "Artifact identifiers consumed to produce this artifact.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "kind": {
+          "description": "Extensible artifact kind such as `raw_trace` or `perfetto`.",
+          "type": "string"
+        },
+        "media_type": {
+          "description": "IANA media type of the file.",
+          "type": "string"
+        },
+        "producer": {
+          "description": "Tool or stage identifier that produced the file.",
+          "type": "string"
+        },
+        "relative_path": {
+          "description": "Canonical path relative to the session directory.",
+          "maxLength": 1024,
+          "minLength": 1,
+          "pattern": "^(?=[\\u0020-\\u007E]+$)(?!/)(?!.*[<>:\"\\\\|?*])(?!.*//)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*/$)(?!.*[. ](?:/|$))(?!(?:.*?/)?(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Nn][Ii][Nn]\\$|[Cc][Oo][Nn][Oo][Uu][Tt]\\$|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9]) *(?:\\.[^/]*)?(?:/|$)).+$",
+          "type": "string"
+        },
+        "sha256": {
+          "description": "SHA-256 digest of the complete file.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "size_bytes": {
+          "description": "File size in bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "relative_path",
+        "media_type",
+        "size_bytes",
+        "sha256",
+        "producer",
+        "input_artifact_ids"
+      ],
+      "type": "object"
+    },
+    "CaptureCapabilities": {
+      "description": "Evidence support for the observation families a capture can provide.",
+      "properties": {
+        "context_switches": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "RTOS or scheduler context-switch evidence."
+        },
+        "counters": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Numeric resource and application counters."
+        },
+        "custom_events": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Target-provided custom instant and span events."
+        },
+        "function_events": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Complete function enter/exit evidence."
+        },
+        "interrupt_events": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Interrupt enter/exit evidence."
+        },
+        "samples": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Statistical program-counter samples."
+        }
+      },
+      "required": [
+        "function_events",
+        "context_switches",
+        "interrupt_events",
+        "samples",
+        "custom_events",
+        "counters"
+      ],
+      "type": "object"
+    },
+    "CaptureConfigArtifactClaim": {
+      "additionalProperties": false,
+      "description": "Exact immutable claim for the capture configuration used to produce observations.",
+      "properties": {
+        "artifact_id": {
+          "description": "Registered capture-configuration artifact identifier.",
+          "type": "string"
+        },
+        "configuration_sha256": {
+          "description": "SHA-256 of the canonical configuration with its owning Session identity removed.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "sha256": {
+          "description": "SHA-256 of the exact registered configuration bytes.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "sha256",
+        "configuration_sha256"
+      ],
+      "type": "object"
+    },
+    "CaptureInfo": {
+      "description": "Parameters and environment used for capture.",
+      "properties": {
+        "adapter": {
+          "$ref": "#/$defs/AdapterInfo",
+          "description": "Adapter responsible for capture and normalization."
+        },
+        "capabilities": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CaptureCapabilities"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Observation-family support copied from the trusted capture receipt."
+        },
+        "capture_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CaptureConfigArtifactClaim"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Exact immutable capture-configuration artifact and digest."
+        },
+        "covered_cores": {
+          "description": "Cores for which the trusted receipt claims coverage.",
+          "items": {
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        "instrumentation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CaptureInstrumentationConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Target custom-event method and measured incremental overhead."
+        },
+        "mode": {
+          "description": "Selected capture mode, such as `etm`, `itm`, or `sampling`.",
+          "type": "string"
+        },
+        "provider": {
+          "description": "Capture provider that issued the trusted receipt.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "request_sha256": {
+          "description": "Digest of the canonical capture request when retained.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "target": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TargetInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Target metadata when known."
+        },
+        "trace32": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Trace32Info"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "TRACE32 metadata when capture used TRACE32."
+        }
+      },
+      "required": [
+        "mode",
+        "adapter"
+      ],
+      "type": "object"
+    },
+    "CaptureInstrumentationConfig": {
+      "additionalProperties": false,
+      "description": "Target instrumentation method and independently measured incremental cost.",
+      "properties": {
+        "method": {
+          "description": "Versioned target-side API or marker method, such as `t32perf-c-wire/v1`.",
+          "type": "string"
+        },
+        "overhead": {
+          "$ref": "#/$defs/CaptureInstrumentationOverhead",
+          "description": "Controlled measurement used to quantify incremental instrumentation cost."
+        },
+        "transport": {
+          "description": "Versioned transport identity, such as `shared-memory-ring-buffer/v1`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "method",
+        "transport",
+        "overhead"
+      ],
+      "type": "object"
+    },
+    "CaptureInstrumentationOverhead": {
+      "additionalProperties": false,
+      "description": "One controlled measurement of target-side instrumentation overhead.\n\nThe incremental cost is `instrumented_duration_ns - baseline_duration_ns`.\nKeeping both source durations and the emitted-event count avoids a rounded\nfloating-point average in the authoritative contract.",
+      "properties": {
+        "baseline_duration_ns": {
+          "description": "Duration of the uninstrumented reference workload.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "emitted_event_count": {
+          "description": "Number of target events emitted during the instrumented workload.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "evidence_artifact_id": {
+          "description": "Immutable artifact containing raw measurement evidence.",
+          "type": "string"
+        },
+        "instrumented_duration_ns": {
+          "description": "Duration of the same workload with instrumentation enabled.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "measurement_method": {
+          "description": "Versioned benchmark or calibration procedure.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "measurement_method",
+        "baseline_duration_ns",
+        "instrumented_duration_ns",
+        "emitted_event_count",
+        "evidence_artifact_id"
+      ],
+      "type": "object"
+    },
+    "ClockInfo": {
+      "description": "A clock domain relevant to timestamp conversion or analysis.",
+      "properties": {
+        "frequency_hz": {
+          "description": "Clock frequency in hertz when known.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "id": {
+          "description": "Stable clock-domain identifier.",
+          "type": "string"
+        },
+        "properties": {
+          "additionalProperties": true,
+          "description": "Clock-specific metadata.",
+          "type": "object"
+        },
+        "source": {
+          "description": "Source or derivation of the frequency value.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "FirmwareInfo": {
+      "description": "Firmware identity used during a capture.",
+      "properties": {
+        "build_id": {
+          "description": "Firmware build identifier extracted from the image.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "elf_path": {
+          "description": "User-provided ELF path when disclosure is permitted.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "elf_sha256": {
+          "description": "SHA-256 digest of the ELF file.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "MetricSupportEntry": {
+      "description": "Support and explanatory reasons for one metric.",
+      "properties": {
+        "reasons": {
+          "description": "Stable or human-readable reasons for the declared level.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "support": {
+          "$ref": "#/$defs/MetricSupportLevel",
+          "description": "Available support level."
+        }
+      },
+      "required": [
+        "support",
+        "reasons"
+      ],
+      "type": "object"
+    },
+    "MetricSupportLevel": {
+      "description": "The support level for one analysis metric.",
+      "oneOf": [
+        {
+          "const": "exact",
+          "description": "The capture directly supports exact computation.",
+          "type": "string"
+        },
+        {
+          "const": "inferred",
+          "description": "The metric can be deterministically inferred with documented caveats.",
+          "type": "string"
+        },
+        {
+          "const": "statistical",
+          "description": "Only a statistical estimate is available.",
+          "type": "string"
+        },
+        {
+          "const": "unavailable",
+          "description": "The capture cannot support this metric.",
+          "type": "string"
+        }
+      ]
+    },
+    "StageInfo": {
+      "description": "Provenance and outcome of one capture or processing stage.",
+      "properties": {
+        "completed_at": {
+          "description": "RFC 3339 completion timestamp when the stage ended.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "input_artifact_ids": {
+          "description": "Artifact identifiers consumed by the stage.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "message": {
+          "description": "Optional stage status detail.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "description": "Stable stage name.",
+          "type": "string"
+        },
+        "output_artifact_ids": {
+          "description": "Artifact identifiers produced by the stage.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "started_at": {
+          "description": "RFC 3339 start timestamp when the stage started.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "$ref": "#/$defs/StageStatus",
+          "description": "Current or terminal stage status."
+        }
+      },
+      "required": [
+        "name",
+        "status"
+      ],
+      "type": "object"
+    },
+    "StageStatus": {
+      "description": "Status of one capture or processing stage recorded in the manifest.",
+      "oneOf": [
+        {
+          "const": "pending",
+          "description": "The stage has not started.",
+          "type": "string"
+        },
+        {
+          "const": "running",
+          "description": "The stage is running.",
+          "type": "string"
+        },
+        {
+          "const": "complete",
+          "description": "The stage completed successfully.",
+          "type": "string"
+        },
+        {
+          "const": "failed",
+          "description": "The stage failed.",
+          "type": "string"
+        },
+        {
+          "const": "skipped",
+          "description": "The stage was intentionally skipped.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetInfo": {
+      "description": "Target identity and capability metadata.",
+      "properties": {
+        "architecture": {
+          "description": "Target architecture name.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "board": {
+          "description": "Board name or revision.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "core_count": {
+          "description": "Number of traced processor cores.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "device": {
+          "description": "MCU, SoC, or device name.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "properties": {
+          "additionalProperties": true,
+          "description": "Adapter-specific target metadata.",
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "ToolInfo": {
+      "description": "Version and provenance of the t32perf tool writing a manifest.",
+      "properties": {
+        "commit": {
+          "description": "Source-control commit when available.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "description": "Tool or executable name.",
+          "type": "string"
+        },
+        "version": {
+          "description": "Tool semantic version or build version.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "type": "object"
+    },
+    "Trace32Info": {
+      "description": "TRACE32 installation and probe metadata.",
+      "properties": {
+        "architecture_package": {
+          "description": "Loaded TRACE32 architecture package.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "build": {
+          "description": "TRACE32 build identifier.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "probe": {
+          "description": "Probe model or serial-safe identifier.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "properties": {
+          "additionalProperties": true,
+          "description": "Additional TRACE32 metadata.",
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "$id": "t32perf.manifest/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Durable session manifest and artifact index.",
+  "properties": {
+    "artifacts": {
+      "description": "Immutable artifacts owned by the session.",
+      "items": {
+        "$ref": "#/$defs/Artifact"
+      },
+      "type": "array"
+    },
+    "capture": {
+      "$ref": "#/$defs/CaptureInfo",
+      "description": "Capture configuration and adapter identity."
+    },
+    "clocks": {
+      "description": "Relevant clock domains.",
+      "items": {
+        "$ref": "#/$defs/ClockInfo"
+      },
+      "type": "array"
+    },
+    "created_at": {
+      "description": "RFC 3339 session creation timestamp.",
+      "type": "string"
+    },
+    "firmware": {
+      "$ref": "#/$defs/FirmwareInfo",
+      "description": "Firmware identity."
+    },
+    "schema": {
+      "const": "t32perf.manifest/v1",
+      "description": "The manifest schema version.",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "Stable session identifier.",
+      "type": "string"
+    },
+    "stages": {
+      "description": "Capture and processing stages.",
+      "items": {
+        "$ref": "#/$defs/StageInfo"
+      },
+      "type": "array"
+    },
+    "tool": {
+      "$ref": "#/$defs/ToolInfo",
+      "description": "Tool version and source provenance."
+    }
+  },
+  "required": [
+    "schema",
+    "session_id",
+    "created_at",
+    "tool",
+    "capture",
+    "firmware",
+    "clocks",
+    "stages",
+    "artifacts"
+  ],
+  "title": "Manifest",
+  "type": "object"
+}

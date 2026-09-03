@@ -1,0 +1,104 @@
+{
+  "$defs": {
+    "EndpointFingerprintScheme": {
+      "description": "Algorithm used to derive a TRACE32 endpoint fingerprint.\n\nThis is independent of the document schema version: it identifies the\ncryptographic endpoint-binding algorithm.",
+      "oneOf": [
+        {
+          "const": "t32perf.endpoint-fingerprint/v2",
+          "description": "Canonical endpoint identity bound to the observed TRACE32 probe.",
+          "type": "string"
+        }
+      ]
+    },
+    "FirmwareBindingEvidenceResult": {
+      "description": "The outcome recorded by firmware-binding evidence.",
+      "oneOf": [
+        {
+          "const": "verified",
+          "description": "The target image matched the executable.",
+          "type": "string"
+        },
+        {
+          "const": "asserted",
+          "description": "An immutable capture request asserted the executable digest without comparing the target\nimage.",
+          "type": "string"
+        },
+        {
+          "const": "mismatch",
+          "description": "The target image did not match the executable.",
+          "type": "string"
+        }
+      ]
+    },
+    "FirmwareBindingProofKind": {
+      "description": "The evidence mechanism used to associate an executable with a capture target.",
+      "oneOf": [
+        {
+          "const": "digest_bound_deployment",
+          "description": "A deployment record bound the executable digest to the target image.",
+          "type": "string"
+        },
+        {
+          "const": "precommitted_elf_assertion",
+          "description": "An immutable capture request asserted the deployed executable digest without comparing\nthe target image.",
+          "type": "string"
+        },
+        {
+          "const": "target_image_comparison",
+          "description": "A target-image comparison established or rejected the binding.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.firmware-binding-evidence/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Immutable artifact whose bytes are referenced by [`FirmwareBindingProof`].",
+  "properties": {
+    "elf_sha256": {
+      "description": "Digest of the executable named by this evidence.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "endpoint_fingerprint": {
+      "description": "SHA-256 fingerprint for the exclusively leased TRACE32 endpoint.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "endpoint_fingerprint_scheme": {
+      "$ref": "#/$defs/EndpointFingerprintScheme",
+      "description": "Fixed algorithm used for [`Self::endpoint_fingerprint`]."
+    },
+    "proof_kind": {
+      "$ref": "#/$defs/FirmwareBindingProofKind",
+      "description": "Evidence mechanism used for the binding."
+    },
+    "result": {
+      "$ref": "#/$defs/FirmwareBindingEvidenceResult",
+      "description": "Binding result established by the artifact."
+    },
+    "schema": {
+      "const": "t32perf.firmware-binding-evidence/v1",
+      "description": "The firmware-binding evidence schema version.",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "Portable capture session identifier.",
+      "maxLength": 64,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "session_id",
+    "endpoint_fingerprint",
+    "endpoint_fingerprint_scheme",
+    "elf_sha256",
+    "proof_kind",
+    "result"
+  ],
+  "title": "FirmwareBindingEvidence",
+  "type": "object"
+}

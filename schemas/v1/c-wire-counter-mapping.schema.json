@@ -1,0 +1,386 @@
+{
+  "$defs": {
+    "CWireContextKind": {
+      "description": "Closed kind of a context defined by a C SDK counter mapping.",
+      "oneOf": [
+        {
+          "const": "task",
+          "description": "An RTOS task context.",
+          "type": "string"
+        },
+        {
+          "const": "isr",
+          "description": "An interrupt-service-routine context.",
+          "type": "string"
+        }
+      ]
+    },
+    "CWireContextMapping": {
+      "additionalProperties": false,
+      "description": "One closed mapping from a numeric C SDK context identifier to a dictionary context.",
+      "properties": {
+        "context_id": {
+          "description": "Stable normalized dictionary context identifier.",
+          "maxLength": 4096,
+          "minLength": 1,
+          "type": "string"
+        },
+        "core_id": {
+          "description": "Core affinity when known.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "kind": {
+          "$ref": "#/$defs/CWireContextKind",
+          "description": "Closed context kind accepted by C SDK stack counters."
+        },
+        "name": {
+          "description": "Human-readable context name.",
+          "maxLength": 4096,
+          "minLength": 1,
+          "type": "string"
+        },
+        "priority": {
+          "description": "Scheduling or interrupt priority when known.",
+          "format": "int32",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "wire_context_id": {
+          "description": "Exact C SDK `context_id` carried by wire records.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "wire_context_id",
+        "context_id",
+        "name",
+        "kind"
+      ],
+      "type": "object"
+    },
+    "CWireCounterMapping": {
+      "additionalProperties": false,
+      "description": "One immutable mapping from a C SDK event identifier to a resource counter.",
+      "properties": {
+        "counter_id": {
+          "description": "Stable normalized counter identifier.",
+          "maxLength": 4096,
+          "minLength": 1,
+          "type": "string"
+        },
+        "description": {
+          "description": "Stable description of the counter source and meaning.",
+          "maxLength": 4096,
+          "minLength": 1,
+          "type": "string"
+        },
+        "event_id": {
+          "description": "Exact C SDK `event_id` carried by Counter records.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "name": {
+          "description": "Human-readable counter name.",
+          "maxLength": 4096,
+          "minLength": 1,
+          "type": "string"
+        },
+        "semantic": {
+          "$ref": "#/$defs/CounterSemantic",
+          "description": "Explicit semantic of the measured resource value."
+        },
+        "subject": {
+          "$ref": "#/$defs/CounterSubject",
+          "description": "Explicit identity of the measured resource."
+        },
+        "unit": {
+          "description": "Unit required by the counter semantic.",
+          "maxLength": 4096,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "counter_id",
+        "name",
+        "unit",
+        "description",
+        "semantic",
+        "subject"
+      ],
+      "type": "object"
+    },
+    "CounterSemantic": {
+      "description": "Stable, extensible semantic identity for one counter family.\n\nValues use lower-case dot-separated identifiers. Standard semantics are\ninterpreted only through [`Self::standard_spec`]; unknown valid identifiers\nremain extension-defined generic counters.",
+      "maxLength": 128,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$",
+      "type": "string"
+    },
+    "CounterSubject": {
+      "description": "Stable identity of the resource measured by a counter.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "description": "The complete capture session.",
+          "properties": {
+            "kind": {
+              "const": "capture",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One allocator instance.",
+          "properties": {
+            "allocator_id": {
+              "description": "Stable allocator identity.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "allocator",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "allocator_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One execution context.",
+          "properties": {
+            "context_id": {
+              "description": "Referenced context dictionary identity.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "context",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "context_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One processor core.",
+          "properties": {
+            "core_id": {
+              "description": "Zero-based core identity.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "kind": {
+              "const": "core",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "core_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One runtime stack.",
+          "properties": {
+            "context_id": {
+              "description": "Referenced Task or ISR context when applicable.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "core_id": {
+              "description": "Referenced core for MSP, PSP, or core-local stacks.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "kind": {
+              "const": "stack",
+              "type": "string"
+            },
+            "role": {
+              "$ref": "#/$defs/StackRole",
+              "description": "Semantic role of the stack."
+            },
+            "stack_id": {
+              "description": "Stable physical-stack identity.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "stack_id",
+            "role"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One target memory region.",
+          "properties": {
+            "kind": {
+              "const": "memory_region",
+              "type": "string"
+            },
+            "region_id": {
+              "description": "Stable region identity.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "region_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One trace-capture buffer.",
+          "properties": {
+            "buffer_id": {
+              "description": "Stable buffer identity.",
+              "type": "string"
+            },
+            "core_id": {
+              "description": "Core owning the buffer when it is core-local.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "kind": {
+              "const": "trace_buffer",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "buffer_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Extension-defined resource identity.",
+          "properties": {
+            "id": {
+              "description": "Stable identity within the namespace.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "custom",
+              "type": "string"
+            },
+            "namespace": {
+              "description": "Lower-case extension namespace.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "namespace",
+            "id"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "StackRole": {
+      "description": "Semantic role assigned to one runtime stack.",
+      "oneOf": [
+        {
+          "const": "task",
+          "description": "RTOS Task stack.",
+          "type": "string"
+        },
+        {
+          "const": "isr",
+          "description": "Dedicated ISR stack.",
+          "type": "string"
+        },
+        {
+          "const": "msp",
+          "description": "Arm Main Stack Pointer stack.",
+          "type": "string"
+        },
+        {
+          "const": "psp",
+          "description": "Arm Process Stack Pointer stack.",
+          "type": "string"
+        },
+        {
+          "const": "custom",
+          "description": "Extension-defined stack role.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.c-wire-counter-mapping/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Deployment-owned, closed mapping for C SDK Counter event identifiers.",
+  "properties": {
+    "contexts": {
+      "default": [],
+      "description": "Closed C SDK context definitions used by Task and ISR stack counters.",
+      "items": {
+        "$ref": "#/$defs/CWireContextMapping"
+      },
+      "maxItems": 65536,
+      "type": "array"
+    },
+    "counters": {
+      "description": "Counter definitions in deployment-defined order.",
+      "items": {
+        "$ref": "#/$defs/CWireCounterMapping"
+      },
+      "maxItems": 65536,
+      "minItems": 1,
+      "type": "array"
+    },
+    "schema": {
+      "const": "t32perf.c-wire-counter-mapping/v1",
+      "description": "Exact mapping document schema.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "counters"
+  ],
+  "title": "CWireCounterMappingDocument",
+  "type": "object"
+}

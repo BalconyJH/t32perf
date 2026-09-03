@@ -1,0 +1,59 @@
+{
+  "$defs": {
+    "TargetAdapterQualificationTrustEntry": {
+      "additionalProperties": false,
+      "description": "One exact policy authorization from an ACL-protected deployment store.",
+      "properties": {
+        "policy_id": {
+          "description": "Portable policy identifier, used only to select the fixed policy filename.",
+          "type": "string"
+        },
+        "policy_sha256": {
+          "description": "SHA-256 of the policy's exact raw bytes.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_id",
+        "policy_sha256"
+      ],
+      "type": "object"
+    },
+    "TargetAdapterQualificationTrustStoreSchemaVersion": {
+      "description": "The single supported deployment trust-store schema version.",
+      "oneOf": [
+        {
+          "const": "t32perf.target-adapter-qualification-trust-store/v1",
+          "description": "Version 1.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.target-adapter-qualification-trust-store/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "ACL-protected exact policy allowlist.\n\nEntries are sorted by `policy_id` and are unique. This document is an\nindependent deployment trust anchor, not Session evidence.",
+  "properties": {
+    "entries": {
+      "description": "Exact authorized policies in canonical ascending `policy_id` order.",
+      "items": {
+        "$ref": "#/$defs/TargetAdapterQualificationTrustEntry"
+      },
+      "maxItems": 256,
+      "minItems": 1,
+      "type": "array"
+    },
+    "schema": {
+      "$ref": "#/$defs/TargetAdapterQualificationTrustStoreSchemaVersion",
+      "description": "Trust-store schema version."
+    }
+  },
+  "required": [
+    "schema",
+    "entries"
+  ],
+  "title": "TargetAdapterQualificationTrustStore",
+  "type": "object"
+}

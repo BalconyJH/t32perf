@@ -1,0 +1,190 @@
+{
+  "$defs": {
+    "FunctionHotspot": {
+      "description": "Aggregated active-time metrics for a function and optional context.",
+      "properties": {
+        "avg_active_ns": {
+          "description": "Integer arithmetic mean active duration of one activation.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "context_id": {
+          "description": "Context dictionary identifier when the report is context-partitioned.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "count": {
+          "description": "Number of activations.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "function_id": {
+          "description": "Function dictionary identifier.",
+          "type": "string"
+        },
+        "inclusive_active_ns": {
+          "description": "Inclusive active time across all activations.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "incomplete_count": {
+          "description": "Number of activations reconstructed from incomplete boundaries.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "max_active_ns": {
+          "description": "Maximum active duration of one activation.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "min_active_ns": {
+          "description": "Minimum active duration of one activation.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "quality": {
+          "$ref": "#/$defs/Quality",
+          "description": "Evidence quality of this aggregate."
+        },
+        "self_active_ns": {
+          "description": "Self active time across all activations.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "function_id",
+        "inclusive_active_ns",
+        "self_active_ns",
+        "count",
+        "min_active_ns",
+        "max_active_ns",
+        "avg_active_ns",
+        "incomplete_count",
+        "quality"
+      ],
+      "type": "object"
+    },
+    "Quality": {
+      "description": "Describes how directly a value is supported by the captured trace.",
+      "oneOf": [
+        {
+          "const": "exact",
+          "description": "The trace directly and completely determines the value.",
+          "type": "string"
+        },
+        {
+          "const": "inferred",
+          "description": "The value is reconstructed from incomplete but deterministic evidence.",
+          "type": "string"
+        },
+        {
+          "const": "statistical",
+          "description": "The value is an estimate obtained from statistical samples.",
+          "type": "string"
+        }
+      ]
+    },
+    "SamplingHotspot": {
+      "description": "Statistical hotspot data obtained from program-counter samples.",
+      "properties": {
+        "address": {
+          "description": "Raw sampled address when no function resolution is available.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "context_id": {
+          "description": "Context identifier when the report is context-partitioned.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "estimated_share": {
+          "description": "Estimated fraction of represented samples in the inclusive range 0 to 1.",
+          "format": "double",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        "function_id": {
+          "description": "Resolved function identifier when available.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "quality": {
+          "$ref": "#/$defs/Quality",
+          "description": "Evidence quality, normally [`Quality::Statistical`]."
+        },
+        "sample_count": {
+          "description": "Number of samples attributed to this row.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "sample_count",
+        "estimated_share",
+        "quality"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "t32perf.hotspots/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "A hotspot report containing deterministic and sampling-derived sections.",
+  "properties": {
+    "functions": {
+      "description": "Exact or inferred function-span aggregates.",
+      "items": {
+        "$ref": "#/$defs/FunctionHotspot"
+      },
+      "type": "array"
+    },
+    "quality": {
+      "$ref": "#/$defs/Quality",
+      "description": "Overall evidence quality of the report."
+    },
+    "sampling": {
+      "description": "Statistical sampling aggregates, kept separate from span aggregates.",
+      "items": {
+        "$ref": "#/$defs/SamplingHotspot"
+      },
+      "type": "array"
+    },
+    "schema": {
+      "const": "t32perf.hotspots/v1",
+      "description": "The hotspot schema version.",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "Session that was analyzed.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "session_id",
+    "quality",
+    "functions",
+    "sampling"
+  ],
+  "title": "HotspotReport",
+  "type": "object"
+}

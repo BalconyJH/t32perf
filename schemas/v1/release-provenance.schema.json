@@ -1,0 +1,231 @@
+{
+  "$defs": {
+    "binaryClaim": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fileClaimBase"
+        },
+        {
+          "properties": {
+            "path": {
+              "enum": [
+                "t32perf",
+                "t32perf.exe"
+              ]
+            }
+          },
+          "type": "object"
+        }
+      ]
+    },
+    "cargoLockClaim": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/fileClaimBase"
+        },
+        {
+          "properties": {
+            "path": {
+              "const": "Cargo.lock"
+            }
+          },
+          "type": "object"
+        }
+      ]
+    },
+    "fileClaimBase": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "size_bytes": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path",
+        "size_bytes",
+        "sha256"
+      ],
+      "type": "object"
+    },
+    "sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    }
+  },
+  "$id": "t32perf.release-provenance/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Immutable build, source, file-integrity, target, toolchain, and linkage claims for one release bundle.",
+  "properties": {
+    "binary": {
+      "$ref": "#/$defs/binaryClaim"
+    },
+    "linkage": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "audit": {
+              "const": "pe-import-table/v1"
+            },
+            "imported_libraries": {
+              "items": {
+                "maxLength": 260,
+                "pattern": "^[A-Za-z0-9._-]+\\.dll$",
+                "type": "string"
+              },
+              "maxItems": 256,
+              "type": "array",
+              "uniqueItems": true
+            },
+            "policy": {
+              "const": "windows-msvc-static-crt"
+            }
+          },
+          "required": [
+            "policy",
+            "audit",
+            "imported_libraries"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "audit": {
+              "const": "platform-policy-only/v1"
+            },
+            "imported_libraries": {
+              "maxItems": 0,
+              "type": "array"
+            },
+            "policy": {
+              "const": "system-libc-dynamic-allowed"
+            }
+          },
+          "required": [
+            "policy",
+            "audit",
+            "imported_libraries"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "package": {
+      "additionalProperties": false,
+      "properties": {
+        "bundle_name": {
+          "maxLength": 255,
+          "minLength": 1,
+          "type": "string"
+        },
+        "name": {
+          "const": "t32perf"
+        },
+        "version": {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version",
+        "bundle_name"
+      ],
+      "type": "object"
+    },
+    "schema": {
+      "const": "t32perf.release-provenance/v1"
+    },
+    "source": {
+      "additionalProperties": false,
+      "properties": {
+        "cargo_lock": {
+          "$ref": "#/$defs/cargoLockClaim"
+        },
+        "commit": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "pattern": "^[0-9a-f]{40}$",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "required": [
+        "commit",
+        "cargo_lock"
+      ],
+      "type": "object"
+    },
+    "target": {
+      "additionalProperties": false,
+      "properties": {
+        "arch": {
+          "maxLength": 64,
+          "minLength": 1,
+          "type": "string"
+        },
+        "os": {
+          "maxLength": 64,
+          "minLength": 1,
+          "type": "string"
+        },
+        "triple": {
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "os",
+        "arch",
+        "triple"
+      ],
+      "type": "object"
+    },
+    "toolchain": {
+      "additionalProperties": false,
+      "properties": {
+        "cargo": {
+          "maxLength": 512,
+          "minLength": 1,
+          "type": "string"
+        },
+        "rustc": {
+          "maxLength": 512,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "rustc",
+        "cargo"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema",
+    "package",
+    "target",
+    "toolchain",
+    "source",
+    "binary",
+    "linkage"
+  ],
+  "title": "T32Perf release provenance",
+  "type": "object"
+}

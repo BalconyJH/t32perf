@@ -1,0 +1,201 @@
+{
+  "$defs": {
+    "ControllerCapabilitiesEvidenceSchemaVersion": {
+      "description": "Supported capability-evidence schema version.",
+      "oneOf": [
+        {
+          "const": "t32perf.controller-capabilities-evidence/v1",
+          "description": "The only supported version or operation marker.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerCapabilitiesOperation": {
+      "description": "Fixed capability-discovery operation marker.",
+      "oneOf": [
+        {
+          "const": "perf_get_capabilities",
+          "description": "The only supported version or operation marker.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerHealthSignal": {
+      "description": "Hardware-health facts that a capability adapter can export reliably.",
+      "oneOf": [
+        {
+          "const": "trace_overflow",
+          "description": "Trace-buffer or transport overflow.",
+          "type": "string"
+        },
+        {
+          "const": "flow_error",
+          "description": "Trace flow error.",
+          "type": "string"
+        },
+        {
+          "const": "trace_gap",
+          "description": "Explicit trace gap.",
+          "type": "string"
+        },
+        {
+          "const": "truncation",
+          "description": "Truncated raw export.",
+          "type": "string"
+        },
+        {
+          "const": "timestamp_discontinuity",
+          "description": "Unexplained timestamp discontinuity.",
+          "type": "string"
+        },
+        {
+          "const": "elf_mismatch",
+          "description": "ELF and executing firmware identity mismatch.",
+          "type": "string"
+        },
+        {
+          "const": "program_flow_closure",
+          "description": "Program-flow closure or equivalent completeness check.",
+          "type": "string"
+        },
+        {
+          "const": "sampling_buffer_full",
+          "description": "Sampling stopped because its bounded Stack buffer became full.",
+          "type": "string"
+        },
+        {
+          "const": "sampling_unexpected_stop",
+          "description": "SNOOPer stopped before the request for a reason the adapter cannot classify.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.controller-capabilities-evidence/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Versioned evidence produced by a successful capability operation.",
+  "properties": {
+    "architecture_package": {
+      "description": "Exact architecture-package identity.",
+      "type": "string"
+    },
+    "binding_sha256": {
+      "description": "Exact controller binding echoed by the adapter.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "capture_modes": {
+      "description": "Explicit supported capture-mode identifiers.",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "minItems": 1,
+      "type": "array"
+    },
+    "covered_cores": {
+      "description": "Cores covered by the adapter.",
+      "items": {
+        "format": "uint32",
+        "minimum": 0,
+        "type": "integer"
+      },
+      "maxItems": 256,
+      "minItems": 1,
+      "type": "array"
+    },
+    "health_signals": {
+      "description": "Hardware-health facts supported by this exact adapter/build.",
+      "items": {
+        "$ref": "#/$defs/ControllerHealthSignal"
+      },
+      "maxItems": 16,
+      "minItems": 1,
+      "type": "array"
+    },
+    "license_features": {
+      "description": "Exact license features required by this adapter.",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 128,
+      "minItems": 1,
+      "type": "array"
+    },
+    "operation": {
+      "$ref": "#/$defs/ControllerCapabilitiesOperation",
+      "description": "Fixed operation marker."
+    },
+    "probe_identifier": {
+      "description": "Stable probe identity.",
+      "type": "string"
+    },
+    "rtos_awareness": {
+      "description": "Exact RTOS-awareness adapter identity, absent when unsupported.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "schema": {
+      "$ref": "#/$defs/ControllerCapabilitiesEvidenceSchemaVersion",
+      "description": "Versioned document family."
+    },
+    "target_identifier": {
+      "description": "Stable target identity.",
+      "type": "string"
+    },
+    "timestamp_supported": {
+      "description": "Whether the adapter verified timestamp support.",
+      "type": "boolean"
+    },
+    "trace32_build": {
+      "description": "Exact nonzero TRACE32 build number.",
+      "format": "uint64",
+      "minimum": 1,
+      "type": "integer"
+    },
+    "trace32_release": {
+      "description": "Exact TRACE32 release label.",
+      "type": "string"
+    },
+    "trace_routing": {
+      "description": "Exact target-to-probe trace routing and pin identities.",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "minItems": 1,
+      "type": "array"
+    },
+    "trace_sinks": {
+      "description": "Explicit supported sink identifiers.",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64,
+      "minItems": 1,
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema",
+    "operation",
+    "binding_sha256",
+    "trace32_release",
+    "trace32_build",
+    "architecture_package",
+    "target_identifier",
+    "probe_identifier",
+    "license_features",
+    "trace_routing",
+    "capture_modes",
+    "trace_sinks",
+    "covered_cores",
+    "timestamp_supported",
+    "health_signals"
+  ],
+  "title": "ControllerCapabilitiesEvidence",
+  "type": "object"
+}

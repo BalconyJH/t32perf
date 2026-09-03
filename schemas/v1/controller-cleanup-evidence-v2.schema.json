@@ -1,0 +1,188 @@
+{
+  "$defs": {
+    "ControllerCleanupEvidenceV2SchemaVersion": {
+      "description": "Supported signal-scoped SNOOPer cleanup-evidence schema version.",
+      "oneOf": [
+        {
+          "const": "t32perf.controller-cleanup-evidence/v2",
+          "description": "The only supported version or operation marker.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerCleanupOperation": {
+      "description": "Fixed target-cleanup operation marker.",
+      "oneOf": [
+        {
+          "const": "perf_cleanup",
+          "description": "The only supported version or operation marker.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerSamplingBufferMode": {
+      "description": "Bounded sampling-buffer mode.",
+      "oneOf": [
+        {
+          "const": "stack",
+          "description": "Stop sampling when the fixed buffer becomes full.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerSamplingCleanupEvidence": {
+      "additionalProperties": false,
+      "description": "Exact canonical SNOOPer baseline after cleanup.",
+      "properties": {
+        "auto_arm": {
+          "description": "AutoArm must be disabled.",
+          "type": "boolean"
+        },
+        "auto_init": {
+          "description": "AutoInit must be disabled.",
+          "type": "boolean"
+        },
+        "buffer_mode": {
+          "$ref": "#/$defs/ControllerSamplingBufferMode",
+          "description": "Restored buffer mode."
+        },
+        "capacity_records": {
+          "description": "Canonical restored Stack capacity in records.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "method": {
+          "$ref": "#/$defs/ControllerSamplingMethod",
+          "description": "Restored sampling method."
+        },
+        "object": {
+          "$ref": "#/$defs/ControllerSamplingObject",
+          "description": "Restored sample object."
+        },
+        "requested_rate_ns": {
+          "description": "Fixed requested interval.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "state": {
+          "$ref": "#/$defs/ControllerSamplingState",
+          "description": "SNOOPer must be OFF."
+        },
+        "zero_reset": {
+          "description": "Adapter-owned ZERO origin was reset successfully.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "method",
+        "object",
+        "buffer_mode",
+        "state",
+        "requested_rate_ns",
+        "capacity_records",
+        "auto_arm",
+        "auto_init",
+        "zero_reset"
+      ],
+      "type": "object"
+    },
+    "ControllerSamplingMethod": {
+      "description": "Sampling acquisition method verified by a target adapter.",
+      "oneOf": [
+        {
+          "const": "real_time",
+          "description": "Runtime PC access without periodic target stop.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerSamplingObject": {
+      "description": "Sampling object verified by a target adapter.",
+      "oneOf": [
+        {
+          "const": "program_counter",
+          "description": "Program-counter sampling.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerSamplingState": {
+      "description": "Sampling trace state observed after the explicit stop command.",
+      "oneOf": [
+        {
+          "const": "off",
+          "description": "The SNOOPer is off and its records are readable/exportable.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerTargetState": {
+      "description": "Target execution state observed by a verified adapter.",
+      "oneOf": [
+        {
+          "const": "running",
+          "description": "The target was running.",
+          "type": "string"
+        },
+        {
+          "const": "halted",
+          "description": "The target was halted.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.controller-cleanup-evidence/v2",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Signal-scoped cleanup evidence for the SNOOPer sampling profile.",
+  "properties": {
+    "adapter_state_restored": {
+      "description": "Adapter-owned state was restored.",
+      "type": "boolean"
+    },
+    "binding_sha256": {
+      "description": "Exact controller binding echoed by the adapter.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "files_deleted": {
+      "description": "Cleanup never deletes Session files.",
+      "type": "boolean"
+    },
+    "initial_target_state": {
+      "$ref": "#/$defs/ControllerTargetState",
+      "description": "Configure-time target state that cleanup preserved."
+    },
+    "operation": {
+      "$ref": "#/$defs/ControllerCleanupOperation",
+      "description": "Fixed operation marker."
+    },
+    "sampling": {
+      "$ref": "#/$defs/ControllerSamplingCleanupEvidence",
+      "description": "Exact canonical sampling baseline."
+    },
+    "schema": {
+      "$ref": "#/$defs/ControllerCleanupEvidenceV2SchemaVersion",
+      "description": "Versioned document family."
+    },
+    "target_state_restored": {
+      "description": "Target execution state still equals the configure-time state.",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "schema",
+    "operation",
+    "binding_sha256",
+    "initial_target_state",
+    "adapter_state_restored",
+    "target_state_restored",
+    "sampling",
+    "files_deleted"
+  ],
+  "title": "ControllerCleanupEvidenceV2",
+  "type": "object"
+}

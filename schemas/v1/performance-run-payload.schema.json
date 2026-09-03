@@ -1,0 +1,293 @@
+{
+  "$defs": {
+    "Artifact": {
+      "description": "One immutable file artifact and its provenance.",
+      "properties": {
+        "id": {
+          "description": "Stable artifact identifier unique within the session.",
+          "type": "string"
+        },
+        "input_artifact_ids": {
+          "description": "Artifact identifiers consumed to produce this artifact.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "kind": {
+          "description": "Extensible artifact kind such as `raw_trace` or `perfetto`.",
+          "type": "string"
+        },
+        "media_type": {
+          "description": "IANA media type of the file.",
+          "type": "string"
+        },
+        "producer": {
+          "description": "Tool or stage identifier that produced the file.",
+          "type": "string"
+        },
+        "relative_path": {
+          "description": "Canonical path relative to the session directory.",
+          "maxLength": 1024,
+          "minLength": 1,
+          "pattern": "^(?=[\\u0020-\\u007E]+$)(?!/)(?!.*[<>:\"\\\\|?*])(?!.*//)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*/$)(?!.*[. ](?:/|$))(?!(?:.*?/)?(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Nn][Ii][Nn]\\$|[Cc][Oo][Nn][Oo][Uu][Tt]\\$|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9]) *(?:\\.[^/]*)?(?:/|$)).+$",
+          "type": "string"
+        },
+        "sha256": {
+          "description": "SHA-256 digest of the complete file.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "size_bytes": {
+          "description": "File size in bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "relative_path",
+        "media_type",
+        "size_bytes",
+        "sha256",
+        "producer",
+        "input_artifact_ids"
+      ],
+      "type": "object"
+    },
+    "HealthVerdict": {
+      "description": "Host-policy verdict for the trustworthiness of a capture.",
+      "oneOf": [
+        {
+          "const": "VALID",
+          "description": "Quantitative results and strict comparisons are permitted.",
+          "type": "string"
+        },
+        {
+          "const": "DEGRADED",
+          "description": "Timeline inspection is permitted, but strict comparison is not.",
+          "type": "string"
+        },
+        {
+          "const": "INVALID",
+          "description": "Only diagnostic output is trustworthy.",
+          "type": "string"
+        }
+      ]
+    },
+    "PerfRunSummary": {
+      "additionalProperties": false,
+      "description": "Small aggregate summary returned without inlining a report artifact.",
+      "properties": {
+        "hotspots_returned": {
+          "description": "Number of hotspot entries returned by a separately bounded summary.",
+          "format": "uint8",
+          "maximum": 100,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "hotspots_total": {
+          "description": "Total matching hotspot count before truncation.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "truncated": {
+          "description": "Whether the bounded result omitted additional hotspot rows.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "hotspots_returned",
+        "hotspots_total",
+        "truncated"
+      ],
+      "type": "object"
+    },
+    "PerfTrustStatus": {
+      "description": "Trust state reported independently of the Session lifecycle enum.",
+      "oneOf": [
+        {
+          "const": "NOT_EVALUATED",
+          "description": "No completed analysis stage exists.",
+          "type": "string"
+        },
+        {
+          "const": "INCOMPLETE",
+          "description": "Lifecycle/artifact state is incomplete or inconsistent.",
+          "type": "string"
+        },
+        {
+          "const": "VALID",
+          "description": "Quantitative analysis is trusted.",
+          "type": "string"
+        },
+        {
+          "const": "DEGRADED",
+          "description": "Timeline-only diagnostic use is allowed.",
+          "type": "string"
+        },
+        {
+          "const": "INVALID",
+          "description": "Only diagnostic output is allowed.",
+          "type": "string"
+        }
+      ]
+    },
+    "PerformanceRunPhase": {
+      "description": "Durable phase of a complete performance run.",
+      "oneOf": [
+        {
+          "const": "provision",
+          "description": "Firmware/resource provisioning is in progress.",
+          "type": "string"
+        },
+        {
+          "const": "control",
+          "description": "Target control and capture are in progress.",
+          "type": "string"
+        },
+        {
+          "const": "normalize",
+          "description": "Raw trace is being normalized.",
+          "type": "string"
+        },
+        {
+          "const": "attest",
+          "description": "Capture evidence is being attested.",
+          "type": "string"
+        },
+        {
+          "const": "analyze",
+          "description": "Normalized data is being analyzed.",
+          "type": "string"
+        },
+        {
+          "const": "convert",
+          "description": "Report conversion is in progress.",
+          "type": "string"
+        },
+        {
+          "const": "complete",
+          "description": "All requested artifacts are durable.",
+          "type": "string"
+        }
+      ]
+    },
+    "SessionStatus": {
+      "description": "Durable lifecycle status of a session.",
+      "oneOf": [
+        {
+          "const": "created",
+          "description": "The session directory and initial metadata exist.",
+          "type": "string"
+        },
+        {
+          "const": "capturing",
+          "description": "Trace capture is in progress.",
+          "type": "string"
+        },
+        {
+          "const": "captured",
+          "description": "Trace capture completed and raw artifacts are durable.",
+          "type": "string"
+        },
+        {
+          "const": "processing",
+          "description": "Host-side normalization or analysis is in progress.",
+          "type": "string"
+        },
+        {
+          "const": "complete",
+          "description": "All requested artifacts completed successfully.",
+          "type": "string"
+        },
+        {
+          "const": "failed",
+          "description": "The current operation failed.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.performance-run-payload/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Typed bounded response for `perf_run`.",
+  "properties": {
+    "health_verdict": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/HealthVerdict"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Health projection when analysis has produced one."
+    },
+    "manifest_sha256": {
+      "description": "Digest of the final immutable session manifest.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "phase": {
+      "$ref": "#/$defs/PerformanceRunPhase",
+      "description": "Current run phase."
+    },
+    "report_artifact": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Artifact"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Immutable converted report reference; report bytes are never inlined."
+    },
+    "resumed": {
+      "description": "Whether this response resumed a prior durable run.",
+      "type": "boolean"
+    },
+    "session_id": {
+      "description": "Owning Session.",
+      "maxLength": 256,
+      "minLength": 1,
+      "type": "string"
+    },
+    "state": {
+      "$ref": "#/$defs/SessionStatus",
+      "description": "Durable Session status."
+    },
+    "summary": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/PerfRunSummary"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Bounded aggregate summary; never embeds raw observations or a report."
+    },
+    "trust_status": {
+      "$ref": "#/$defs/PerfTrustStatus",
+      "description": "Trust projection for completed analysis."
+    }
+  },
+  "required": [
+    "session_id",
+    "phase",
+    "state",
+    "trust_status",
+    "resumed"
+  ],
+  "title": "PerfRunPayload",
+  "type": "object"
+}

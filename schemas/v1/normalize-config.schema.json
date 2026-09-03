@@ -1,0 +1,503 @@
+{
+  "$defs": {
+    "cWire": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter": {
+          "const": "c_wire_v1"
+        },
+        "clock": {
+          "$ref": "#/$defs/clock"
+        },
+        "core_id": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "counter_mapping_artifact_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "limits": {
+          "$ref": "#/$defs/wireLimits"
+        },
+        "origin": {
+          "$ref": "#/$defs/origin"
+        },
+        "source_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "wire_version": {
+          "const": 1
+        }
+      },
+      "required": [
+        "adapter",
+        "wire_version",
+        "source_id",
+        "core_id",
+        "clock",
+        "origin",
+        "limits"
+      ],
+      "type": "object"
+    },
+    "canonicalNdjson": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter": {
+          "const": "canonical_ndjson_v1"
+        },
+        "limits": {
+          "$ref": "#/$defs/lineLimits"
+        },
+        "source_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "adapter",
+        "source_id",
+        "limits"
+      ],
+      "type": "object"
+    },
+    "clock": {
+      "additionalProperties": false,
+      "properties": {
+        "domain_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "frequency_hz": {
+          "$ref": "#/$defs/frequency"
+        },
+        "wrap": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/wrap"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "domain_id",
+        "frequency_hz"
+      ],
+      "type": "object"
+    },
+    "csvBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "column": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "field": {
+          "$ref": "#/$defs/csvField"
+        }
+      },
+      "required": [
+        "field",
+        "column"
+      ],
+      "type": "object"
+    },
+    "csvField": {
+      "enum": [
+        "timestamp_ticks",
+        "source_sequence",
+        "order_key",
+        "event_type",
+        "core_id",
+        "context_id",
+        "previous_context_id",
+        "next_context_id",
+        "function_id",
+        "frame_id",
+        "interrupt_id",
+        "priority",
+        "activation_id",
+        "address",
+        "weight_ns",
+        "name",
+        "span_id",
+        "correlation_id",
+        "counter_id",
+        "value",
+        "duration_ns",
+        "reason",
+        "metadata_key",
+        "metadata_value"
+      ]
+    },
+    "explicitCsv": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter": {
+          "const": "explicit_csv_v1"
+        },
+        "clock": {
+          "$ref": "#/$defs/clock"
+        },
+        "columns": {
+          "items": {
+            "$ref": "#/$defs/csvBinding"
+          },
+          "minItems": 3,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "ignored_columns": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array",
+          "uniqueItems": true
+        },
+        "limits": {
+          "$ref": "#/$defs/lineLimits"
+        },
+        "origin": {
+          "$ref": "#/$defs/origin"
+        },
+        "quality": {
+          "enum": [
+            "exact",
+            "inferred",
+            "statistical"
+          ]
+        },
+        "source_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "adapter",
+        "source_id",
+        "columns",
+        "ignored_columns",
+        "clock",
+        "origin",
+        "quality",
+        "limits"
+      ],
+      "type": "object"
+    },
+    "frequency": {
+      "additionalProperties": false,
+      "properties": {
+        "denominator": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "numerator": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "numerator",
+        "denominator"
+      ],
+      "type": "object"
+    },
+    "lineLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "max_dictionary_bytes": {
+          "maximum": 1073741824,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "max_dictionary_entries": {
+          "maximum": 1048576,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "max_line_bytes": {
+          "maximum": 16777216,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "max_records": {
+          "maximum": 1000000000,
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "max_line_bytes",
+        "max_records"
+      ],
+      "type": "object"
+    },
+    "multiSource": {
+      "additionalProperties": false,
+      "properties": {
+        "clock_domain": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "input_artifact_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "order": {
+          "const": "reject_ambiguous_ties"
+        },
+        "source": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/canonicalNdjson"
+            },
+            {
+              "$ref": "#/$defs/explicitCsv"
+            },
+            {
+              "$ref": "#/$defs/cWire"
+            },
+            {
+              "$ref": "#/$defs/trace32SnooperAscii"
+            },
+            {
+              "$ref": "#/$defs/trace32TaskEvents"
+            }
+          ]
+        }
+      },
+      "required": [
+        "input_artifact_id",
+        "clock_domain",
+        "order",
+        "source"
+      ],
+      "type": "object"
+    },
+    "origin": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "const": "first_record"
+            },
+            "session_ns": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "mode",
+            "session_ns"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "const": "explicit"
+            },
+            "session_ns": {
+              "type": "integer"
+            },
+            "ticks": {
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "mode",
+            "ticks",
+            "session_ns"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "trace32SnooperAscii": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter": {
+          "const": "trace32_snooper_ascii_v1"
+        },
+        "expected_profile_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "firmware_elf_artifact_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "limits": {
+          "$ref": "#/$defs/lineLimits"
+        },
+        "source_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "adapter",
+        "source_id",
+        "expected_profile_id",
+        "firmware_elf_artifact_id",
+        "limits"
+      ],
+      "type": "object"
+    },
+    "trace32TaskEvents": {
+      "additionalProperties": false,
+      "properties": {
+        "adapter": {
+          "const": "trace32_task_events_v1"
+        },
+        "expected_profile_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "firmware_elf_artifact_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "limits": {
+          "$ref": "#/$defs/lineLimits"
+        },
+        "mapping_artifact_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "source_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "adapter",
+        "source_id",
+        "expected_profile_id",
+        "firmware_elf_artifact_id",
+        "mapping_artifact_id",
+        "limits"
+      ],
+      "type": "object"
+    },
+    "wireLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "max_payload_bytes": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "max_records": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "max_payload_bytes",
+        "max_records"
+      ],
+      "type": "object"
+    },
+    "wrap": {
+      "additionalProperties": false,
+      "properties": {
+        "max_forward_ticks": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "modulus": {
+          "minimum": 2,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "modulus",
+        "max_forward_ticks"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "t32perf.normalize-config/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "oneOf": [
+    {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "const": "single_source"
+        },
+        "output_limits": {
+          "$ref": "#/$defs/lineLimits"
+        },
+        "schema": {
+          "const": "t32perf.normalize-config/v1"
+        },
+        "source": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/canonicalNdjson"
+            },
+            {
+              "$ref": "#/$defs/explicitCsv"
+            },
+            {
+              "$ref": "#/$defs/cWire"
+            },
+            {
+              "$ref": "#/$defs/trace32SnooperAscii"
+            },
+            {
+              "$ref": "#/$defs/trace32TaskEvents"
+            }
+          ]
+        }
+      },
+      "required": [
+        "schema",
+        "mode",
+        "source",
+        "output_limits"
+      ],
+      "type": "object"
+    },
+    {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "const": "multi_source"
+        },
+        "output_limits": {
+          "$ref": "#/$defs/lineLimits"
+        },
+        "schema": {
+          "const": "t32perf.normalize-config/v1"
+        },
+        "sources": {
+          "items": {
+            "$ref": "#/$defs/multiSource"
+          },
+          "maxItems": 64,
+          "minItems": 2,
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema",
+        "mode",
+        "sources",
+        "output_limits"
+      ],
+      "type": "object"
+    }
+  ],
+  "title": "T32Perf normalization configuration v1",
+  "type": "object"
+}

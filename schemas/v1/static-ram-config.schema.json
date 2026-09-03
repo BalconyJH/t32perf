@@ -1,0 +1,76 @@
+{
+  "$defs": {
+    "StaticRamAdditionalSectionKind": {
+      "description": "Classification allowed for a caller-declared static-RAM output section.",
+      "oneOf": [
+        {
+          "const": "dma",
+          "description": "DMA-visible static storage.",
+          "type": "string"
+        },
+        {
+          "const": "rtos",
+          "description": "RTOS-owned static storage.",
+          "type": "string"
+        },
+        {
+          "const": "custom",
+          "description": "Project-defined static storage.",
+          "type": "string"
+        }
+      ]
+    },
+    "StaticRamSectionConfig": {
+      "additionalProperties": false,
+      "description": "One exact additional static-RAM output-section classification.",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/StaticRamAdditionalSectionKind",
+          "description": "Explicit classification."
+        },
+        "name": {
+          "description": "Exact top-level output-section name.",
+          "maxLength": 128,
+          "minLength": 2,
+          "pattern": "^\\.[A-Za-z0-9._-]+$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "kind"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "t32perf.static-ram-config/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Versioned static-RAM parser configuration artifact.",
+  "properties": {
+    "additional_sections": {
+      "description": "Additional exact output-section classifications.",
+      "items": {
+        "$ref": "#/$defs/StaticRamSectionConfig"
+      },
+      "maxItems": 4096,
+      "type": "array"
+    },
+    "flavor": {
+      "description": "Exact static-RAM parser flavor; input format is never inferred.",
+      "pattern": "^(gnu-ld-map-v1|elf-sections-v1)$",
+      "type": "string"
+    },
+    "schema": {
+      "const": "t32perf.static-ram-config/v1",
+      "description": "Static-RAM configuration schema.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "flavor"
+  ],
+  "title": "StaticRamConfigDocument",
+  "type": "object"
+}

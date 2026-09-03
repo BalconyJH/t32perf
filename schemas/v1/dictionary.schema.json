@@ -1,0 +1,452 @@
+{
+  "$defs": {
+    "ContextKind": {
+      "description": "The semantic kind of an execution context.",
+      "oneOf": [
+        {
+          "const": "task",
+          "description": "An RTOS task or thread.",
+          "type": "string"
+        },
+        {
+          "const": "isr",
+          "description": "An interrupt service routine context.",
+          "type": "string"
+        },
+        {
+          "const": "idle",
+          "description": "An idle execution context.",
+          "type": "string"
+        },
+        {
+          "const": "core",
+          "description": "A core-level context used when no finer attribution exists.",
+          "type": "string"
+        },
+        {
+          "const": "unknown",
+          "description": "A context whose precise kind is unavailable.",
+          "type": "string"
+        }
+      ]
+    },
+    "CounterSemantic": {
+      "description": "Stable, extensible semantic identity for one counter family.\n\nValues use lower-case dot-separated identifiers. Standard semantics are\ninterpreted only through [`Self::standard_spec`]; unknown valid identifiers\nremain extension-defined generic counters.",
+      "maxLength": 128,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$",
+      "type": "string"
+    },
+    "CounterSubject": {
+      "description": "Stable identity of the resource measured by a counter.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "description": "The complete capture session.",
+          "properties": {
+            "kind": {
+              "const": "capture",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One allocator instance.",
+          "properties": {
+            "allocator_id": {
+              "description": "Stable allocator identity.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "allocator",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "allocator_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One execution context.",
+          "properties": {
+            "context_id": {
+              "description": "Referenced context dictionary identity.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "context",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "context_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One processor core.",
+          "properties": {
+            "core_id": {
+              "description": "Zero-based core identity.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "kind": {
+              "const": "core",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "core_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One runtime stack.",
+          "properties": {
+            "context_id": {
+              "description": "Referenced Task or ISR context when applicable.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "core_id": {
+              "description": "Referenced core for MSP, PSP, or core-local stacks.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "kind": {
+              "const": "stack",
+              "type": "string"
+            },
+            "role": {
+              "$ref": "#/$defs/StackRole",
+              "description": "Semantic role of the stack."
+            },
+            "stack_id": {
+              "description": "Stable physical-stack identity.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "stack_id",
+            "role"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One target memory region.",
+          "properties": {
+            "kind": {
+              "const": "memory_region",
+              "type": "string"
+            },
+            "region_id": {
+              "description": "Stable region identity.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "region_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One trace-capture buffer.",
+          "properties": {
+            "buffer_id": {
+              "description": "Stable buffer identity.",
+              "type": "string"
+            },
+            "core_id": {
+              "description": "Core owning the buffer when it is core-local.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "kind": {
+              "const": "trace_buffer",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "buffer_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Extension-defined resource identity.",
+          "properties": {
+            "id": {
+              "description": "Stable identity within the namespace.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "custom",
+              "type": "string"
+            },
+            "namespace": {
+              "description": "Lower-case extension namespace.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "namespace",
+            "id"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "DictionaryEntry": {
+      "description": "A dictionary entry that assigns stable IDs to source entities.",
+      "oneOf": [
+        {
+          "description": "Defines a task, ISR, idle context, core, or unknown execution context.",
+          "properties": {
+            "core_id": {
+              "description": "Core affinity when known.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "id": {
+              "description": "Stable context identifier referenced by observations.",
+              "type": "string"
+            },
+            "kind": {
+              "$ref": "#/$defs/ContextKind",
+              "description": "The semantic kind of the context."
+            },
+            "name": {
+              "description": "Display name reported by the capture adapter.",
+              "type": "string"
+            },
+            "priority": {
+              "description": "Scheduling or interrupt priority when known.",
+              "format": "int32",
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "type": {
+              "const": "DefineContext",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "id",
+            "kind",
+            "name"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "Defines a function or symbol.",
+          "properties": {
+            "address": {
+              "description": "Function start address.",
+              "format": "uint64",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "file": {
+              "description": "Source file path reported by debug information.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "id": {
+              "description": "Stable function identifier referenced by observations.",
+              "type": "string"
+            },
+            "line": {
+              "description": "One-based source line reported by debug information.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "module": {
+              "description": "Module, image, or compilation-unit name.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "name": {
+              "description": "Demangled function name when available.",
+              "type": "string"
+            },
+            "type": {
+              "const": "DefineFunction",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "id",
+            "name"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "Defines a numeric counter.",
+          "properties": {
+            "description": {
+              "description": "Optional longer description of the counter.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "id": {
+              "description": "Stable counter identifier referenced by observations.",
+              "type": "string"
+            },
+            "name": {
+              "description": "Human-readable counter name.",
+              "type": "string"
+            },
+            "semantic": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/CounterSemantic"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Explicit extensible counter semantic. Must be paired with `subject`."
+            },
+            "subject": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/CounterSubject"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Explicit measured resource. Must be paired with `semantic`."
+            },
+            "type": {
+              "const": "DefineCounter",
+              "type": "string"
+            },
+            "unit": {
+              "description": "Unit symbol such as `bytes`, `percent`, or `count`.",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "id",
+            "name"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "StackRole": {
+      "description": "Semantic role assigned to one runtime stack.",
+      "oneOf": [
+        {
+          "const": "task",
+          "description": "RTOS Task stack.",
+          "type": "string"
+        },
+        {
+          "const": "isr",
+          "description": "Dedicated ISR stack.",
+          "type": "string"
+        },
+        {
+          "const": "msp",
+          "description": "Arm Main Stack Pointer stack.",
+          "type": "string"
+        },
+        {
+          "const": "psp",
+          "description": "Arm Process Stack Pointer stack.",
+          "type": "string"
+        },
+        {
+          "const": "custom",
+          "description": "Extension-defined stack role.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.dictionary/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "A complete dictionary used by normalized observations.",
+  "properties": {
+    "entries": {
+      "description": "Dictionary entries in definition order.",
+      "items": {
+        "$ref": "#/$defs/DictionaryEntry"
+      },
+      "type": "array"
+    },
+    "schema": {
+      "const": "t32perf.dictionary/v1",
+      "description": "The dictionary schema version.",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "The session that owns the dictionary.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "session_id",
+    "entries"
+  ],
+  "title": "ObservationDictionary",
+  "type": "object"
+}

@@ -1,0 +1,181 @@
+{
+  "$defs": {
+    "TraceArtifactBinding": {
+      "additionalProperties": false,
+      "description": "Immutable Session artifact identity and digest used by a mapping.",
+      "properties": {
+        "artifact_id": {
+          "description": "Registered artifact identifier.",
+          "type": "string"
+        },
+        "sha256": {
+          "description": "Registered artifact digest.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "sha256"
+      ],
+      "type": "object"
+    },
+    "TraceFunctionMapping": {
+      "additionalProperties": false,
+      "description": "One function or symbol known before parsing begins.",
+      "properties": {
+        "address": {
+          "description": "Optional function start address.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "display_name": {
+          "description": "Dictionary display name.",
+          "type": "string"
+        },
+        "end_address": {
+          "description": "Optional exclusive function end address used for PC attribution.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "export_name": {
+          "description": "Exact exported symbol or runnable name.",
+          "type": "string"
+        },
+        "file": {
+          "description": "Optional source path.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "function_id": {
+          "description": "Stable normalized identifier.",
+          "type": "string"
+        },
+        "line": {
+          "description": "Optional one-based source line.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "module": {
+          "description": "Optional image or module.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "export_name",
+        "function_id",
+        "display_name"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "t32perf.trace32-symbol-mapping/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Versioned host-derived ELF symbol mapping artifact.",
+  "properties": {
+    "address_classes": {
+      "description": "Exact accepted address classes.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "architecture_package": {
+      "description": "Exact architecture package.",
+      "type": "string"
+    },
+    "controller_health": {
+      "$ref": "#/$defs/TraceArtifactBinding",
+      "description": "Accepted controller health evidence bound to this mapping."
+    },
+    "elf_artifact_id": {
+      "description": "Firmware ELF artifact identifier.",
+      "type": "string"
+    },
+    "elf_sha256": {
+      "description": "Firmware ELF digest bound by the authoritative capture config.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "functions": {
+      "description": "Nonoverlapping function ranges sorted by start address.",
+      "items": {
+        "$ref": "#/$defs/TraceFunctionMapping"
+      },
+      "type": "array"
+    },
+    "profile_id": {
+      "description": "Fixed export profile selected by accepted controller evidence.",
+      "type": "string"
+    },
+    "profile_sha256": {
+      "description": "Exact qualified target-adapter profile digest when this mapping is\nused by qualification-bound parsing.  Legacy mapping documents omit\nthis field and remain parseable, but cannot open a qualified parser.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "qualification_receipt": {
+      "$ref": "#/$defs/TraceArtifactBinding",
+      "description": "Deployment qualification receipt admitted by the trusted controller."
+    },
+    "schema": {
+      "description": "Exact schema identity.",
+      "type": "string"
+    },
+    "target_identifier": {
+      "description": "Exact deployment target identity.",
+      "type": "string"
+    },
+    "time_origin_evidence": {
+      "$ref": "#/$defs/TraceArtifactBinding",
+      "description": "Accepted export/time-origin evidence bound to this mapping."
+    },
+    "trace32_build": {
+      "description": "Exact TRACE32 build.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "trace32_release": {
+      "description": "Canonical TRACE32 release identity.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "profile_id",
+    "trace32_release",
+    "trace32_build",
+    "architecture_package",
+    "target_identifier",
+    "elf_artifact_id",
+    "elf_sha256",
+    "controller_health",
+    "time_origin_evidence",
+    "qualification_receipt",
+    "address_classes",
+    "functions"
+  ],
+  "title": "Trace32SymbolMappingDocument",
+  "type": "object"
+}

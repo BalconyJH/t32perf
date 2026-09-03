@@ -1,0 +1,85 @@
+{
+  "$defs": {
+    "ControllerStopEvidenceSchemaVersion": {
+      "description": "Supported stop-evidence schema version.",
+      "oneOf": [
+        {
+          "const": "t32perf.controller-stop-evidence/v1",
+          "description": "The only supported version or operation marker.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerStopOperation": {
+      "description": "Fixed capture-stop operation marker.",
+      "oneOf": [
+        {
+          "const": "perf_stop",
+          "description": "The only supported version or operation marker.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerTargetState": {
+      "description": "Target execution state observed by a verified adapter.",
+      "oneOf": [
+        {
+          "const": "running",
+          "description": "The target was running.",
+          "type": "string"
+        },
+        {
+          "const": "halted",
+          "description": "The target was halted.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.controller-stop-evidence/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Versioned evidence produced by a successful capture-stop operation.",
+  "properties": {
+    "binding_sha256": {
+      "description": "Exact controller binding echoed by the adapter.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "capture_stopped": {
+      "description": "Must be true only after capture stop was verified.",
+      "type": "boolean"
+    },
+    "operation": {
+      "$ref": "#/$defs/ControllerStopOperation",
+      "description": "Fixed operation marker."
+    },
+    "schema": {
+      "$ref": "#/$defs/ControllerStopEvidenceSchemaVersion",
+      "description": "Versioned document family."
+    },
+    "target_state_after_stop": {
+      "$ref": "#/$defs/ControllerTargetState",
+      "description": "Target state observed after the capture was stopped."
+    },
+    "workload_completed": {
+      "description": "Must be true only after the fixed workload reached its defined end condition.",
+      "type": "boolean"
+    },
+    "workload_identity": {
+      "description": "Exact fixed workload identity that reached its end condition.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "operation",
+    "binding_sha256",
+    "capture_stopped",
+    "workload_completed",
+    "workload_identity",
+    "target_state_after_stop"
+  ],
+  "title": "ControllerStopEvidence",
+  "type": "object"
+}

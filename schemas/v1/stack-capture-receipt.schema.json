@@ -1,0 +1,98 @@
+{
+  "$defs": {
+    "EndpointFingerprintScheme": {
+      "description": "Algorithm used to derive a TRACE32 endpoint fingerprint.\n\nThis is independent of the document schema version: it identifies the\ncryptographic endpoint-binding algorithm.",
+      "oneOf": [
+        {
+          "const": "t32perf.endpoint-fingerprint/v2",
+          "description": "Canonical endpoint identity bound to the observed TRACE32 probe.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.stack-capture-receipt/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Host-derived receipt binding a successful raw stack artifact to exact driver-journal bytes.",
+  "properties": {
+    "endpoint_fingerprint": {
+      "description": "TRACE32 endpoint fingerprint.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "endpoint_fingerprint_scheme": {
+      "$ref": "#/$defs/EndpointFingerprintScheme",
+      "description": "Fixed endpoint fingerprint algorithm."
+    },
+    "journal_chain_sha256": {
+      "description": "SHA-256 chain calculated by the Host over exact event bytes.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "journal_event_count": {
+      "description": "Exact journal event count used for the journal chain.",
+      "format": "uint64",
+      "maximum": 2054,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "schema": {
+      "const": "t32perf.stack-capture-receipt/v1",
+      "description": "Schema version.",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "Portable Session identifier.",
+      "type": "string"
+    },
+    "session_operation_id": {
+      "description": "Host Session operation id as 32 lowercase hexadecimal characters.",
+      "pattern": "^[0-9a-f]{32}$",
+      "type": "string"
+    },
+    "session_request_sha256": {
+      "description": "SHA-256 of the exact session-owned request bytes.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "stack_samples_sha256": {
+      "description": "SHA-256 of accepted raw stack-samples bytes.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "stack_samples_size_bytes": {
+      "description": "Nonzero raw artifact size.",
+      "format": "uint64",
+      "minimum": 1,
+      "type": "integer"
+    },
+    "successful_sample_count": {
+      "description": "Retained raw sample count from the successful capture.",
+      "format": "uint32",
+      "maximum": 512,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "transaction_id": {
+      "description": "Completed transaction id.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "session_id",
+    "session_operation_id",
+    "session_request_sha256",
+    "transaction_id",
+    "endpoint_fingerprint",
+    "endpoint_fingerprint_scheme",
+    "stack_samples_sha256",
+    "stack_samples_size_bytes",
+    "journal_event_count",
+    "journal_chain_sha256",
+    "successful_sample_count"
+  ],
+  "title": "StackCaptureReceipt",
+  "type": "object"
+}

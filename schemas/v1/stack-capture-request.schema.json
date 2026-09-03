@@ -1,0 +1,89 @@
+{
+  "$defs": {
+    "SamplingAddressSpace": {
+      "description": "TRACE32 address space supported by the sampling sidecar.",
+      "oneOf": [
+        {
+          "const": "P",
+          "description": "TRACE32 program address space.",
+          "type": "string"
+        }
+      ]
+    },
+    "StackCaptureAcknowledgement": {
+      "const": true,
+      "type": "boolean"
+    }
+  },
+  "$id": "t32perf.stack-capture-request/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A bounded, explicitly intrusive stack-sampling request.",
+  "properties": {
+    "acknowledge_intrusive": {
+      "$ref": "#/$defs/StackCaptureAcknowledgement",
+      "description": "Explicit acknowledgement that the target will be stopped and restarted."
+    },
+    "address_space": {
+      "$ref": "#/$defs/SamplingAddressSpace",
+      "description": "Program address space used for every observed frame."
+    },
+    "core_id": {
+      "description": "Core to halt and inspect. Version 1 supports only the current single core.",
+      "format": "uint32",
+      "maximum": 0,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "deployed_firmware_elf_sha256": {
+      "description": "Optional assertion for the deployed ELF used by debugger labels.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "duration_ms": {
+      "description": "Requested host capture duration in milliseconds.",
+      "format": "uint32",
+      "maximum": 60000,
+      "minimum": 100,
+      "type": "integer"
+    },
+    "max_frames": {
+      "description": "Maximum frames retained from one frame walk.",
+      "format": "uint32",
+      "maximum": 8,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "max_samples": {
+      "description": "Maximum halt cycles permitted in this capture.",
+      "format": "uint32",
+      "maximum": 512,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "sample_period_ms": {
+      "description": "Requested interval between halt cycles in milliseconds.",
+      "format": "uint32",
+      "maximum": 1000,
+      "minimum": 10,
+      "type": "integer"
+    },
+    "schema": {
+      "const": "t32perf.stack-capture-request/v1",
+      "description": "Schema version.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "acknowledge_intrusive",
+    "sample_period_ms",
+    "duration_ms",
+    "max_samples",
+    "max_frames",
+    "core_id",
+    "address_space"
+  ],
+  "title": "StackCaptureRequest",
+  "type": "object"
+}

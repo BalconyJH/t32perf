@@ -1,0 +1,238 @@
+{
+  "$defs": {
+    "HilVerificationKind": {
+      "description": "Closed HIL receipt kind.",
+      "oneOf": [
+        {
+          "const": "native_timeline",
+          "description": "Native timeline verification.",
+          "type": "string"
+        },
+        {
+          "const": "resources",
+          "description": "Resource verification.",
+          "type": "string"
+        },
+        {
+          "const": "fault_injection",
+          "description": "Fault injection verification.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetAdapterQualificationPolicySchemaVersion": {
+      "description": "The single supported policy schema version.",
+      "oneOf": [
+        {
+          "const": "t32perf.target-adapter-qualification-policy/v1",
+          "description": "Version 1.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetAdapterScenario": {
+      "description": "A fixed target-adapter execution scenario.",
+      "oneOf": [
+        {
+          "const": "normal",
+          "description": "Normal capture without injected faults.",
+          "type": "string"
+        },
+        {
+          "const": "trace_overflow",
+          "description": "Deliberately force trace-buffer or transport overflow.",
+          "type": "string"
+        },
+        {
+          "const": "flow_error",
+          "description": "Deliberately force a TRACE32 flow error.",
+          "type": "string"
+        },
+        {
+          "const": "sampling_buffer_full",
+          "description": "Use a fixed small SNOOPer Stack buffer and let it stop at capacity.",
+          "type": "string"
+        },
+        {
+          "const": "sampling_unexpected_stop",
+          "description": "Observe an unclassified early SNOOPer stop.",
+          "type": "string"
+        },
+        {
+          "const": "trace32_disconnect",
+          "description": "Disconnect TRACE32 during a fixed operation.",
+          "type": "string"
+        },
+        {
+          "const": "driver_disconnect",
+          "description": "Disconnect the deployment driver during a fixed operation.",
+          "type": "string"
+        },
+        {
+          "const": "cmm_abort",
+          "description": "Abort the active CMM transaction through the fixed t32mcp abort flow.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.target-adapter-qualification-policy/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Independently protected exact deployment authorization for one adapter.",
+  "properties": {
+    "adapter_id": {
+      "description": "Stable adapter identity.",
+      "type": "string"
+    },
+    "adapter_version": {
+      "description": "Exact adapter version.",
+      "type": "string"
+    },
+    "allowed_scenarios": {
+      "description": "Canonical deployment scenarios authorized by this exact HIL claim.",
+      "items": {
+        "$ref": "#/$defs/TargetAdapterScenario"
+      },
+      "maxItems": 8,
+      "minItems": 1,
+      "type": "array"
+    },
+    "architecture_package": {
+      "description": "Exact TRACE32 architecture package.",
+      "type": "string"
+    },
+    "board_id": {
+      "description": "Exact verified board identity.",
+      "type": "string"
+    },
+    "candidate_profile_sha256": {
+      "description": "Candidate profile digest, with its qualification claim cleared.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "expected_hil_kind": {
+      "$ref": "#/$defs/HilVerificationKind",
+      "description": "Exact expected HIL kind."
+    },
+    "expected_hil_scenario": {
+      "description": "Exact expected HIL scenario; non-fault kinds require `None`.",
+      "oneOf": [
+        {
+          "const": "trace_overflow",
+          "description": "TRACE32 trace-overflow injection.",
+          "type": "string"
+        },
+        {
+          "const": "flow_error",
+          "description": "Flow-error injection.",
+          "type": "string"
+        },
+        {
+          "const": "sampling_buffer_full",
+          "description": "SNOOPer Stack reaches the fixed sampling capacity.",
+          "type": "string"
+        },
+        {
+          "const": "elf_mismatch",
+          "description": "ELF mismatch injection.",
+          "type": "string"
+        },
+        {
+          "const": "trace32_disconnect_recovery",
+          "description": "TRACE32 disconnect recovery.",
+          "type": "string"
+        },
+        {
+          "const": "driver_disconnect_recovery",
+          "description": "Driver disconnect recovery.",
+          "type": "string"
+        },
+        {
+          "const": "cmm_abort_recovery",
+          "description": "CMM abort recovery.",
+          "type": "string"
+        }
+      ]
+    },
+    "firmware_elf_sha256": {
+      "description": "Exact firmware ELF artifact digest.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "hil_verification_receipt_sha256": {
+      "description": "Digest of the immutable HIL receipt bytes.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "implementation_sha256": {
+      "description": "Deployment-verified expected release-bundle manifest digest.\n\nUpstream t32mcp does not runtime-attest the installed skill bytes.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "policy_id": {
+      "description": "Stable ACL snapshot identifier.",
+      "type": "string"
+    },
+    "probe_identifier": {
+      "description": "Exact debug probe identity.",
+      "type": "string"
+    },
+    "qualification_receipt_sha256": {
+      "description": "Digest of the immutable qualification receipt bytes.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "qualified_profile_sha256": {
+      "description": "Complete qualified profile digest after binding the receipt bytes.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "schema": {
+      "$ref": "#/$defs/TargetAdapterQualificationPolicySchemaVersion",
+      "description": "Policy document version."
+    },
+    "t32mcp_version": {
+      "description": "Exact qualified t32mcp implementation version.",
+      "type": "string"
+    },
+    "target_identifier": {
+      "description": "Exact target identity.",
+      "type": "string"
+    },
+    "trace32_build": {
+      "description": "Exact TRACE32 build.",
+      "format": "uint64",
+      "minimum": 1,
+      "type": "integer"
+    },
+    "trace32_release": {
+      "description": "Exact TRACE32 release.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "policy_id",
+    "adapter_id",
+    "adapter_version",
+    "candidate_profile_sha256",
+    "qualified_profile_sha256",
+    "implementation_sha256",
+    "firmware_elf_sha256",
+    "trace32_release",
+    "trace32_build",
+    "architecture_package",
+    "target_identifier",
+    "probe_identifier",
+    "qualification_receipt_sha256",
+    "hil_verification_receipt_sha256",
+    "board_id",
+    "t32mcp_version",
+    "expected_hil_kind",
+    "expected_hil_scenario",
+    "allowed_scenarios"
+  ],
+  "title": "TargetAdapterQualificationPolicy",
+  "type": "object"
+}

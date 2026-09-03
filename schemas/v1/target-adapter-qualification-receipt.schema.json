@@ -1,0 +1,95 @@
+{
+  "$defs": {
+    "TargetAdapterQualificationReceiptSchemaVersion": {
+      "description": "Supported target-adapter qualification-receipt schema.",
+      "oneOf": [
+        {
+          "const": "t32perf.target-adapter-qualification-receipt/v1",
+          "description": "Version 1.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.target-adapter-qualification-receipt/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Deployment qualification bound to exact implementation and HIL evidence.",
+  "properties": {
+    "adapter_id": {
+      "description": "Stable adapter identity.",
+      "type": "string"
+    },
+    "adapter_version": {
+      "description": "Exact adapter version.",
+      "type": "string"
+    },
+    "architecture_package": {
+      "description": "Exact architecture package.",
+      "type": "string"
+    },
+    "candidate_profile_sha256": {
+      "description": "Profile identity with the receipt digest field cleared to avoid a cycle.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "firmware_elf_sha256": {
+      "description": "Exact firmware ELF artifact SHA-256.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "hil_verification_receipt_sha256": {
+      "description": "Immutable HIL verification receipt digest.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "implementation_sha256": {
+      "description": "Deployment-verified expected release-bundle manifest digest.\n\nUpstream t32mcp does not runtime-attest the installed skill bytes.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "probe_identifier": {
+      "description": "Exact probe identity.",
+      "type": "string"
+    },
+    "schema": {
+      "$ref": "#/$defs/TargetAdapterQualificationReceiptSchemaVersion",
+      "description": "Versioned receipt family."
+    },
+    "t32mcp_version": {
+      "description": "Exact official t32mcp implementation version qualified by HIL.",
+      "type": "string"
+    },
+    "target_identifier": {
+      "description": "Exact target identity.",
+      "type": "string"
+    },
+    "trace32_build": {
+      "description": "Exact TRACE32 build.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "trace32_release": {
+      "description": "Canonical TRACE32 release.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "adapter_id",
+    "adapter_version",
+    "candidate_profile_sha256",
+    "implementation_sha256",
+    "trace32_release",
+    "trace32_build",
+    "architecture_package",
+    "target_identifier",
+    "probe_identifier",
+    "firmware_elf_sha256",
+    "t32mcp_version",
+    "hil_verification_receipt_sha256"
+  ],
+  "title": "TargetAdapterQualificationReceipt",
+  "type": "object"
+}

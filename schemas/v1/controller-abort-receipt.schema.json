@@ -1,0 +1,112 @@
+{
+  "$defs": {
+    "ControllerAbortAcknowledgement": {
+      "description": "Trust semantics of a confirmed upstream abort.",
+      "oneOf": [
+        {
+          "const": "unbound_single_tenant_tool_success",
+          "description": "The trusted single-tenant caller observed a successful unit result from\n`abort_practice_skill`; the result itself is not transaction-bound.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerAbortReceiptSchemaVersion": {
+      "description": "Supported controller abort-receipt schema version.",
+      "oneOf": [
+        {
+          "const": "t32perf.controller-abort-receipt/v1",
+          "description": "Version 1.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerBinding": {
+      "additionalProperties": false,
+      "description": "Fields cryptographically bound into every controller transaction.",
+      "properties": {
+        "binding_sha256": {
+          "description": "Digest of every preceding binding field with a versioned domain separator.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "nonce": {
+          "description": "Independent replay-prevention nonce.",
+          "type": "string"
+        },
+        "session_id": {
+          "description": "Session receiving the transaction artifacts.",
+          "type": "string"
+        },
+        "session_operation_id": {
+          "description": "Immutable operation identifier from Session state.",
+          "type": "string"
+        },
+        "session_request_sha256": {
+          "description": "Digest of the immutable Session request.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "transaction_id": {
+          "description": "Unique transaction identifier.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "session_id",
+        "session_operation_id",
+        "session_request_sha256",
+        "transaction_id",
+        "nonce",
+        "binding_sha256"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "t32perf.controller-abort-receipt/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Explicit trusted-controller acknowledgement of upstream's unbound abort result.",
+  "properties": {
+    "abort_request_artifact_id": {
+      "description": "Artifact identifier of the abort plan shown to the trusted caller.",
+      "type": "string"
+    },
+    "abort_request_artifact_sha256": {
+      "description": "Digest of the exact abort plan bytes.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "acknowledgement": {
+      "$ref": "#/$defs/ControllerAbortAcknowledgement",
+      "description": "Honest acknowledgement class; upstream exposes no ownership token."
+    },
+    "binding": {
+      "$ref": "#/$defs/ControllerBinding",
+      "description": "Binding copied from the abandoned transaction."
+    },
+    "request_artifact_id": {
+      "description": "Artifact identifier of the immutable controller request.",
+      "type": "string"
+    },
+    "request_artifact_sha256": {
+      "description": "Digest of the exact immutable controller request bytes.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "schema": {
+      "$ref": "#/$defs/ControllerAbortReceiptSchemaVersion",
+      "description": "Versioned document family."
+    }
+  },
+  "required": [
+    "schema",
+    "binding",
+    "request_artifact_id",
+    "request_artifact_sha256",
+    "abort_request_artifact_id",
+    "abort_request_artifact_sha256",
+    "acknowledgement"
+  ],
+  "title": "ControllerAbortReceipt",
+  "type": "object"
+}

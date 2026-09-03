@@ -1,0 +1,220 @@
+{
+  "$defs": {
+    "FoldedStackFrame": {
+      "additionalProperties": false,
+      "description": "One root-to-leaf frame in a folded path.",
+      "properties": {
+        "function_name": {
+          "description": "Optional function label reported by TRACE32.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pc": {
+          "description": "Program counter reported by TRACE32.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "source_file": {
+          "description": "Optional source-file basename reported by TRACE32.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_line": {
+          "description": "Optional one-based source line reported by TRACE32.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "pc"
+      ],
+      "type": "object"
+    },
+    "FoldedStackFrameOrder": {
+      "description": "Fixed order used in a folded path.",
+      "oneOf": [
+        {
+          "const": "root_to_leaf",
+          "description": "Frames begin at the outermost observed boundary and end at the leaf.",
+          "type": "string"
+        }
+      ]
+    },
+    "FoldedStackPath": {
+      "additionalProperties": false,
+      "description": "One exact observed root-to-leaf path and its sample count.",
+      "properties": {
+        "frames": {
+          "description": "Root-to-leaf frames; no absent parent frame is fabricated.",
+          "items": {
+            "$ref": "#/$defs/FoldedStackFrame"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "type": "array"
+        },
+        "outer_boundary": {
+          "$ref": "#/$defs/StackSampleTermination",
+          "description": "The unverified outer-boundary reason of the original leaf-to-root walk."
+        },
+        "samples": {
+          "description": "Number of raw samples with exactly this path and termination.",
+          "format": "uint32",
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "outer_boundary",
+        "frames",
+        "samples"
+      ],
+      "type": "object"
+    },
+    "FoldedStackProfileQuality": {
+      "description": "Fixed quality of folded paths built from intrusive samples.",
+      "oneOf": [
+        {
+          "const": "intrusive_statistical",
+          "description": "Statistical samples which required target halt cycles.",
+          "type": "string"
+        }
+      ]
+    },
+    "StackSampleTermination": {
+      "description": "Reason why one recorded frame walk ended.",
+      "oneOf": [
+        {
+          "const": "terminal_unverified",
+          "description": "TRACE32 reached an outer boundary which is not verified as a complete unwind.",
+          "type": "string"
+        },
+        {
+          "const": "max_frames",
+          "description": "The caller-imposed maximum frame depth was reached.",
+          "type": "string"
+        },
+        {
+          "const": "pc_read_failed",
+          "description": "TRACE32 could not read a program counter for the next frame.",
+          "type": "string"
+        },
+        {
+          "const": "frame_cycle",
+          "description": "A repeated frame identity was detected during the walk.",
+          "type": "string"
+        },
+        {
+          "const": "halt_deadline",
+          "description": "The fixed per-cycle halt budget expired before another caller was observed.",
+          "type": "string"
+        }
+      ]
+    },
+    "StackSamplingMethod": {
+      "description": "Fixed stack collection mechanism.",
+      "oneOf": [
+        {
+          "const": "break_frame_walk",
+          "description": "TRACE32 Break, B::Frame, and Go cycle.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.folded-stack-profile/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Deterministic aggregation of raw stack samples for flame-graph rendering.",
+  "properties": {
+    "attempted_samples": {
+      "description": "Attempted raw halt cycles; not CPU time or a call count.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "collected_samples": {
+      "description": "Collected raw samples; not CPU time or a call count.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "frame_order": {
+      "$ref": "#/$defs/FoldedStackFrameOrder",
+      "description": "Fixed order of all retained paths."
+    },
+    "included_samples": {
+      "description": "Sum of path sample counts; not CPU time, a call count, or a duration.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "method": {
+      "$ref": "#/$defs/StackSamplingMethod",
+      "description": "Fixed collection mechanism of the source artifact."
+    },
+    "paths": {
+      "description": "Unique deterministically sorted observed paths.",
+      "items": {
+        "$ref": "#/$defs/FoldedStackPath"
+      },
+      "maxItems": 512,
+      "type": "array"
+    },
+    "quality": {
+      "$ref": "#/$defs/FoldedStackProfileQuality",
+      "description": "Fixed intrusive statistical quality."
+    },
+    "raw_samples_sha256": {
+      "description": "SHA-256 of the exact [`StackSamples`] bytes used to build this profile.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "schema": {
+      "const": "t32perf.folded-stack-profile/v1",
+      "description": "Schema version.",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "Session of the bound raw artifact.",
+      "type": "string"
+    },
+    "terminal_unverified_samples": {
+      "description": "Collected samples whose outer boundary is terminal_unverified.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "truncated_samples": {
+      "description": "Collected samples truncated by max_frames, pc_read_failed, frame_cycle, or halt_deadline.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema",
+    "session_id",
+    "raw_samples_sha256",
+    "quality",
+    "method",
+    "frame_order",
+    "attempted_samples",
+    "collected_samples",
+    "included_samples",
+    "terminal_unverified_samples",
+    "truncated_samples",
+    "paths"
+  ],
+  "title": "FoldedStackProfile",
+  "type": "object"
+}

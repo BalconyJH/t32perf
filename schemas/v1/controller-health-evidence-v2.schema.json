@@ -1,0 +1,253 @@
+{
+  "$defs": {
+    "ControllerHealthEvidenceV2SchemaVersion": {
+      "description": "Supported signal-scoped sampling-health evidence schema version.",
+      "oneOf": [
+        {
+          "const": "t32perf.controller-health-evidence/v2",
+          "description": "The only supported version or operation marker.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerHealthOperation": {
+      "description": "Fixed hardware-health operation marker.",
+      "oneOf": [
+        {
+          "const": "perf_get_health",
+          "description": "The only supported version or operation marker.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerHealthSignal": {
+      "description": "Hardware-health facts that a capability adapter can export reliably.",
+      "oneOf": [
+        {
+          "const": "trace_overflow",
+          "description": "Trace-buffer or transport overflow.",
+          "type": "string"
+        },
+        {
+          "const": "flow_error",
+          "description": "Trace flow error.",
+          "type": "string"
+        },
+        {
+          "const": "trace_gap",
+          "description": "Explicit trace gap.",
+          "type": "string"
+        },
+        {
+          "const": "truncation",
+          "description": "Truncated raw export.",
+          "type": "string"
+        },
+        {
+          "const": "timestamp_discontinuity",
+          "description": "Unexplained timestamp discontinuity.",
+          "type": "string"
+        },
+        {
+          "const": "elf_mismatch",
+          "description": "ELF and executing firmware identity mismatch.",
+          "type": "string"
+        },
+        {
+          "const": "program_flow_closure",
+          "description": "Program-flow closure or equivalent completeness check.",
+          "type": "string"
+        },
+        {
+          "const": "sampling_buffer_full",
+          "description": "Sampling stopped because its bounded Stack buffer became full.",
+          "type": "string"
+        },
+        {
+          "const": "sampling_unexpected_stop",
+          "description": "SNOOPer stopped before the request for a reason the adapter cannot classify.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerSamplingBufferMode": {
+      "description": "Bounded sampling-buffer mode.",
+      "oneOf": [
+        {
+          "const": "stack",
+          "description": "Stop sampling when the fixed buffer becomes full.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerSamplingHealthEvidence": {
+      "additionalProperties": false,
+      "description": "Exact SNOOPer facts for a stopped statistical capture.",
+      "properties": {
+        "buffer_full": {
+          "description": "Whether Stack capacity was reached and sampling stopped early.",
+          "type": "boolean"
+        },
+        "buffer_mode": {
+          "$ref": "#/$defs/ControllerSamplingBufferMode",
+          "description": "Actual bounded recording mode."
+        },
+        "capacity_records": {
+          "description": "Fixed configured capacity in records.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "method": {
+          "$ref": "#/$defs/ControllerSamplingMethod",
+          "description": "Actual acquisition method queried after configuration."
+        },
+        "object": {
+          "$ref": "#/$defs/ControllerSamplingObject",
+          "description": "Actual sampling object."
+        },
+        "pre_stop_state": {
+          "$ref": "#/$defs/ControllerSamplingPreStopState",
+          "description": "State captured immediately before explicit `SNOOPer.OFF`."
+        },
+        "recorded_records": {
+          "description": "Records retained after stop.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "requested_rate_ns": {
+          "description": "Configured requested interval. TRACE32 does not guarantee this rate.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "state": {
+          "$ref": "#/$defs/ControllerSamplingState",
+          "description": "State observed after explicit `SNOOPer.OFF`."
+        },
+        "unexpected_stop": {
+          "description": "Whether SNOOPer stopped early without reaching Stack capacity.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "method",
+        "object",
+        "buffer_mode",
+        "state",
+        "pre_stop_state",
+        "requested_rate_ns",
+        "capacity_records",
+        "recorded_records",
+        "buffer_full",
+        "unexpected_stop"
+      ],
+      "type": "object"
+    },
+    "ControllerSamplingMethod": {
+      "description": "Sampling acquisition method verified by a target adapter.",
+      "oneOf": [
+        {
+          "const": "real_time",
+          "description": "Runtime PC access without periodic target stop.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerSamplingObject": {
+      "description": "Sampling object verified by a target adapter.",
+      "oneOf": [
+        {
+          "const": "program_counter",
+          "description": "Program-counter sampling.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerSamplingPreStopState": {
+      "description": "SNOOPer state captured immediately before explicit `SNOOPer.OFF`.",
+      "oneOf": [
+        {
+          "const": "arm",
+          "description": "Sampling was still armed when stop was requested.",
+          "type": "string"
+        },
+        {
+          "const": "break",
+          "description": "Sampling had stopped before the request, requiring reason classification.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerSamplingState": {
+      "description": "Sampling trace state observed after the explicit stop command.",
+      "oneOf": [
+        {
+          "const": "off",
+          "description": "The SNOOPer is off and its records are readable/exportable.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.controller-health-evidence/v2",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Signal-scoped hardware health for statistical sampling adapters.",
+  "properties": {
+    "binding_sha256": {
+      "description": "Exact controller binding echoed by the adapter.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "capture_stopped": {
+      "description": "Must remain true while health is collected for an exportable capture.",
+      "type": "boolean"
+    },
+    "elf_matches_firmware": {
+      "description": "Firmware comparison when the adapter has a trusted sparse image measurement.",
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "operation": {
+      "$ref": "#/$defs/ControllerHealthOperation",
+      "description": "Fixed operation marker."
+    },
+    "sampling": {
+      "$ref": "#/$defs/ControllerSamplingHealthEvidence",
+      "description": "Exact stopped SNOOPer facts."
+    },
+    "schema": {
+      "$ref": "#/$defs/ControllerHealthEvidenceV2SchemaVersion",
+      "description": "Versioned document family."
+    },
+    "stop_evidence_sha256": {
+      "description": "Exact immutable stop-evidence digest from which pre-stop facts came.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "supported_signals": {
+      "description": "Exact supported-signal set. Unsupported facts have no boolean placeholder.",
+      "items": {
+        "$ref": "#/$defs/ControllerHealthSignal"
+      },
+      "maxItems": 16,
+      "minItems": 1,
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema",
+    "operation",
+    "binding_sha256",
+    "capture_stopped",
+    "supported_signals",
+    "stop_evidence_sha256",
+    "sampling"
+  ],
+  "title": "ControllerHealthEvidenceV2",
+  "type": "object"
+}

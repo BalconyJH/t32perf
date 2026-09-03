@@ -1,0 +1,283 @@
+{
+  "$defs": {
+    "ControllerSamplingBufferMode": {
+      "description": "Bounded sampling-buffer mode.",
+      "oneOf": [
+        {
+          "const": "stack",
+          "description": "Stop sampling when the fixed buffer becomes full.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerSamplingMethod": {
+      "description": "Sampling acquisition method verified by a target adapter.",
+      "oneOf": [
+        {
+          "const": "real_time",
+          "description": "Runtime PC access without periodic target stop.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerSamplingObject": {
+      "description": "Sampling object verified by a target adapter.",
+      "oneOf": [
+        {
+          "const": "program_counter",
+          "description": "Program-counter sampling.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerSamplingState": {
+      "description": "Sampling trace state observed after the explicit stop command.",
+      "oneOf": [
+        {
+          "const": "off",
+          "description": "The SNOOPer is off and its records are readable/exportable.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerTargetState": {
+      "description": "Target execution state observed by a verified adapter.",
+      "oneOf": [
+        {
+          "const": "running",
+          "description": "The target was running.",
+          "type": "string"
+        },
+        {
+          "const": "halted",
+          "description": "The target was halted.",
+          "type": "string"
+        }
+      ]
+    },
+    "PerfOperation": {
+      "description": "A fixed script operation exposed by the TRACE32 performance skill.",
+      "oneOf": [
+        {
+          "const": "perf_get_capabilities",
+          "description": "Capability discovery.",
+          "type": "string"
+        },
+        {
+          "const": "perf_configure",
+          "description": "Target-specific configuration.",
+          "type": "string"
+        },
+        {
+          "const": "perf_start",
+          "description": "Capture start.",
+          "type": "string"
+        },
+        {
+          "const": "perf_stop",
+          "description": "Capture stop.",
+          "type": "string"
+        },
+        {
+          "const": "perf_get_health",
+          "description": "Health retrieval.",
+          "type": "string"
+        },
+        {
+          "const": "perf_export",
+          "description": "Artifact export.",
+          "type": "string"
+        },
+        {
+          "const": "perf_get_hotspots",
+          "description": "Hotspot retrieval.",
+          "type": "string"
+        },
+        {
+          "const": "perf_cleanup",
+          "description": "Capture-state cleanup.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetAdapterFailureKind": {
+      "description": "Failure category requiring recovery before another Session uses the target.",
+      "oneOf": [
+        {
+          "const": "trace32_disconnect",
+          "description": "TRACE32 connection was lost.",
+          "type": "string"
+        },
+        {
+          "const": "driver_disconnect",
+          "description": "Deployment driver connection was lost.",
+          "type": "string"
+        },
+        {
+          "const": "cmm_abort",
+          "description": "The fixed CMM transaction was aborted.",
+          "type": "string"
+        },
+        {
+          "const": "operation_failure",
+          "description": "A fixed operation returned another fail-closed error.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetAdapterRecoveryEvidenceSchemaVersion": {
+      "description": "Supported target-adapter recovery-evidence schema.",
+      "oneOf": [
+        {
+          "const": "t32perf.target-adapter-recovery-evidence/v1",
+          "description": "Version 1.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetAdapterSamplingRecoveryEvidence": {
+      "additionalProperties": false,
+      "description": "Canonical SNOOPer state verified during target-adapter recovery.",
+      "properties": {
+        "auto_arm": {
+          "description": "AutoArm canonical baseline.",
+          "type": "boolean"
+        },
+        "auto_init": {
+          "description": "AutoInit canonical baseline.",
+          "type": "boolean"
+        },
+        "buffer_mode": {
+          "$ref": "#/$defs/ControllerSamplingBufferMode",
+          "description": "Restored buffer mode."
+        },
+        "capacity_records": {
+          "description": "Canonical restored Stack capacity in records.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "method": {
+          "$ref": "#/$defs/ControllerSamplingMethod",
+          "description": "Restored acquisition method."
+        },
+        "object": {
+          "$ref": "#/$defs/ControllerSamplingObject",
+          "description": "Restored sample object."
+        },
+        "requested_rate_ns": {
+          "description": "Fixed requested interval from the profile.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "state": {
+          "$ref": "#/$defs/ControllerSamplingState",
+          "description": "SNOOPer must be OFF after recovery."
+        },
+        "zero_reset": {
+          "description": "Whether the adapter-owned ZERO origin was reset.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "method",
+        "object",
+        "buffer_mode",
+        "state",
+        "requested_rate_ns",
+        "capacity_records",
+        "auto_arm",
+        "auto_init",
+        "zero_reset"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "t32perf.target-adapter-recovery-evidence/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Strict recovery evidence written by the trusted target Controller.",
+  "properties": {
+    "adapter_state_restored": {
+      "description": "Whether every adapter-owned capture mutation was restored.",
+      "type": "boolean"
+    },
+    "binding_sha256": {
+      "description": "Controller binding of the failed operation.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "failed_operation": {
+      "$ref": "#/$defs/PerfOperation",
+      "description": "Operation that failed."
+    },
+    "failure_kind": {
+      "$ref": "#/$defs/TargetAdapterFailureKind",
+      "description": "Closed failure category."
+    },
+    "files_deleted": {
+      "description": "Recovery must never delete Session files.",
+      "type": "boolean"
+    },
+    "initial_target_state": {
+      "$ref": "#/$defs/ControllerTargetState",
+      "description": "Target state captured before adapter-owned mutation."
+    },
+    "new_session_required": {
+      "description": "Recovery never resumes the failed Session.",
+      "type": "boolean"
+    },
+    "profile_sha256": {
+      "description": "Stable candidate qualification-identity digest. This deliberately\nexcludes a qualification receipt digest, avoiding a circular HIL /\nreceipt / recovery-evidence dependency.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "restored_target_state": {
+      "$ref": "#/$defs/ControllerTargetState",
+      "description": "Target state observed after recovery."
+    },
+    "sampling": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/TargetAdapterSamplingRecoveryEvidence"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Exact canonical SNOOPer baseline facts for sampling adapters."
+    },
+    "schema": {
+      "$ref": "#/$defs/TargetAdapterRecoveryEvidenceSchemaVersion",
+      "description": "Versioned document family."
+    },
+    "upstream_abort_confirmed": {
+      "description": "Whether the upstream unbound abort was explicitly acknowledged when required.",
+      "type": "boolean"
+    },
+    "upstream_abort_receipt_sha256": {
+      "description": "Immutable host abort-receipt digest when an unbound CMM abort was acknowledged.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "schema",
+    "profile_sha256",
+    "binding_sha256",
+    "failed_operation",
+    "failure_kind",
+    "initial_target_state",
+    "restored_target_state",
+    "adapter_state_restored",
+    "upstream_abort_confirmed",
+    "files_deleted",
+    "new_session_required"
+  ],
+  "title": "TargetAdapterRecoveryEvidence",
+  "type": "object"
+}

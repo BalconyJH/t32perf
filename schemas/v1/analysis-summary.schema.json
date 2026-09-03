@@ -1,0 +1,1164 @@
+{
+  "$defs": {
+    "AnalysisDiagnosticCounts": {
+      "description": "Counts that remain useful for diagnosis even when quantitative results are gated.",
+      "properties": {
+        "function_span_count": {
+          "description": "Number of derived function-span records emitted, including incomplete spans.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "health_issue_count": {
+          "description": "Number of diagnosed health issues retained by the health report.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "health_observation_count": {
+          "description": "Number of raw health observations retained by the health report.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "incomplete_function_span_count": {
+          "description": "Number of derived spans excluded from trusted aggregation.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "observation_count": {
+          "description": "Number of normalized observations consumed by the analyzer.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "observation_count",
+        "function_span_count",
+        "incomplete_function_span_count",
+        "health_observation_count",
+        "health_issue_count"
+      ],
+      "type": "object"
+    },
+    "AnalysisQuantitativeSummary": {
+      "description": "All quantitative values persisted by the analysis-summary document.",
+      "properties": {
+        "call_depth": {
+          "$ref": "#/$defs/CallDepthSummary",
+          "description": "Maximum call depth and the path that established it."
+        },
+        "context_cpu": {
+          "description": "Virtual CPU time grouped by execution context.",
+          "items": {
+            "$ref": "#/$defs/ContextCpuSummary"
+          },
+          "type": "array"
+        },
+        "function_span_count": {
+          "description": "Number of reconstructed function spans.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "idle_cpu_ns": {
+          "description": "Total virtual CPU time attributed to idle contexts.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "incomplete_function_span_count": {
+          "description": "Number of spans excluded from trusted aggregation.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "isr_cpu_ns": {
+          "description": "Total virtual CPU time attributed to ISR contexts.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "observation_count": {
+          "description": "Number of normalized observations consumed.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "resources": {
+          "$ref": "#/$defs/ResourceSummary",
+          "description": "Numeric counter and resource summaries."
+        },
+        "stack_usage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StackUsageAnalysisSummary"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Optional static stack-usage summary."
+        },
+        "static_ram": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StaticRamAnalysisSummary"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Optional static RAM summary."
+        },
+        "task_cpu_ns": {
+          "description": "Total virtual CPU time attributed to task contexts.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "observation_count",
+        "function_span_count",
+        "incomplete_function_span_count",
+        "call_depth",
+        "context_cpu",
+        "task_cpu_ns",
+        "isr_cpu_ns",
+        "idle_cpu_ns",
+        "resources"
+      ],
+      "type": "object"
+    },
+    "Artifact": {
+      "description": "One immutable file artifact and its provenance.",
+      "properties": {
+        "id": {
+          "description": "Stable artifact identifier unique within the session.",
+          "type": "string"
+        },
+        "input_artifact_ids": {
+          "description": "Artifact identifiers consumed to produce this artifact.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "kind": {
+          "description": "Extensible artifact kind such as `raw_trace` or `perfetto`.",
+          "type": "string"
+        },
+        "media_type": {
+          "description": "IANA media type of the file.",
+          "type": "string"
+        },
+        "producer": {
+          "description": "Tool or stage identifier that produced the file.",
+          "type": "string"
+        },
+        "relative_path": {
+          "description": "Canonical path relative to the session directory.",
+          "maxLength": 1024,
+          "minLength": 1,
+          "pattern": "^(?=[\\u0020-\\u007E]+$)(?!/)(?!.*[<>:\"\\\\|?*])(?!.*//)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*/$)(?!.*[. ](?:/|$))(?!(?:.*?/)?(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Nn][Ii][Nn]\\$|[Cc][Oo][Nn][Oo][Uu][Tt]\\$|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9]) *(?:\\.[^/]*)?(?:/|$)).+$",
+          "type": "string"
+        },
+        "sha256": {
+          "description": "SHA-256 digest of the complete file.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "size_bytes": {
+          "description": "File size in bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "relative_path",
+        "media_type",
+        "size_bytes",
+        "sha256",
+        "producer",
+        "input_artifact_ids"
+      ],
+      "type": "object"
+    },
+    "CallDepthSummary": {
+      "description": "Deepest reconstructed call path.",
+      "properties": {
+        "context_id": {
+          "description": "Context in which the deepest path occurred.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "deepest_path": {
+          "description": "Function identifiers from root to leaf at maximum depth.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "max_depth": {
+          "description": "Maximum number of simultaneously open function frames.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "max_depth",
+        "deepest_path"
+      ],
+      "type": "object"
+    },
+    "ContextCpuSummary": {
+      "description": "Virtual CPU time attributed to one execution context.",
+      "properties": {
+        "active_ns": {
+          "description": "Time during which this context was actually running on a core.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "context_id": {
+          "description": "Context dictionary identifier.",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ContextKind",
+          "description": "Context kind from the dictionary or analyzer inference."
+        }
+      },
+      "required": [
+        "context_id",
+        "kind",
+        "active_ns"
+      ],
+      "type": "object"
+    },
+    "ContextKind": {
+      "description": "The semantic kind of an execution context.",
+      "oneOf": [
+        {
+          "const": "task",
+          "description": "An RTOS task or thread.",
+          "type": "string"
+        },
+        {
+          "const": "isr",
+          "description": "An interrupt service routine context.",
+          "type": "string"
+        },
+        {
+          "const": "idle",
+          "description": "An idle execution context.",
+          "type": "string"
+        },
+        {
+          "const": "core",
+          "description": "A core-level context used when no finer attribution exists.",
+          "type": "string"
+        },
+        {
+          "const": "unknown",
+          "description": "A context whose precise kind is unavailable.",
+          "type": "string"
+        }
+      ]
+    },
+    "CounterSemantic": {
+      "description": "Stable, extensible semantic identity for one counter family.\n\nValues use lower-case dot-separated identifiers. Standard semantics are\ninterpreted only through [`Self::standard_spec`]; unknown valid identifiers\nremain extension-defined generic counters.",
+      "maxLength": 128,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$",
+      "type": "string"
+    },
+    "CounterSubject": {
+      "description": "Stable identity of the resource measured by a counter.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "description": "The complete capture session.",
+          "properties": {
+            "kind": {
+              "const": "capture",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One allocator instance.",
+          "properties": {
+            "allocator_id": {
+              "description": "Stable allocator identity.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "allocator",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "allocator_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One execution context.",
+          "properties": {
+            "context_id": {
+              "description": "Referenced context dictionary identity.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "context",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "context_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One processor core.",
+          "properties": {
+            "core_id": {
+              "description": "Zero-based core identity.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "kind": {
+              "const": "core",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "core_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One runtime stack.",
+          "properties": {
+            "context_id": {
+              "description": "Referenced Task or ISR context when applicable.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "core_id": {
+              "description": "Referenced core for MSP, PSP, or core-local stacks.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "kind": {
+              "const": "stack",
+              "type": "string"
+            },
+            "role": {
+              "$ref": "#/$defs/StackRole",
+              "description": "Semantic role of the stack."
+            },
+            "stack_id": {
+              "description": "Stable physical-stack identity.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "stack_id",
+            "role"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One target memory region.",
+          "properties": {
+            "kind": {
+              "const": "memory_region",
+              "type": "string"
+            },
+            "region_id": {
+              "description": "Stable region identity.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "region_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One trace-capture buffer.",
+          "properties": {
+            "buffer_id": {
+              "description": "Stable buffer identity.",
+              "type": "string"
+            },
+            "core_id": {
+              "description": "Core owning the buffer when it is core-local.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "kind": {
+              "const": "trace_buffer",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "buffer_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Extension-defined resource identity.",
+          "properties": {
+            "id": {
+              "description": "Stable identity within the namespace.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "custom",
+              "type": "string"
+            },
+            "namespace": {
+              "description": "Lower-case extension namespace.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "namespace",
+            "id"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "DerivedResourceMetricSummary": {
+      "description": "One derived resource value supported by explicitly identified source counters.",
+      "properties": {
+        "first_ts_ns": {
+          "description": "First timestamp in a rate window or synchronized point timestamp.",
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "last_ts_ns": {
+          "description": "Last timestamp in a rate window or synchronized point timestamp.",
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "quality": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Quality"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Worst contributing evidence quality when any evidence exists."
+        },
+        "semantic": {
+          "$ref": "#/$defs/CounterSemantic",
+          "description": "Derived standard semantic."
+        },
+        "source_counter_ids": {
+          "description": "Counter IDs that supplied the evidence.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "subject": {
+          "$ref": "#/$defs/CounterSubject",
+          "description": "Resource to which the value belongs."
+        },
+        "support": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Effective support after capability, quality, and health-policy gating."
+        },
+        "unit": {
+          "description": "Exact unit required by the standard semantic.",
+          "type": "string"
+        },
+        "value": {
+          "description": "Derived value, absent when evidence is insufficient.",
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "window_ns": {
+          "description": "Positive derivation window for rate metrics.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "semantic",
+        "subject",
+        "unit",
+        "source_counter_ids",
+        "support"
+      ],
+      "type": "object"
+    },
+    "HealthVerdict": {
+      "description": "Host-policy verdict for the trustworthiness of a capture.",
+      "oneOf": [
+        {
+          "const": "VALID",
+          "description": "Quantitative results and strict comparisons are permitted.",
+          "type": "string"
+        },
+        {
+          "const": "DEGRADED",
+          "description": "Timeline inspection is permitted, but strict comparison is not.",
+          "type": "string"
+        },
+        {
+          "const": "INVALID",
+          "description": "Only diagnostic output is trustworthy.",
+          "type": "string"
+        }
+      ]
+    },
+    "MetricSupport": {
+      "description": "Support matrix covering all required timeline and timing metrics.",
+      "properties": {
+        "active": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Support for active function duration excluding preemption."
+        },
+        "call_count": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Support for exact or estimated function call counts."
+        },
+        "elapsed": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Support for wall-clock elapsed function duration."
+        },
+        "function_timeline": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Support for reconstructed function timeline slices."
+        },
+        "isr_timeline": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Support for the interrupt execution timeline."
+        },
+        "resource_counters": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "default": {
+            "reasons": [
+              "resource_counter_support_not_recorded"
+            ],
+            "support": "unavailable"
+          },
+          "description": "Support for explicitly defined numeric resource counters."
+        },
+        "self": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Support for self active function duration excluding children."
+        },
+        "task_timeline": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Support for the task execution timeline."
+        }
+      },
+      "required": [
+        "function_timeline",
+        "call_count",
+        "elapsed",
+        "active",
+        "self",
+        "task_timeline",
+        "isr_timeline"
+      ],
+      "type": "object"
+    },
+    "MetricSupportEntry": {
+      "description": "Support and explanatory reasons for one metric.",
+      "properties": {
+        "reasons": {
+          "description": "Stable or human-readable reasons for the declared level.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "support": {
+          "$ref": "#/$defs/MetricSupportLevel",
+          "description": "Available support level."
+        }
+      },
+      "required": [
+        "support",
+        "reasons"
+      ],
+      "type": "object"
+    },
+    "MetricSupportLevel": {
+      "description": "The support level for one analysis metric.",
+      "oneOf": [
+        {
+          "const": "exact",
+          "description": "The capture directly supports exact computation.",
+          "type": "string"
+        },
+        {
+          "const": "inferred",
+          "description": "The metric can be deterministically inferred with documented caveats.",
+          "type": "string"
+        },
+        {
+          "const": "statistical",
+          "description": "Only a statistical estimate is available.",
+          "type": "string"
+        },
+        {
+          "const": "unavailable",
+          "description": "The capture cannot support this metric.",
+          "type": "string"
+        }
+      ]
+    },
+    "Quality": {
+      "description": "Describes how directly a value is supported by the captured trace.",
+      "oneOf": [
+        {
+          "const": "exact",
+          "description": "The trace directly and completely determines the value.",
+          "type": "string"
+        },
+        {
+          "const": "inferred",
+          "description": "The value is reconstructed from incomplete but deterministic evidence.",
+          "type": "string"
+        },
+        {
+          "const": "statistical",
+          "description": "The value is an estimate obtained from statistical samples.",
+          "type": "string"
+        }
+      ]
+    },
+    "ResourceClass": {
+      "description": "Broad resource group derived exclusively from an explicit standard semantic.",
+      "oneOf": [
+        {
+          "const": "heap",
+          "description": "Dynamic allocator state.",
+          "type": "string"
+        },
+        {
+          "const": "stack",
+          "description": "Runtime stack state.",
+          "type": "string"
+        },
+        {
+          "const": "ram",
+          "description": "Explicit target memory-region state.",
+          "type": "string"
+        },
+        {
+          "const": "trace_buffer",
+          "description": "Trace-capture buffer state.",
+          "type": "string"
+        },
+        {
+          "const": "other",
+          "description": "Generic or extension-defined counter state.",
+          "type": "string"
+        }
+      ]
+    },
+    "ResourceCounterSummary": {
+      "description": "Aggregate statistics for one counter.",
+      "properties": {
+        "class": {
+          "$ref": "#/$defs/ResourceClass",
+          "description": "Resource class assigned to this counter."
+        },
+        "counter_id": {
+          "description": "Counter dictionary identifier.",
+          "type": "string"
+        },
+        "delta": {
+          "description": "`latest - first` when both values exist and the semantic window is valid.",
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "first": {
+          "description": "First observed value.",
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "first_ts_ns": {
+          "description": "First observation timestamp.",
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "last_ts_ns": {
+          "description": "Latest observation timestamp.",
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "latest": {
+          "description": "Latest observed value.",
+          "format": "double",
+          "type": "number"
+        },
+        "max": {
+          "description": "Maximum observed value.",
+          "format": "double",
+          "type": "number"
+        },
+        "mean": {
+          "description": "Arithmetic mean of observed values.",
+          "format": "double",
+          "type": "number"
+        },
+        "min": {
+          "description": "Minimum observed value.",
+          "format": "double",
+          "type": "number"
+        },
+        "name": {
+          "description": "Human-readable dictionary name when available.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "quality": {
+          "$ref": "#/$defs/Quality",
+          "description": "Worst evidence quality among contributing observations."
+        },
+        "rate_per_second": {
+          "description": "Per-second rate derived only from a valid monotonic count window.",
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "sample_count": {
+          "description": "Number of counter values consumed.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "semantic": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CounterSemantic"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Explicit semantic identity, absent for legacy generic counters."
+        },
+        "subject": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CounterSubject"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Explicit resource identity, absent for legacy generic counters."
+        },
+        "support": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "default": {
+            "reasons": [
+              "resource_counter_support_not_recorded"
+            ],
+            "support": "unavailable"
+          },
+          "description": "Effective capability, evidence-quality, and health-policy support."
+        },
+        "unit": {
+          "description": "Unit from the counter dictionary when available.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "window_ns": {
+          "description": "Positive duration between first and latest observations.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "counter_id",
+        "class",
+        "sample_count",
+        "latest",
+        "min",
+        "max",
+        "mean",
+        "quality"
+      ],
+      "type": "object"
+    },
+    "ResourceSummary": {
+      "description": "Summary of all numeric counters observed during analysis.",
+      "properties": {
+        "counters": {
+          "description": "Per-counter summaries sorted by counter identifier.",
+          "items": {
+            "$ref": "#/$defs/ResourceCounterSummary"
+          },
+          "type": "array"
+        },
+        "derived": {
+          "description": "Evidence-gated metrics derived from explicit source-counter semantics.",
+          "items": {
+            "$ref": "#/$defs/DerivedResourceMetricSummary"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "counters"
+      ],
+      "type": "object"
+    },
+    "StackRole": {
+      "description": "Semantic role assigned to one runtime stack.",
+      "oneOf": [
+        {
+          "const": "task",
+          "description": "RTOS Task stack.",
+          "type": "string"
+        },
+        {
+          "const": "isr",
+          "description": "Dedicated ISR stack.",
+          "type": "string"
+        },
+        {
+          "const": "msp",
+          "description": "Arm Main Stack Pointer stack.",
+          "type": "string"
+        },
+        {
+          "const": "psp",
+          "description": "Arm Process Stack Pointer stack.",
+          "type": "string"
+        },
+        {
+          "const": "custom",
+          "description": "Extension-defined stack role.",
+          "type": "string"
+        }
+      ]
+    },
+    "StackUsageAnalysisSummary": {
+      "description": "Static stack-usage summary linked to its independently persisted source report.",
+      "properties": {
+        "artifact_id": {
+          "description": "ID of the independently persisted parsed stack-usage artifact.",
+          "type": "string"
+        },
+        "flavor": {
+          "description": "Versioned stack-usage parser flavor.",
+          "type": "string"
+        },
+        "function_count": {
+          "description": "Number of parsed function entries.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "maximum_static_bytes": {
+          "description": "Maximum statically bounded stack frame in bytes, when one exists.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "source_artifact_id": {
+          "description": "ID of the compiler stack-usage artifact consumed by the parser.",
+          "type": "string"
+        },
+        "support": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "default": {
+            "reasons": [
+              "static_resource_support_not_recorded"
+            ],
+            "support": "unavailable"
+          },
+          "description": "Support for binding the compiler report to the running firmware identity."
+        }
+      },
+      "required": [
+        "artifact_id",
+        "source_artifact_id",
+        "flavor",
+        "function_count"
+      ],
+      "type": "object"
+    },
+    "StaticRamAnalysisSummary": {
+      "description": "Static RAM summary linked to its independently persisted source report.",
+      "properties": {
+        "artifact_id": {
+          "description": "ID of the independently persisted parsed static-RAM artifact.",
+          "type": "string"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StaticRamConfigProvenance"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Exact parser-configuration provenance."
+        },
+        "flavor": {
+          "description": "Versioned linker-map parser flavor.",
+          "type": "string"
+        },
+        "source_artifact_id": {
+          "description": "ID of the linker-map artifact consumed by the parser.",
+          "type": "string"
+        },
+        "support": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "default": {
+            "reasons": [
+              "static_resource_support_not_recorded"
+            ],
+            "support": "unavailable"
+          },
+          "description": "Support for binding the parsed MAP data to the running firmware identity."
+        },
+        "total_bytes": {
+          "description": "Total classified static RAM in bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "totals": {
+          "$ref": "#/$defs/StaticRamKindTotals",
+          "default": {
+            "bss_bytes": 0,
+            "custom_bytes": 0,
+            "data_bytes": 0,
+            "dma_bytes": 0,
+            "noinit_bytes": 0,
+            "rtos_bytes": 0
+          },
+          "description": "Checked totals kept separate for every classification."
+        }
+      },
+      "required": [
+        "artifact_id",
+        "source_artifact_id",
+        "flavor",
+        "total_bytes"
+      ],
+      "type": "object"
+    },
+    "StaticRamConfigProvenance": {
+      "description": "Static-RAM parser configuration provenance persisted with an analysis summary.",
+      "properties": {
+        "artifact_id": {
+          "description": "Explicit configuration input artifact, absent for the versioned built-in default.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sha256": {
+          "description": "Digest of the explicit artifact or canonical built-in default document.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sha256"
+      ],
+      "type": "object"
+    },
+    "StaticRamKindTotals": {
+      "additionalProperties": false,
+      "description": "Checked per-kind static-RAM totals.",
+      "properties": {
+        "bss_bytes": {
+          "description": "Zero-initialized `.bss` bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "custom_bytes": {
+          "description": "Explicit custom-section bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "data_bytes": {
+          "description": "Initialized `.data` bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "dma_bytes": {
+          "description": "Explicit DMA-section bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "noinit_bytes": {
+          "description": "Non-initialized `.noinit` bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "rtos_bytes": {
+          "description": "Explicit RTOS-section bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "data_bytes",
+        "bss_bytes",
+        "noinit_bytes",
+        "dma_bytes",
+        "rtos_bytes",
+        "custom_bytes"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "t32perf.analysis-summary/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Versioned, machine-facing summary of one completed analysis stage.",
+  "properties": {
+    "diagnostics": {
+      "$ref": "#/$defs/AnalysisDiagnosticCounts",
+      "description": "Counts retained for diagnosis and receipt verification."
+    },
+    "health_verdict": {
+      "$ref": "#/$defs/HealthVerdict",
+      "description": "Health verdict that gates the optional quantitative payload."
+    },
+    "input_artifacts": {
+      "description": "Exact immutable artifact claims consumed by this document.",
+      "items": {
+        "$ref": "#/$defs/Artifact"
+      },
+      "type": "array"
+    },
+    "metric_support": {
+      "$ref": "#/$defs/MetricSupport",
+      "description": "Metric support determined by the same health-policy evaluation."
+    },
+    "quantitative": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AnalysisQuantitativeSummary"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Quantitative results, present only for a `VALID` capture."
+    },
+    "schema": {
+      "const": "t32perf.analysis-summary/v1",
+      "description": "The analysis-summary schema version.",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "Session whose observations were analyzed.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "session_id",
+    "health_verdict",
+    "metric_support",
+    "input_artifacts",
+    "diagnostics"
+  ],
+  "title": "AnalysisSummaryDocument",
+  "type": "object"
+}

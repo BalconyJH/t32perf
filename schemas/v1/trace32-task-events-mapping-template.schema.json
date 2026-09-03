@@ -1,0 +1,213 @@
+{
+  "$defs": {
+    "ContextKind": {
+      "description": "The semantic kind of an execution context.",
+      "oneOf": [
+        {
+          "const": "task",
+          "description": "An RTOS task or thread.",
+          "type": "string"
+        },
+        {
+          "const": "isr",
+          "description": "An interrupt service routine context.",
+          "type": "string"
+        },
+        {
+          "const": "idle",
+          "description": "An idle execution context.",
+          "type": "string"
+        },
+        {
+          "const": "core",
+          "description": "A core-level context used when no finer attribution exists.",
+          "type": "string"
+        },
+        {
+          "const": "unknown",
+          "description": "A context whose precise kind is unavailable.",
+          "type": "string"
+        }
+      ]
+    },
+    "TraceContextMapping": {
+      "additionalProperties": false,
+      "description": "One task, idle context, or ISR known before parsing begins.",
+      "properties": {
+        "context_id": {
+          "description": "Stable normalized identifier.",
+          "type": "string"
+        },
+        "display_name": {
+          "description": "Dictionary display name.",
+          "type": "string"
+        },
+        "entry_function_id": {
+          "description": "Function paired with task/ISR start and stop events.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "export_name": {
+          "description": "Exact TASKEVENTS `task name` text.",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ContextKind",
+          "description": "Kind proved by ELF/ORTI/marker configuration."
+        },
+        "priority": {
+          "description": "Optional scheduling or interrupt priority.",
+          "format": "int32",
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "export_name",
+        "context_id",
+        "kind",
+        "display_name"
+      ],
+      "type": "object"
+    },
+    "TraceFunctionMapping": {
+      "additionalProperties": false,
+      "description": "One function or symbol known before parsing begins.",
+      "properties": {
+        "address": {
+          "description": "Optional function start address.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "display_name": {
+          "description": "Dictionary display name.",
+          "type": "string"
+        },
+        "end_address": {
+          "description": "Optional exclusive function end address used for PC attribution.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "export_name": {
+          "description": "Exact exported symbol or runnable name.",
+          "type": "string"
+        },
+        "file": {
+          "description": "Optional source path.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "function_id": {
+          "description": "Stable normalized identifier.",
+          "type": "string"
+        },
+        "line": {
+          "description": "Optional one-based source line.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "module": {
+          "description": "Optional image or module.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "export_name",
+        "function_id",
+        "display_name"
+      ],
+      "type": "object"
+    },
+    "TraceRunnableMapping": {
+      "additionalProperties": false,
+      "description": "One qualified runnable binding in a TASKEVENTS mapping artifact.",
+      "properties": {
+        "export_name": {
+          "description": "Exact exported runnable name.",
+          "type": "string"
+        },
+        "function_id": {
+          "description": "Function dictionary identifier.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "export_name",
+        "function_id"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "t32perf.trace32-task-events-mapping-template/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Closed, pre-capture TASKEVENTS semantic dictionary for one qualified profile.\n\nThis document deliberately excludes all run-specific identity and evidence.\nThose values are supplied only by [`TraceTaskEventsRuntimeBinding`] during\nmaterialization after the controller completes a capture.",
+  "properties": {
+    "contexts": {
+      "description": "Qualified task, idle, and ISR definitions.",
+      "items": {
+        "$ref": "#/$defs/TraceContextMapping"
+      },
+      "type": "array"
+    },
+    "core_id": {
+      "description": "Single TRACE32 export core.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "functions": {
+      "description": "Qualified task/ISR entry and runnable functions.",
+      "items": {
+        "$ref": "#/$defs/TraceFunctionMapping"
+      },
+      "type": "array"
+    },
+    "profile_id": {
+      "description": "Qualified target-adapter profile identity.",
+      "type": "string"
+    },
+    "runnables": {
+      "description": "Qualified runnable bindings.",
+      "items": {
+        "$ref": "#/$defs/TraceRunnableMapping"
+      },
+      "type": "array"
+    },
+    "schema": {
+      "description": "Exact schema identity.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "profile_id",
+    "core_id",
+    "contexts",
+    "functions",
+    "runnables"
+  ],
+  "title": "Trace32TaskEventsMappingTemplateDocument",
+  "type": "object"
+}

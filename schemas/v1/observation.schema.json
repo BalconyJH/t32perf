@@ -1,0 +1,730 @@
+{
+  "$defs": {
+    "Observation": {
+      "description": "One normalized observation emitted by a capture adapter.",
+      "oneOf": [
+        {
+          "description": "A function activation begins.",
+          "properties": {
+            "context_id": {
+              "description": "Active execution context.",
+              "type": "string"
+            },
+            "core_id": {
+              "description": "Core that executed the function.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "frame_id": {
+              "description": "Optional adapter-provided activation identifier.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "function_id": {
+              "description": "Function dictionary identifier.",
+              "type": "string"
+            },
+            "ts_ns": {
+              "description": "Session-relative timestamp.",
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": {
+              "const": "FunctionEnter",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "ts_ns",
+            "core_id",
+            "context_id",
+            "function_id"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A function activation ends.",
+          "properties": {
+            "context_id": {
+              "description": "Active execution context.",
+              "type": "string"
+            },
+            "core_id": {
+              "description": "Core that executed the function.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "frame_id": {
+              "description": "Optional adapter-provided activation identifier.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "function_id": {
+              "description": "Function dictionary identifier.",
+              "type": "string"
+            },
+            "ts_ns": {
+              "description": "Session-relative timestamp.",
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": {
+              "const": "FunctionExit",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "ts_ns",
+            "core_id",
+            "context_id",
+            "function_id"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "The running context on a core changes.",
+          "properties": {
+            "core_id": {
+              "description": "Core whose context changed.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "next_context_id": {
+              "description": "Context switched in.",
+              "type": "string"
+            },
+            "prev_context_id": {
+              "description": "Context switched out, if known.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "reason": {
+              "description": "Adapter-provided switch reason.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "ts_ns": {
+              "description": "Session-relative timestamp.",
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": {
+              "const": "ContextSwitch",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "ts_ns",
+            "core_id",
+            "next_context_id"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "An interrupt activation begins.",
+          "properties": {
+            "activation_id": {
+              "description": "Identifier pairing nested interrupt enter and exit records.",
+              "type": "string"
+            },
+            "core_id": {
+              "description": "Core handling the interrupt.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "interrupt_id": {
+              "description": "Interrupt dictionary or target identifier.",
+              "type": "string"
+            },
+            "priority": {
+              "description": "Interrupt priority when known.",
+              "format": "int32",
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "ts_ns": {
+              "description": "Session-relative timestamp.",
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": {
+              "const": "InterruptEnter",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "ts_ns",
+            "core_id",
+            "interrupt_id",
+            "activation_id"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "An interrupt activation ends.",
+          "properties": {
+            "activation_id": {
+              "description": "Identifier pairing nested interrupt enter and exit records.",
+              "type": "string"
+            },
+            "core_id": {
+              "description": "Core handling the interrupt.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "interrupt_id": {
+              "description": "Interrupt dictionary or target identifier.",
+              "type": "string"
+            },
+            "priority": {
+              "description": "Interrupt priority when known.",
+              "format": "int32",
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "ts_ns": {
+              "description": "Session-relative timestamp.",
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": {
+              "const": "InterruptExit",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "ts_ns",
+            "core_id",
+            "interrupt_id",
+            "activation_id"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A statistical program-counter sample.",
+          "properties": {
+            "address": {
+              "description": "Raw sampled address when available.",
+              "format": "uint64",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "context_id": {
+              "description": "Active context when known.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "core_id": {
+              "description": "Core sampled by the capture source.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "function_id": {
+              "description": "Resolved function when known.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "ts_ns": {
+              "description": "Session-relative timestamp.",
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": {
+              "const": "Sample",
+              "type": "string"
+            },
+            "weight_ns": {
+              "description": "Time represented by this sample when known.",
+              "format": "uint64",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "ts_ns",
+            "core_id"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A named instantaneous marker.",
+          "properties": {
+            "args": {
+              "additionalProperties": true,
+              "description": "Structured marker arguments.",
+              "type": "object"
+            },
+            "context_id": {
+              "description": "Context associated with the marker.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "core_id": {
+              "description": "Core associated with the marker.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "name": {
+              "description": "Marker name.",
+              "type": "string"
+            },
+            "ts_ns": {
+              "description": "Session-relative timestamp.",
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": {
+              "const": "Instant",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "ts_ns",
+            "name"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A synchronous custom span begins.",
+          "properties": {
+            "args": {
+              "additionalProperties": true,
+              "description": "Structured span arguments.",
+              "type": "object"
+            },
+            "context_id": {
+              "description": "Context associated with the span.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "core_id": {
+              "description": "Core associated with the span.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "name": {
+              "description": "Span name.",
+              "type": "string"
+            },
+            "span_id": {
+              "description": "Identifier pairing the begin and end records.",
+              "type": "string"
+            },
+            "ts_ns": {
+              "description": "Session-relative timestamp.",
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": {
+              "const": "SpanBegin",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "ts_ns",
+            "span_id",
+            "name"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A synchronous custom span ends.",
+          "properties": {
+            "args": {
+              "additionalProperties": true,
+              "description": "Structured end arguments.",
+              "type": "object"
+            },
+            "context_id": {
+              "description": "Context associated with the span.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "core_id": {
+              "description": "Core associated with the span.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "span_id": {
+              "description": "Identifier pairing the begin and end records.",
+              "type": "string"
+            },
+            "ts_ns": {
+              "description": "Session-relative timestamp.",
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": {
+              "const": "SpanEnd",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "ts_ns",
+            "span_id"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "An asynchronous span begins.",
+          "properties": {
+            "args": {
+              "additionalProperties": true,
+              "description": "Structured operation arguments.",
+              "type": "object"
+            },
+            "context_id": {
+              "description": "Context associated with the event.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "core_id": {
+              "description": "Core associated with the event.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "correlation_id": {
+              "description": "Identifier pairing events across contexts or cores.",
+              "type": "string"
+            },
+            "name": {
+              "description": "Asynchronous operation name.",
+              "type": "string"
+            },
+            "ts_ns": {
+              "description": "Session-relative timestamp.",
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": {
+              "const": "AsyncBegin",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "ts_ns",
+            "correlation_id",
+            "name"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "An asynchronous span ends.",
+          "properties": {
+            "args": {
+              "additionalProperties": true,
+              "description": "Structured completion arguments.",
+              "type": "object"
+            },
+            "context_id": {
+              "description": "Context associated with the event.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "core_id": {
+              "description": "Core associated with the event.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "correlation_id": {
+              "description": "Identifier pairing events across contexts or cores.",
+              "type": "string"
+            },
+            "ts_ns": {
+              "description": "Session-relative timestamp.",
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": {
+              "const": "AsyncEnd",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "ts_ns",
+            "correlation_id"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A numeric counter value changes.",
+          "properties": {
+            "args": {
+              "additionalProperties": true,
+              "description": "Structured value arguments.",
+              "type": "object"
+            },
+            "context_id": {
+              "description": "Context associated with the value.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "core_id": {
+              "description": "Core associated with the value.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "counter_id": {
+              "description": "Counter dictionary identifier.",
+              "type": "string"
+            },
+            "ts_ns": {
+              "description": "Session-relative timestamp.",
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": {
+              "const": "Counter",
+              "type": "string"
+            },
+            "value": {
+              "description": "Finite numeric value.",
+              "format": "double",
+              "type": "number"
+            }
+          },
+          "required": [
+            "type",
+            "ts_ns",
+            "counter_id",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "A bounded interval of missing or unusable trace data.",
+          "properties": {
+            "duration_ns": {
+              "description": "Nonnegative duration of the gap.",
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "reason": {
+              "description": "Machine-readable or human-readable gap reason.",
+              "type": "string"
+            },
+            "ts_ns": {
+              "description": "Session-relative start timestamp of the gap.",
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": {
+              "const": "TraceGap",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "ts_ns",
+            "duration_ns",
+            "reason"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "Source metadata that changes at a point in the stream.",
+          "properties": {
+            "key": {
+              "description": "Metadata key.",
+              "type": "string"
+            },
+            "ts_ns": {
+              "description": "Session-relative timestamp.",
+              "format": "int64",
+              "type": "integer"
+            },
+            "type": {
+              "const": "Metadata",
+              "type": "string"
+            },
+            "value": {
+              "description": "Arbitrary JSON metadata value."
+            }
+          },
+          "required": [
+            "type",
+            "ts_ns",
+            "key",
+            "value"
+          ],
+          "type": "object"
+        }
+      ],
+      "properties": {
+        "quality": {
+          "$ref": "#/$defs/Quality",
+          "description": "Evidence quality of this observation."
+        },
+        "source_id": {
+          "description": "Stable identifier for the producer or input channel.",
+          "type": "string"
+        },
+        "source_seq": {
+          "description": "Monotonic sequence number in the source's logical record stream.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "source_id",
+        "source_seq",
+        "quality"
+      ],
+      "type": "object"
+    },
+    "Quality": {
+      "description": "Describes how directly a value is supported by the captured trace.",
+      "oneOf": [
+        {
+          "const": "exact",
+          "description": "The trace directly and completely determines the value.",
+          "type": "string"
+        },
+        {
+          "const": "inferred",
+          "description": "The value is reconstructed from incomplete but deterministic evidence.",
+          "type": "string"
+        },
+        {
+          "const": "statistical",
+          "description": "The value is an estimate obtained from statistical samples.",
+          "type": "string"
+        }
+      ]
+    },
+    "TimeOrigin": {
+      "description": "The fixed origin used by normalized timestamps.",
+      "oneOf": [
+        {
+          "const": "session_relative",
+          "description": "Timestamp zero is the logical start of the capture session.",
+          "type": "string"
+        }
+      ]
+    },
+    "TimeUnit": {
+      "description": "The fixed unit used by every normalized timestamp and duration.",
+      "oneOf": [
+        {
+          "const": "ns",
+          "description": "Integer nanoseconds.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.observation/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "A complete in-memory JSON observation document.\n\nLarge captures should use NDJSON with [`ObservationStreamHeader`] instead.",
+  "properties": {
+    "observations": {
+      "description": "Normalized source observations in source order.",
+      "items": {
+        "$ref": "#/$defs/Observation"
+      },
+      "type": "array"
+    },
+    "schema": {
+      "const": "t32perf.observation/v1",
+      "description": "The observation schema version.",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "The session that owns the observations.",
+      "type": "string"
+    },
+    "time_origin": {
+      "$ref": "#/$defs/TimeOrigin",
+      "description": "The timestamp origin."
+    },
+    "time_unit": {
+      "$ref": "#/$defs/TimeUnit",
+      "description": "The timestamp and duration unit."
+    }
+  },
+  "required": [
+    "schema",
+    "session_id",
+    "time_unit",
+    "time_origin"
+  ],
+  "title": "ObservationDocument",
+  "type": "object"
+}

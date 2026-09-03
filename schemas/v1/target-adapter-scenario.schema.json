@@ -1,0 +1,84 @@
+{
+  "$defs": {
+    "TargetAdapterScenario": {
+      "description": "A fixed target-adapter execution scenario.",
+      "oneOf": [
+        {
+          "const": "normal",
+          "description": "Normal capture without injected faults.",
+          "type": "string"
+        },
+        {
+          "const": "trace_overflow",
+          "description": "Deliberately force trace-buffer or transport overflow.",
+          "type": "string"
+        },
+        {
+          "const": "flow_error",
+          "description": "Deliberately force a TRACE32 flow error.",
+          "type": "string"
+        },
+        {
+          "const": "sampling_buffer_full",
+          "description": "Use a fixed small SNOOPer Stack buffer and let it stop at capacity.",
+          "type": "string"
+        },
+        {
+          "const": "sampling_unexpected_stop",
+          "description": "Observe an unclassified early SNOOPer stop.",
+          "type": "string"
+        },
+        {
+          "const": "trace32_disconnect",
+          "description": "Disconnect TRACE32 during a fixed operation.",
+          "type": "string"
+        },
+        {
+          "const": "driver_disconnect",
+          "description": "Disconnect the deployment driver during a fixed operation.",
+          "type": "string"
+        },
+        {
+          "const": "cmm_abort",
+          "description": "Abort the active CMM transaction through the fixed t32mcp abort flow.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetAdapterScenarioSelectionSchemaVersion": {
+      "description": "Supported target-adapter scenario-selection schema.",
+      "oneOf": [
+        {
+          "const": "t32perf.target-adapter-scenario/v1",
+          "description": "Version 1.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.target-adapter-scenario/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Immutable deployment-owned selection of one compiled adapter scenario.",
+  "properties": {
+    "evidence_only": {
+      "description": "Whether this candidate-only selection is restricted to evidence capture.",
+      "type": "boolean"
+    },
+    "scenario": {
+      "$ref": "#/$defs/TargetAdapterScenario",
+      "description": "Closed compiled scenario identifier."
+    },
+    "schema": {
+      "$ref": "#/$defs/TargetAdapterScenarioSelectionSchemaVersion",
+      "description": "Versioned selection document family."
+    }
+  },
+  "required": [
+    "schema",
+    "scenario",
+    "evidence_only"
+  ],
+  "title": "TargetAdapterScenarioSelection",
+  "type": "object"
+}

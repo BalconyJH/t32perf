@@ -1,0 +1,50 @@
+{
+  "$defs": {
+    "PerformanceReportFormat": {
+      "description": "The only report serialization a performance run may request.",
+      "oneOf": [
+        {
+          "const": "perfetto_json",
+          "description": "The immutable Perfetto JSON report artifact.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.performance-run-request/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Strict caller-owned input for a complete performance run.",
+  "properties": {
+    "duration_ns": {
+      "description": "Requested capture duration. The adapter may impose a stricter bound.",
+      "format": "uint64",
+      "minimum": 1,
+      "type": "integer"
+    },
+    "report_format": {
+      "$ref": "#/$defs/PerformanceReportFormat",
+      "description": "Closed report serialization choice."
+    },
+    "schema": {
+      "const": "t32perf.performance-run-request/v1",
+      "description": "Request schema identity.",
+      "type": "string"
+    },
+    "top": {
+      "description": "Maximum number of hotspot rows requested in the bounded summary.",
+      "format": "uint8",
+      "maximum": 100,
+      "minimum": 1,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema",
+    "duration_ns",
+    "top",
+    "report_format"
+  ],
+  "title": "PerformanceRunRequest",
+  "type": "object"
+}

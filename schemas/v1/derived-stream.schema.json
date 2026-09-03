@@ -1,0 +1,46 @@
+{
+  "$defs": {
+    "DerivedStreamEncoding": {
+      "description": "Physical encoding of a streaming derived-span artifact.",
+      "oneOf": [
+        {
+          "const": "ndjson",
+          "description": "One header JSON object followed by one [`FunctionSpan`] object per line.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.derived-stream/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Header written as the first record of a streaming derived-span artifact.",
+  "properties": {
+    "encoding": {
+      "$ref": "#/$defs/DerivedStreamEncoding",
+      "description": "The physical stream encoding."
+    },
+    "input_artifact_ids": {
+      "description": "Manifest artifact identifiers consumed by analysis.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "schema": {
+      "const": "t32perf.derived-stream/v1",
+      "description": "The derived-stream schema version.",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "The Session from which spans were derived.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "session_id",
+    "encoding"
+  ],
+  "title": "DerivedStreamHeader",
+  "type": "object"
+}

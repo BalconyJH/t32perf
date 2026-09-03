@@ -1,0 +1,2631 @@
+{
+  "$defs": {
+    "AnalysisReport": {
+      "description": "Versioned, human-facing analysis report metadata.\n\nThis is a non-authoritative, bounded presentation projection emitted by a\nreport surface such as the `summary` command. Stage integrity is established\nby [`crate::AnalysisStageReceipt`] and [`crate::AnalysisSummaryDocument`];\nlarge or independently versioned data remains in artifacts referenced by ID.",
+      "properties": {
+        "artifacts": {
+          "description": "References to the authoritative report artifacts.",
+          "items": {
+            "$ref": "#/$defs/ReportArtifactLink"
+          },
+          "type": "array"
+        },
+        "findings": {
+          "description": "Structured findings in presentation order.",
+          "items": {
+            "$ref": "#/$defs/ReportFinding"
+          },
+          "type": "array"
+        },
+        "generated_at": {
+          "description": "RFC 3339 report generation timestamp.",
+          "type": "string"
+        },
+        "health_verdict": {
+          "$ref": "#/$defs/HealthVerdict",
+          "description": "Health verdict that gates interpretation of the report."
+        },
+        "schema": {
+          "const": "t32perf.report/v1",
+          "description": "The report schema version.",
+          "type": "string"
+        },
+        "session_id": {
+          "description": "Session summarized by the report.",
+          "type": "string"
+        },
+        "summary": {
+          "$ref": "#/$defs/ReportSummary",
+          "description": "Compact capture and analysis counts."
+        },
+        "title": {
+          "description": "Human-readable report title.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema",
+        "session_id",
+        "generated_at",
+        "title",
+        "health_verdict",
+        "summary",
+        "findings",
+        "artifacts"
+      ],
+      "type": "object"
+    },
+    "Artifact": {
+      "description": "One immutable file artifact and its provenance.",
+      "properties": {
+        "id": {
+          "description": "Stable artifact identifier unique within the session.",
+          "type": "string"
+        },
+        "input_artifact_ids": {
+          "description": "Artifact identifiers consumed to produce this artifact.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "kind": {
+          "description": "Extensible artifact kind such as `raw_trace` or `perfetto`.",
+          "type": "string"
+        },
+        "media_type": {
+          "description": "IANA media type of the file.",
+          "type": "string"
+        },
+        "producer": {
+          "description": "Tool or stage identifier that produced the file.",
+          "type": "string"
+        },
+        "relative_path": {
+          "description": "Canonical path relative to the session directory.",
+          "maxLength": 1024,
+          "minLength": 1,
+          "pattern": "^(?=[\\u0020-\\u007E]+$)(?!/)(?!.*[<>:\"\\\\|?*])(?!.*//)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*/$)(?!.*[. ](?:/|$))(?!(?:.*?/)?(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Nn][Ii][Nn]\\$|[Cc][Oo][Nn][Oo][Uu][Tt]\\$|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9]) *(?:\\.[^/]*)?(?:/|$)).+$",
+          "type": "string"
+        },
+        "sha256": {
+          "description": "SHA-256 digest of the complete file.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "size_bytes": {
+          "description": "File size in bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "relative_path",
+        "media_type",
+        "size_bytes",
+        "sha256",
+        "producer",
+        "input_artifact_ids"
+      ],
+      "type": "object"
+    },
+    "CaptureInstrumentationConfig": {
+      "additionalProperties": false,
+      "description": "Target instrumentation method and independently measured incremental cost.",
+      "properties": {
+        "method": {
+          "description": "Versioned target-side API or marker method, such as `t32perf-c-wire/v1`.",
+          "type": "string"
+        },
+        "overhead": {
+          "$ref": "#/$defs/CaptureInstrumentationOverhead",
+          "description": "Controlled measurement used to quantify incremental instrumentation cost."
+        },
+        "transport": {
+          "description": "Versioned transport identity, such as `shared-memory-ring-buffer/v1`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "method",
+        "transport",
+        "overhead"
+      ],
+      "type": "object"
+    },
+    "CaptureInstrumentationOverhead": {
+      "additionalProperties": false,
+      "description": "One controlled measurement of target-side instrumentation overhead.\n\nThe incremental cost is `instrumented_duration_ns - baseline_duration_ns`.\nKeeping both source durations and the emitted-event count avoids a rounded\nfloating-point average in the authoritative contract.",
+      "properties": {
+        "baseline_duration_ns": {
+          "description": "Duration of the uninstrumented reference workload.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "emitted_event_count": {
+          "description": "Number of target events emitted during the instrumented workload.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "evidence_artifact_id": {
+          "description": "Immutable artifact containing raw measurement evidence.",
+          "type": "string"
+        },
+        "instrumented_duration_ns": {
+          "description": "Duration of the same workload with instrumentation enabled.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "measurement_method": {
+          "description": "Versioned benchmark or calibration procedure.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "measurement_method",
+        "baseline_duration_ns",
+        "instrumented_duration_ns",
+        "emitted_event_count",
+        "evidence_artifact_id"
+      ],
+      "type": "object"
+    },
+    "ComparisonVerdict": {
+      "description": "Capture-wide comparison verdict.",
+      "oneOf": [
+        {
+          "const": "improved",
+          "description": "At least one material improvement and no regression were found.",
+          "type": "string"
+        },
+        {
+          "const": "unchanged",
+          "description": "No material regression or improvement was found.",
+          "type": "string"
+        },
+        {
+          "const": "regressed",
+          "description": "At least one material regression was found.",
+          "type": "string"
+        },
+        {
+          "const": "inconclusive",
+          "description": "Health or metric support prevents strict comparison.",
+          "type": "string"
+        }
+      ]
+    },
+    "ContextCpuSummary": {
+      "description": "Virtual CPU time attributed to one execution context.",
+      "properties": {
+        "active_ns": {
+          "description": "Time during which this context was actually running on a core.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "context_id": {
+          "description": "Context dictionary identifier.",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ContextKind",
+          "description": "Context kind from the dictionary or analyzer inference."
+        }
+      },
+      "required": [
+        "context_id",
+        "kind",
+        "active_ns"
+      ],
+      "type": "object"
+    },
+    "ContextKind": {
+      "description": "The semantic kind of an execution context.",
+      "oneOf": [
+        {
+          "const": "task",
+          "description": "An RTOS task or thread.",
+          "type": "string"
+        },
+        {
+          "const": "isr",
+          "description": "An interrupt service routine context.",
+          "type": "string"
+        },
+        {
+          "const": "idle",
+          "description": "An idle execution context.",
+          "type": "string"
+        },
+        {
+          "const": "core",
+          "description": "A core-level context used when no finer attribution exists.",
+          "type": "string"
+        },
+        {
+          "const": "unknown",
+          "description": "A context whose precise kind is unavailable.",
+          "type": "string"
+        }
+      ]
+    },
+    "FunctionHotspot": {
+      "description": "Aggregated active-time metrics for a function and optional context.",
+      "properties": {
+        "avg_active_ns": {
+          "description": "Integer arithmetic mean active duration of one activation.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "context_id": {
+          "description": "Context dictionary identifier when the report is context-partitioned.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "count": {
+          "description": "Number of activations.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "function_id": {
+          "description": "Function dictionary identifier.",
+          "type": "string"
+        },
+        "inclusive_active_ns": {
+          "description": "Inclusive active time across all activations.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "incomplete_count": {
+          "description": "Number of activations reconstructed from incomplete boundaries.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "max_active_ns": {
+          "description": "Maximum active duration of one activation.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "min_active_ns": {
+          "description": "Minimum active duration of one activation.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "quality": {
+          "$ref": "#/$defs/Quality",
+          "description": "Evidence quality of this aggregate."
+        },
+        "self_active_ns": {
+          "description": "Self active time across all activations.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "function_id",
+        "inclusive_active_ns",
+        "self_active_ns",
+        "count",
+        "min_active_ns",
+        "max_active_ns",
+        "avg_active_ns",
+        "incomplete_count",
+        "quality"
+      ],
+      "type": "object"
+    },
+    "HealthSeverity": {
+      "description": "Severity assigned to a host-policy issue.",
+      "oneOf": [
+        {
+          "const": "info",
+          "description": "Informational evidence that does not reduce trust.",
+          "type": "string"
+        },
+        {
+          "const": "warning",
+          "description": "A warning that may constrain interpretation.",
+          "type": "string"
+        },
+        {
+          "const": "error",
+          "description": "A serious problem that invalidates affected quantitative conclusions.",
+          "type": "string"
+        },
+        {
+          "const": "fatal",
+          "description": "A capture-wide failure that makes the trace unusable.",
+          "type": "string"
+        }
+      ]
+    },
+    "HealthVerdict": {
+      "description": "Host-policy verdict for the trustworthiness of a capture.",
+      "oneOf": [
+        {
+          "const": "VALID",
+          "description": "Quantitative results and strict comparisons are permitted.",
+          "type": "string"
+        },
+        {
+          "const": "DEGRADED",
+          "description": "Timeline inspection is permitted, but strict comparison is not.",
+          "type": "string"
+        },
+        {
+          "const": "INVALID",
+          "description": "Only diagnostic output is trustworthy.",
+          "type": "string"
+        }
+      ]
+    },
+    "MetricSupportLevel": {
+      "description": "The support level for one analysis metric.",
+      "oneOf": [
+        {
+          "const": "exact",
+          "description": "The capture directly supports exact computation.",
+          "type": "string"
+        },
+        {
+          "const": "inferred",
+          "description": "The metric can be deterministically inferred with documented caveats.",
+          "type": "string"
+        },
+        {
+          "const": "statistical",
+          "description": "Only a statistical estimate is available.",
+          "type": "string"
+        },
+        {
+          "const": "unavailable",
+          "description": "The capture cannot support this metric.",
+          "type": "string"
+        }
+      ]
+    },
+    "PerfArtifactListEntry": {
+      "additionalProperties": false,
+      "description": "One paginated artifact-list row.",
+      "properties": {
+        "id": {
+          "description": "Artifact identity.",
+          "type": "string"
+        },
+        "input_artifact_ids": {
+          "description": "Bounded direct provenance inputs.",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 16,
+          "type": "array"
+        },
+        "input_artifact_ids_returned_count": {
+          "description": "Returned direct provenance-input count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "input_artifact_ids_total_count": {
+          "description": "Total direct provenance-input count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "input_artifact_ids_truncated": {
+          "description": "Whether provenance inputs were truncated.",
+          "type": "boolean"
+        },
+        "kind": {
+          "description": "Artifact kind.",
+          "type": "string"
+        },
+        "media_type": {
+          "description": "Media type.",
+          "type": "string"
+        },
+        "producer": {
+          "description": "Producer identity.",
+          "type": "string"
+        },
+        "relative_path": {
+          "description": "Canonical Session-relative path.",
+          "maxLength": 1024,
+          "minLength": 1,
+          "pattern": "^(?=[\\u0020-\\u007E]+$)(?!/)(?!.*[<>:\"\\\\|?*])(?!.*//)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*/$)(?!.*[. ](?:/|$))(?!(?:.*?/)?(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Nn][Ii][Nn]\\$|[Cc][Oo][Nn][Oo][Uu][Tt]\\$|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9]) *(?:\\.[^/]*)?(?:/|$)).+$",
+          "type": "string"
+        },
+        "sha256": {
+          "description": "Immutable SHA-256 digest.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "size_bytes": {
+          "description": "Immutable size.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "relative_path",
+        "media_type",
+        "size_bytes",
+        "sha256",
+        "producer",
+        "input_artifact_ids",
+        "input_artifact_ids_total_count",
+        "input_artifact_ids_returned_count",
+        "input_artifact_ids_truncated"
+      ],
+      "type": "object"
+    },
+    "PerfArtifactReference": {
+      "additionalProperties": false,
+      "description": "Stable artifact reference that never includes artifact contents.",
+      "properties": {
+        "id": {
+          "description": "Artifact identity.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Artifact kind.",
+          "type": "string"
+        },
+        "media_type": {
+          "description": "Media type.",
+          "type": "string"
+        },
+        "producer": {
+          "description": "Producer identity.",
+          "type": "string"
+        },
+        "relative_path": {
+          "description": "Canonical Session-relative path.",
+          "maxLength": 1024,
+          "minLength": 1,
+          "pattern": "^(?=[\\u0020-\\u007E]+$)(?!/)(?!.*[<>:\"\\\\|?*])(?!.*//)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*/$)(?!.*[. ](?:/|$))(?!(?:.*?/)?(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Nn][Ii][Nn]\\$|[Cc][Oo][Nn][Oo][Uu][Tt]\\$|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9]) *(?:\\.[^/]*)?(?:/|$)).+$",
+          "type": "string"
+        },
+        "sha256": {
+          "description": "Immutable SHA-256 digest.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "size_bytes": {
+          "description": "Immutable size.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "relative_path",
+        "media_type",
+        "size_bytes",
+        "sha256",
+        "producer"
+      ],
+      "type": "object"
+    },
+    "PerfCallDepthSummary": {
+      "additionalProperties": false,
+      "description": "Bounded maximum-call-depth projection.",
+      "properties": {
+        "context_id": {
+          "description": "Context containing the deepest path.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "deepest_path": {
+          "description": "Bounded deepest path.",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 100,
+          "type": "array"
+        },
+        "max_depth": {
+          "description": "Maximum reconstructed depth.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "path_truncated": {
+          "description": "Whether the path was truncated.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "max_depth",
+        "deepest_path",
+        "path_truncated"
+      ],
+      "type": "object"
+    },
+    "PerfCapturePhase": {
+      "description": "Capture phase reconstructed from immutable Controller artifacts.",
+      "oneOf": [
+        {
+          "const": "capabilities_required",
+          "description": "Capability evidence is required.",
+          "type": "string"
+        },
+        {
+          "const": "configure_required",
+          "description": "Trace configuration evidence is required.",
+          "type": "string"
+        },
+        {
+          "const": "start_required",
+          "description": "Capture-start evidence is required.",
+          "type": "string"
+        },
+        {
+          "const": "stop_required",
+          "description": "Workload completion and capture-stop evidence are required.",
+          "type": "string"
+        },
+        {
+          "const": "health_required",
+          "description": "Hardware-health evidence is required.",
+          "type": "string"
+        },
+        {
+          "const": "export_required",
+          "description": "Raw trace export is required.",
+          "type": "string"
+        },
+        {
+          "const": "cleanup_required",
+          "description": "Adapter-owned SNOOPer state must be restored.",
+          "type": "string"
+        },
+        {
+          "const": "capture_complete",
+          "description": "The Controller capture chain is complete.",
+          "type": "string"
+        }
+      ]
+    },
+    "PerfCollectCall": {
+      "additionalProperties": false,
+      "description": "Exact no-argument collect call returned to the trusted MCP caller.",
+      "properties": {
+        "arguments": {
+          "$ref": "#/$defs/PerfNoArguments",
+          "description": "Empty tool arguments."
+        },
+        "tool": {
+          "$ref": "#/$defs/PerfMcpTool",
+          "description": "Official tool identifier."
+        }
+      },
+      "required": [
+        "tool",
+        "arguments"
+      ],
+      "type": "object"
+    },
+    "PerfComparePayload": {
+      "additionalProperties": false,
+      "description": "Typed result of `perf_compare`.",
+      "properties": {
+        "inconclusive_allowed": {
+          "description": "Whether inconclusive was accepted as a zero exit code.",
+          "type": "boolean"
+        },
+        "policy": {
+          "$ref": "#/$defs/PerfComparisonPolicySource",
+          "description": "Sanitized policy source."
+        },
+        "report": {
+          "$ref": "#/$defs/PerfComparisonSummary",
+          "description": "Bounded summary without arbitrary comparison rows."
+        },
+        "report_artifact": {
+          "$ref": "#/$defs/PerfComparisonArtifactReference",
+          "description": "Authoritative full report reference."
+        },
+        "verdict": {
+          "$ref": "#/$defs/ComparisonVerdict",
+          "description": "Overall verdict."
+        }
+      },
+      "required": [
+        "policy",
+        "verdict",
+        "inconclusive_allowed",
+        "report",
+        "report_artifact"
+      ],
+      "type": "object"
+    },
+    "PerfComparisonArtifactReference": {
+      "additionalProperties": false,
+      "description": "Content-addressed control-plane comparison artifact reference.",
+      "properties": {
+        "control_path": {
+          "description": "Artifact-root-relative control path.",
+          "type": "string"
+        },
+        "policy_sha256": {
+          "description": "Exact comparison-policy digest.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "publication": {
+          "description": "Publication class.",
+          "type": "string"
+        },
+        "schema": {
+          "description": "Comparison-artifact schema identity.",
+          "type": "string"
+        },
+        "sha256": {
+          "description": "Immutable content digest.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "size_bytes": {
+          "description": "Immutable size.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "schema",
+        "control_path",
+        "sha256",
+        "size_bytes",
+        "policy_sha256",
+        "publication"
+      ],
+      "type": "object"
+    },
+    "PerfComparisonOutcomeCounts": {
+      "additionalProperties": false,
+      "description": "Complete outcome-count projection for a comparison.",
+      "properties": {
+        "metrics": {
+          "$ref": "#/$defs/PerfOutcomeCounts",
+          "description": "Function and execution metric rows."
+        },
+        "resource_metrics": {
+          "$ref": "#/$defs/PerfResourceOutcomeCounts",
+          "description": "Resource metric rows."
+        },
+        "static_ram_metrics": {
+          "$ref": "#/$defs/PerfOutcomeCounts",
+          "description": "Static-RAM metric rows."
+        }
+      },
+      "required": [
+        "metrics",
+        "resource_metrics",
+        "static_ram_metrics"
+      ],
+      "type": "object"
+    },
+    "PerfComparisonPolicyKind": {
+      "description": "Kind of comparison-policy source accepted by the bounded façade.",
+      "oneOf": [
+        {
+          "const": "named",
+          "description": "Built-in named policy.",
+          "type": "string"
+        },
+        {
+          "const": "inline",
+          "description": "Inline bounded JSON policy.",
+          "type": "string"
+        },
+        {
+          "const": "file",
+          "description": "Bounded policy file.",
+          "type": "string"
+        }
+      ]
+    },
+    "PerfComparisonPolicySource": {
+      "additionalProperties": false,
+      "description": "Sanitized comparison-policy source description.",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/PerfComparisonPolicyKind",
+          "description": "Policy-source kind."
+        },
+        "name": {
+          "description": "Built-in policy name when `kind` is named.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "type": "object"
+    },
+    "PerfComparisonSummary": {
+      "additionalProperties": false,
+      "description": "Bounded comparison summary; full rows remain in the control artifact.",
+      "properties": {
+        "baseline_health": {
+          "$ref": "#/$defs/HealthVerdict",
+          "description": "Baseline health verdict."
+        },
+        "baseline_session_id": {
+          "description": "Baseline Session.",
+          "type": "string"
+        },
+        "candidate_health": {
+          "$ref": "#/$defs/HealthVerdict",
+          "description": "Candidate health verdict."
+        },
+        "candidate_session_id": {
+          "description": "Candidate Session.",
+          "type": "string"
+        },
+        "metrics_total_count": {
+          "description": "Total ordinary metric-row count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "outcome_counts": {
+          "$ref": "#/$defs/PerfComparisonOutcomeCounts",
+          "description": "Complete outcome counts without inlining arbitrary rows."
+        },
+        "reasons": {
+          "description": "Bounded capture-wide reasons.",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 32,
+          "type": "array"
+        },
+        "reasons_returned_count": {
+          "description": "Returned reason count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "reasons_total_count": {
+          "description": "Total reason count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "reasons_truncated": {
+          "description": "Whether reasons were truncated.",
+          "type": "boolean"
+        },
+        "requested_top": {
+          "description": "Requested Top-N bound used by the internal projection.",
+          "format": "uint64",
+          "maximum": 100,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "resource_metrics_total_count": {
+          "description": "Total resource metric-row count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "schema": {
+          "const": "t32perf.comparison/v1",
+          "description": "Comparison schema version.",
+          "type": "string"
+        },
+        "static_ram_metrics_total_count": {
+          "description": "Total static-RAM metric-row count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "verdict": {
+          "$ref": "#/$defs/ComparisonVerdict",
+          "description": "Overall comparison verdict."
+        }
+      },
+      "required": [
+        "schema",
+        "baseline_session_id",
+        "candidate_session_id",
+        "baseline_health",
+        "candidate_health",
+        "verdict",
+        "requested_top",
+        "reasons",
+        "reasons_total_count",
+        "reasons_returned_count",
+        "reasons_truncated",
+        "metrics_total_count",
+        "resource_metrics_total_count",
+        "static_ram_metrics_total_count",
+        "outcome_counts"
+      ],
+      "type": "object"
+    },
+    "PerfControlPayload": {
+      "additionalProperties": false,
+      "description": "Typed response shared by capability and capture workflow operations.",
+      "properties": {
+        "capture_artifacts": {
+          "description": "Bounded capability/control/export artifact references.",
+          "items": {
+            "$ref": "#/$defs/Artifact"
+          },
+          "maxItems": 8,
+          "type": "array"
+        },
+        "capture_phase": {
+          "$ref": "#/$defs/PerfCapturePhase",
+          "description": "Reconstructed Controller capture phase."
+        },
+        "completed_operations": {
+          "description": "Completed operations in fixed sequence order.",
+          "items": {
+            "$ref": "#/$defs/PerfControllerOperation"
+          },
+          "maxItems": 8,
+          "type": "array"
+        },
+        "next_action": {
+          "$ref": "#/$defs/PerfNextAction",
+          "description": "The only permitted next action."
+        },
+        "pending_operation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PerfControllerOperation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Pending or newly prepared operation."
+        },
+        "request_artifact": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Artifact"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Immutable Controller request reference for a prepared transaction."
+        },
+        "session_id": {
+          "description": "Owning Session.",
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/SessionStatus",
+          "description": "Durable Session lifecycle state."
+        },
+        "status": {
+          "$ref": "#/$defs/PerfControlStatus",
+          "description": "Result of the current façade call."
+        },
+        "transaction_id": {
+          "description": "Pending or newly prepared transaction identity.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "session_id",
+        "state",
+        "capture_phase",
+        "status",
+        "completed_operations",
+        "capture_artifacts",
+        "next_action"
+      ],
+      "type": "object"
+    },
+    "PerfControlStatus": {
+      "description": "State of one façade call against the durable control workflow.",
+      "oneOf": [
+        {
+          "const": "prepared",
+          "description": "A new immutable transaction was prepared.",
+          "type": "string"
+        },
+        {
+          "const": "pending",
+          "description": "A transaction remains pending upstream.",
+          "type": "string"
+        },
+        {
+          "const": "operation_completed",
+          "description": "One pending transaction was accepted and committed.",
+          "type": "string"
+        },
+        {
+          "const": "capabilities_complete",
+          "description": "Capability discovery was already complete.",
+          "type": "string"
+        },
+        {
+          "const": "workload_required",
+          "description": "The caller must run its fixed workload before stop can be prepared.",
+          "type": "string"
+        },
+        {
+          "const": "control_complete",
+          "description": "The Controller capture chain completed and host processing is required.",
+          "type": "string"
+        }
+      ]
+    },
+    "PerfControllerOperation": {
+      "description": "Durable Controller operation exposed by the capture façade.",
+      "oneOf": [
+        {
+          "const": "perf_get_capabilities",
+          "description": "Capability discovery.",
+          "type": "string"
+        },
+        {
+          "const": "perf_configure",
+          "description": "Target-specific trace configuration.",
+          "type": "string"
+        },
+        {
+          "const": "perf_start",
+          "description": "Capture start.",
+          "type": "string"
+        },
+        {
+          "const": "perf_stop",
+          "description": "Capture stop.",
+          "type": "string"
+        },
+        {
+          "const": "perf_get_health",
+          "description": "Hardware-health retrieval.",
+          "type": "string"
+        },
+        {
+          "const": "perf_export",
+          "description": "Raw trace export.",
+          "type": "string"
+        },
+        {
+          "const": "perf_get_hotspots",
+          "description": "Host-processed hotspot request.",
+          "type": "string"
+        },
+        {
+          "const": "perf_cleanup",
+          "description": "Target-state cleanup.",
+          "type": "string"
+        }
+      ]
+    },
+    "PerfConvertPayload": {
+      "additionalProperties": false,
+      "description": "Typed result of `perf_convert`.",
+      "properties": {
+        "artifact": {
+          "$ref": "#/$defs/Artifact",
+          "description": "Immutable report artifact."
+        },
+        "format": {
+          "description": "Exact output format.",
+          "type": "string"
+        },
+        "health_verdict": {
+          "$ref": "#/$defs/HealthVerdict",
+          "description": "Validated health verdict."
+        },
+        "manifest_committed": {
+          "description": "Whether immutable manifest finalization completed.",
+          "type": "boolean"
+        },
+        "session_id": {
+          "description": "Owning Session.",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/SessionStatus",
+          "description": "Final Session status."
+        }
+      },
+      "required": [
+        "session_id",
+        "format",
+        "health_verdict",
+        "status",
+        "artifact",
+        "manifest_committed"
+      ],
+      "type": "object"
+    },
+    "PerfExecuteArguments": {
+      "additionalProperties": false,
+      "description": "Typed arguments for `execute_practice_skill`.",
+      "properties": {
+        "script_args": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Bounded Controller-owned script arguments.",
+          "type": "object"
+        },
+        "script_name": {
+          "description": "Fixed script filename.",
+          "type": "string"
+        },
+        "skill_name": {
+          "description": "Fixed logical skill name.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "skill_name",
+        "script_name",
+        "script_args"
+      ],
+      "type": "object"
+    },
+    "PerfExecuteCall": {
+      "additionalProperties": false,
+      "description": "Exact execute call returned to the trusted MCP caller.",
+      "properties": {
+        "arguments": {
+          "$ref": "#/$defs/PerfExecuteArguments",
+          "description": "Typed fixed-skill arguments."
+        },
+        "tool": {
+          "$ref": "#/$defs/PerfMcpTool",
+          "description": "Official tool identifier."
+        }
+      },
+      "required": [
+        "tool",
+        "arguments"
+      ],
+      "type": "object"
+    },
+    "PerfExecutionSummary": {
+      "additionalProperties": false,
+      "description": "Bounded execution-context summary.",
+      "properties": {
+        "idle_cpu_ns": {
+          "description": "Total idle CPU time.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "isr_count": {
+          "description": "Total ISR context count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "isr_cpu_ns": {
+          "description": "Total ISR CPU time.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "isrs": {
+          "description": "Top ISR contexts.",
+          "items": {
+            "$ref": "#/$defs/ContextCpuSummary"
+          },
+          "maxItems": 100,
+          "type": "array"
+        },
+        "task_count": {
+          "description": "Total Task context count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "task_cpu_ns": {
+          "description": "Total Task CPU time.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "tasks": {
+          "description": "Top Task contexts.",
+          "items": {
+            "$ref": "#/$defs/ContextCpuSummary"
+          },
+          "maxItems": 100,
+          "type": "array"
+        }
+      },
+      "required": [
+        "task_cpu_ns",
+        "isr_cpu_ns",
+        "idle_cpu_ns",
+        "task_count",
+        "isr_count",
+        "tasks",
+        "isrs"
+      ],
+      "type": "object"
+    },
+    "PerfGetStatusPayload": {
+      "additionalProperties": false,
+      "description": "Typed result of `perf_get_status`.",
+      "properties": {
+        "artifact_count": {
+          "description": "Number of registered artifacts.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "health_verdict": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HealthVerdict"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Validated health verdict when an analysis stage exists."
+        },
+        "manifest_committed": {
+          "description": "Whether immutable manifest finalization completed.",
+          "type": "boolean"
+        },
+        "session_id": {
+          "description": "Owning Session.",
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/SessionState",
+          "description": "Complete durable state document."
+        },
+        "trust_status": {
+          "$ref": "#/$defs/PerfTrustStatus",
+          "description": "Trust status derived from lifecycle and analysis artifacts."
+        }
+      },
+      "required": [
+        "session_id",
+        "state",
+        "manifest_committed",
+        "artifact_count",
+        "trust_status"
+      ],
+      "type": "object"
+    },
+    "PerfGetSummaryPayload": {
+      "additionalProperties": false,
+      "description": "Typed result of `perf_get_summary`.",
+      "properties": {
+        "artifact_references": {
+          "description": "Bounded immutable artifact references.",
+          "items": {
+            "$ref": "#/$defs/PerfArtifactReference"
+          },
+          "maxItems": 32,
+          "type": "array"
+        },
+        "capture": {
+          "$ref": "#/$defs/PerfSummaryCapture",
+          "description": "Capture provenance projection."
+        },
+        "health": {
+          "$ref": "#/$defs/PerfHealthSummary",
+          "description": "Bounded health projection."
+        },
+        "quantitative": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PerfQuantitativeSummary"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Quantitative Top-N projection for VALID analysis."
+        },
+        "quantitative_available": {
+          "description": "Whether quantitative rows are trusted and present.",
+          "type": "boolean"
+        },
+        "report": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnalysisReport"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Presentation report for VALID analysis."
+        },
+        "requested_top": {
+          "description": "Requested per-family Top-N bound.",
+          "format": "uint64",
+          "maximum": 100,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "session_id": {
+          "description": "Owning Session.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "session_id",
+        "requested_top",
+        "quantitative_available",
+        "health",
+        "capture",
+        "artifact_references"
+      ],
+      "type": "object"
+    },
+    "PerfHealthIssue": {
+      "additionalProperties": false,
+      "description": "Bounded issue returned by `perf_get_summary`.",
+      "properties": {
+        "artifact_id": {
+          "description": "Related artifact identity.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "code": {
+          "description": "Machine-readable issue code.",
+          "type": "string"
+        },
+        "end_ns": {
+          "description": "Affected interval end.",
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "message": {
+          "description": "Bounded diagnosis.",
+          "type": "string"
+        },
+        "record": {
+          "description": "Related source record.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "severity": {
+          "$ref": "#/$defs/HealthSeverity",
+          "description": "Policy severity."
+        },
+        "source": {
+          "description": "Component that produced the issue.",
+          "type": "string"
+        },
+        "start_ns": {
+          "description": "Affected interval start.",
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "code",
+        "severity",
+        "source",
+        "message"
+      ],
+      "type": "object"
+    },
+    "PerfHealthSummary": {
+      "additionalProperties": false,
+      "description": "Bounded health projection returned by the summary façade.",
+      "properties": {
+        "issue_count": {
+          "description": "Total issue count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "issues": {
+          "description": "Bounded issues.",
+          "items": {
+            "$ref": "#/$defs/PerfHealthIssue"
+          },
+          "maxItems": 64,
+          "type": "array"
+        },
+        "issues_returned": {
+          "description": "Returned issue count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "issues_truncated": {
+          "description": "Whether issues were truncated.",
+          "type": "boolean"
+        },
+        "metric_support": {
+          "$ref": "#/$defs/PerfMetricSupport",
+          "description": "Metric support under the same policy."
+        },
+        "observation_count": {
+          "description": "Raw health-observation count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "policy_version": {
+          "description": "Bounded policy identity.",
+          "type": "string"
+        },
+        "verdict": {
+          "$ref": "#/$defs/HealthVerdict",
+          "description": "Validated health verdict."
+        }
+      },
+      "required": [
+        "verdict",
+        "policy_version",
+        "observation_count",
+        "issue_count",
+        "issues_returned",
+        "issues_truncated",
+        "issues",
+        "metric_support"
+      ],
+      "type": "object"
+    },
+    "PerfHotspotSummary": {
+      "additionalProperties": false,
+      "description": "Bounded hotspot rows returned by the summary façade.",
+      "properties": {
+        "function_count": {
+          "description": "Total function-row count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "functions": {
+          "description": "Top function rows.",
+          "items": {
+            "$ref": "#/$defs/FunctionHotspot"
+          },
+          "maxItems": 100,
+          "type": "array"
+        },
+        "quality": {
+          "$ref": "#/$defs/Quality",
+          "description": "Aggregate evidence quality."
+        },
+        "sampling": {
+          "description": "Top sampling rows.",
+          "items": {
+            "$ref": "#/$defs/SamplingHotspot"
+          },
+          "maxItems": 100,
+          "type": "array"
+        },
+        "sampling_count": {
+          "description": "Total sampling-row count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "quality",
+        "function_count",
+        "sampling_count",
+        "functions",
+        "sampling"
+      ],
+      "type": "object"
+    },
+    "PerfListArtifactsPayload": {
+      "additionalProperties": false,
+      "description": "Typed result of `perf_list_artifacts`.",
+      "properties": {
+        "after": {
+          "description": "Exclusive cursor used for this page.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "artifacts": {
+          "description": "Bounded page rows.",
+          "items": {
+            "$ref": "#/$defs/PerfArtifactListEntry"
+          },
+          "maxItems": 1000,
+          "type": "array"
+        },
+        "limit": {
+          "description": "Requested page limit.",
+          "format": "uint64",
+          "maximum": 1000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "next_after": {
+          "description": "Cursor for the next page.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "returned_count": {
+          "description": "Returned row count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "session_id": {
+          "description": "Owning Session.",
+          "type": "string"
+        },
+        "total_count": {
+          "description": "Total artifact count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "truncated": {
+          "description": "Whether more rows remain.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "session_id",
+        "artifacts",
+        "total_count",
+        "returned_count",
+        "limit",
+        "truncated"
+      ],
+      "type": "object"
+    },
+    "PerfMcpTool": {
+      "description": "Exact official t32mcp tool named by one next action.",
+      "oneOf": [
+        {
+          "const": "execute_practice_skill",
+          "description": "Starts one fixed PRACTICE skill script.",
+          "type": "string"
+        },
+        {
+          "const": "collect_practice_skill_response",
+          "description": "Collects the globally active PRACTICE response.",
+          "type": "string"
+        }
+      ]
+    },
+    "PerfMetricSupport": {
+      "additionalProperties": false,
+      "description": "Complete metric-support projection returned by the summary façade.",
+      "properties": {
+        "active": {
+          "$ref": "#/$defs/PerfSupportEntry",
+          "description": "Active-time support."
+        },
+        "call_count": {
+          "$ref": "#/$defs/PerfSupportEntry",
+          "description": "Call-count support."
+        },
+        "elapsed": {
+          "$ref": "#/$defs/PerfSupportEntry",
+          "description": "Elapsed-time support."
+        },
+        "function_timeline": {
+          "$ref": "#/$defs/PerfSupportEntry",
+          "description": "Function timeline support."
+        },
+        "isr_timeline": {
+          "$ref": "#/$defs/PerfSupportEntry",
+          "description": "ISR timeline support."
+        },
+        "resource_counters": {
+          "$ref": "#/$defs/PerfSupportEntry",
+          "description": "Resource-counter support."
+        },
+        "self": {
+          "$ref": "#/$defs/PerfSupportEntry",
+          "description": "Self-time support."
+        },
+        "task_timeline": {
+          "$ref": "#/$defs/PerfSupportEntry",
+          "description": "Task timeline support."
+        }
+      },
+      "required": [
+        "function_timeline",
+        "call_count",
+        "elapsed",
+        "active",
+        "self",
+        "task_timeline",
+        "isr_timeline",
+        "resource_counters"
+      ],
+      "type": "object"
+    },
+    "PerfNextAction": {
+      "description": "The only next action permitted by one control response.",
+      "oneOf": [
+        {
+          "description": "Execute a newly prepared immutable Controller request.",
+          "properties": {
+            "kind": {
+              "const": "execute",
+              "type": "string"
+            },
+            "mcp": {
+              "$ref": "#/$defs/PerfExecuteCall",
+              "description": "Exact official MCP call."
+            },
+            "response_handoff": {
+              "$ref": "#/$defs/PerfResponseHandoff",
+              "description": "Controller-owned response destination."
+            }
+          },
+          "required": [
+            "kind",
+            "mcp",
+            "response_handoff"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "Collect the response of an already pending transaction.",
+          "properties": {
+            "abort_available": {
+              "description": "Whether the separate two-phase abort path remains available.",
+              "type": "boolean"
+            },
+            "kind": {
+              "const": "collect",
+              "type": "string"
+            },
+            "mcp": {
+              "$ref": "#/$defs/PerfCollectCall",
+              "description": "Exact official MCP collect call."
+            },
+            "response_handoff": {
+              "$ref": "#/$defs/PerfResponseHandoff",
+              "description": "Controller-owned response destination."
+            }
+          },
+          "required": [
+            "kind",
+            "mcp",
+            "response_handoff",
+            "abort_available"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "Invoke another exact host façade operation.",
+          "properties": {
+            "kind": {
+              "const": "invoke",
+              "type": "string"
+            },
+            "operation": {
+              "$ref": "#/$defs/PerfSurfaceOperation",
+              "description": "Exact operation to invoke."
+            },
+            "required_controller_operation": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/PerfControllerOperation"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Required low-level Controller operation, when applicable."
+            }
+          },
+          "required": [
+            "kind",
+            "operation"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "Run the target-specific workload before acknowledging completion.",
+          "properties": {
+            "kind": {
+              "const": "run_workload",
+              "type": "string"
+            },
+            "ownership": {
+              "description": "Component that owns workload execution.",
+              "type": "string"
+            },
+            "resume": {
+              "$ref": "#/$defs/PerfResumeAction",
+              "description": "Exact resumption call after workload completion."
+            }
+          },
+          "required": [
+            "kind",
+            "ownership",
+            "resume"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "The Controller has durably materialized the authoritative capture configuration.",
+          "properties": {
+            "capture_config": {
+              "$ref": "#/$defs/PerfArtifactReference",
+              "description": "Immutable host-derived capture configuration."
+            },
+            "kind": {
+              "const": "capture_config_ready",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "capture_config"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "PerfNoArguments": {
+      "additionalProperties": false,
+      "description": "Structurally empty MCP argument object.",
+      "type": "object"
+    },
+    "PerfOutcomeCounts": {
+      "additionalProperties": false,
+      "description": "Outcome counts for ordinary or static-RAM comparison rows.",
+      "properties": {
+        "improved": {
+          "description": "Improved rows.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "inconclusive": {
+          "description": "Inconclusive rows.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "regressed": {
+          "description": "Regressed rows.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "total": {
+          "description": "Total rows.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "unchanged": {
+          "description": "Unchanged rows.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "total",
+        "improved",
+        "unchanged",
+        "regressed",
+        "inconclusive"
+      ],
+      "type": "object"
+    },
+    "PerfQuantitativeSummary": {
+      "additionalProperties": false,
+      "description": "Health-gated quantitative part of `perf_get_summary`.",
+      "properties": {
+        "call_depth": {
+          "$ref": "#/$defs/PerfCallDepthSummary",
+          "description": "Maximum call-depth summary."
+        },
+        "execution": {
+          "$ref": "#/$defs/PerfExecutionSummary",
+          "description": "Task/ISR execution totals and Top-N rows."
+        },
+        "function_span_count": {
+          "description": "Reconstructed function-span count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "hotspots": {
+          "$ref": "#/$defs/PerfHotspotSummary",
+          "description": "Function and sampling hotspots."
+        },
+        "incomplete_function_span_count": {
+          "description": "Incomplete function-span count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "observation_count": {
+          "description": "Parsed observation count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "hotspots",
+        "execution",
+        "observation_count",
+        "function_span_count",
+        "incomplete_function_span_count",
+        "call_depth"
+      ],
+      "type": "object"
+    },
+    "PerfResourceOutcomeCounts": {
+      "additionalProperties": false,
+      "description": "Outcome counts for resource comparison rows.",
+      "properties": {
+        "improved": {
+          "description": "Improved rows.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "inconclusive": {
+          "description": "Inconclusive rows.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "informational": {
+          "description": "Informational rows.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "regressed": {
+          "description": "Regressed rows.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "total": {
+          "description": "Total rows.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "unchanged": {
+          "description": "Unchanged rows.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "total",
+        "improved",
+        "unchanged",
+        "regressed",
+        "inconclusive",
+        "informational"
+      ],
+      "type": "object"
+    },
+    "PerfResponseHandoff": {
+      "additionalProperties": false,
+      "description": "Controller-owned response-file handoff.",
+      "properties": {
+        "instruction": {
+          "description": "Bounded instruction for committing the final wrapper.",
+          "type": "string"
+        },
+        "max_bytes": {
+          "description": "Maximum accepted response bytes.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "path": {
+          "description": "Absolute response path allocated by the Controller.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "max_bytes",
+        "instruction"
+      ],
+      "type": "object"
+    },
+    "PerfResumeAction": {
+      "additionalProperties": false,
+      "description": "Explicit resume invocation after an externally owned workload.",
+      "properties": {
+        "arguments": {
+          "description": "Fixed arguments required by that invocation.",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 4,
+          "type": "array"
+        },
+        "operation": {
+          "$ref": "#/$defs/PerfSurfaceOperation",
+          "description": "Exact façade operation to invoke."
+        }
+      },
+      "required": [
+        "operation",
+        "arguments"
+      ],
+      "type": "object"
+    },
+    "PerfRunPayload": {
+      "additionalProperties": false,
+      "description": "Typed bounded response for `perf_run`.",
+      "properties": {
+        "health_verdict": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HealthVerdict"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Health projection when analysis has produced one."
+        },
+        "manifest_sha256": {
+          "description": "Digest of the final immutable session manifest.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "phase": {
+          "$ref": "#/$defs/PerformanceRunPhase",
+          "description": "Current run phase."
+        },
+        "report_artifact": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Artifact"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Immutable converted report reference; report bytes are never inlined."
+        },
+        "resumed": {
+          "description": "Whether this response resumed a prior durable run.",
+          "type": "boolean"
+        },
+        "session_id": {
+          "description": "Owning Session.",
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/SessionStatus",
+          "description": "Durable Session status."
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PerfRunSummary"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Bounded aggregate summary; never embeds raw observations or a report."
+        },
+        "trust_status": {
+          "$ref": "#/$defs/PerfTrustStatus",
+          "description": "Trust projection for completed analysis."
+        }
+      },
+      "required": [
+        "session_id",
+        "phase",
+        "state",
+        "trust_status",
+        "resumed"
+      ],
+      "type": "object"
+    },
+    "PerfRunSummary": {
+      "additionalProperties": false,
+      "description": "Small aggregate summary returned without inlining a report artifact.",
+      "properties": {
+        "hotspots_returned": {
+          "description": "Number of hotspot entries returned by a separately bounded summary.",
+          "format": "uint8",
+          "maximum": 100,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "hotspots_total": {
+          "description": "Total matching hotspot count before truncation.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "truncated": {
+          "description": "Whether the bounded result omitted additional hotspot rows.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "hotspots_returned",
+        "hotspots_total",
+        "truncated"
+      ],
+      "type": "object"
+    },
+    "PerfSummaryCapture": {
+      "additionalProperties": false,
+      "description": "Capture provenance projected into a bounded summary.",
+      "properties": {
+        "capture_config_artifact_id": {
+          "description": "Authoritative capture-config artifact identity.",
+          "type": "string"
+        },
+        "instrumentation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CaptureInstrumentationConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Target instrumentation and measured overhead, when used."
+        }
+      },
+      "required": [
+        "capture_config_artifact_id"
+      ],
+      "type": "object"
+    },
+    "PerfSupportEntry": {
+      "additionalProperties": false,
+      "description": "Bounded support entry returned by the summary façade.",
+      "properties": {
+        "reason_count": {
+          "description": "Total underlying reason count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "reasons": {
+          "description": "Bounded reasons.",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 8,
+          "type": "array"
+        },
+        "reasons_returned": {
+          "description": "Returned reason count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "reasons_truncated": {
+          "description": "Whether reasons were truncated.",
+          "type": "boolean"
+        },
+        "support": {
+          "$ref": "#/$defs/MetricSupportLevel",
+          "description": "Support level."
+        }
+      },
+      "required": [
+        "support",
+        "reason_count",
+        "reasons_returned",
+        "reasons_truncated",
+        "reasons"
+      ],
+      "type": "object"
+    },
+    "PerfSurfaceOperation": {
+      "description": "One exact operation exposed by the host-side performance façade.",
+      "oneOf": [
+        {
+          "const": "perf_capabilities",
+          "description": "Inspect or advance the capability-discovery phase.",
+          "type": "string"
+        },
+        {
+          "const": "perf_capture",
+          "description": "Inspect or advance the durable capture workflow.",
+          "type": "string"
+        },
+        {
+          "const": "perf_get_status",
+          "description": "Read one Session's durable state and trust summary.",
+          "type": "string"
+        },
+        {
+          "const": "perf_get_summary",
+          "description": "Read one bounded, health-gated quantitative summary.",
+          "type": "string"
+        },
+        {
+          "const": "perf_list_artifacts",
+          "description": "List bounded artifact references with cursor pagination.",
+          "type": "string"
+        },
+        {
+          "const": "perf_convert",
+          "description": "Convert one Session to a supported report format.",
+          "type": "string"
+        },
+        {
+          "const": "perf_compare",
+          "description": "Compare two completed Sessions under an explicit policy.",
+          "type": "string"
+        },
+        {
+          "const": "perf_run",
+          "description": "Run the closed provision-to-report workflow.",
+          "type": "string"
+        }
+      ]
+    },
+    "PerfTrustStatus": {
+      "description": "Trust state reported independently of the Session lifecycle enum.",
+      "oneOf": [
+        {
+          "const": "NOT_EVALUATED",
+          "description": "No completed analysis stage exists.",
+          "type": "string"
+        },
+        {
+          "const": "INCOMPLETE",
+          "description": "Lifecycle/artifact state is incomplete or inconsistent.",
+          "type": "string"
+        },
+        {
+          "const": "VALID",
+          "description": "Quantitative analysis is trusted.",
+          "type": "string"
+        },
+        {
+          "const": "DEGRADED",
+          "description": "Timeline-only diagnostic use is allowed.",
+          "type": "string"
+        },
+        {
+          "const": "INVALID",
+          "description": "Only diagnostic output is allowed.",
+          "type": "string"
+        }
+      ]
+    },
+    "PerformanceRunPhase": {
+      "description": "Durable phase of a complete performance run.",
+      "oneOf": [
+        {
+          "const": "provision",
+          "description": "Firmware/resource provisioning is in progress.",
+          "type": "string"
+        },
+        {
+          "const": "control",
+          "description": "Target control and capture are in progress.",
+          "type": "string"
+        },
+        {
+          "const": "normalize",
+          "description": "Raw trace is being normalized.",
+          "type": "string"
+        },
+        {
+          "const": "attest",
+          "description": "Capture evidence is being attested.",
+          "type": "string"
+        },
+        {
+          "const": "analyze",
+          "description": "Normalized data is being analyzed.",
+          "type": "string"
+        },
+        {
+          "const": "convert",
+          "description": "Report conversion is in progress.",
+          "type": "string"
+        },
+        {
+          "const": "complete",
+          "description": "All requested artifacts are durable.",
+          "type": "string"
+        }
+      ]
+    },
+    "Quality": {
+      "description": "Describes how directly a value is supported by the captured trace.",
+      "oneOf": [
+        {
+          "const": "exact",
+          "description": "The trace directly and completely determines the value.",
+          "type": "string"
+        },
+        {
+          "const": "inferred",
+          "description": "The value is reconstructed from incomplete but deterministic evidence.",
+          "type": "string"
+        },
+        {
+          "const": "statistical",
+          "description": "The value is an estimate obtained from statistical samples.",
+          "type": "string"
+        }
+      ]
+    },
+    "ReportArtifactLink": {
+      "description": "A reference from a report to a manifest artifact.",
+      "properties": {
+        "artifact_id": {
+          "description": "Referenced manifest artifact identifier.",
+          "type": "string"
+        },
+        "role": {
+          "description": "Artifact role in the report, such as `timeline`, `health`, or `hotspots`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "role"
+      ],
+      "type": "object"
+    },
+    "ReportFinding": {
+      "description": "One structured report finding.",
+      "properties": {
+        "code": {
+          "description": "Stable machine-readable finding code.",
+          "type": "string"
+        },
+        "evidence": {
+          "additionalProperties": true,
+          "description": "Structured values supporting the finding.",
+          "type": "object"
+        },
+        "message": {
+          "description": "Concise finding explanation.",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/$defs/HealthSeverity",
+          "description": "Finding severity."
+        },
+        "title": {
+          "description": "Short finding title.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "severity",
+        "title",
+        "message",
+        "evidence"
+      ],
+      "type": "object"
+    },
+    "ReportSummary": {
+      "description": "Compact summary embedded in a human-facing report.",
+      "properties": {
+        "capture_duration_ns": {
+          "description": "Wall-clock capture duration when known.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "comparison_verdict": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ComparisonVerdict"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Comparison verdict when the report includes a comparison artifact."
+        },
+        "function_span_count": {
+          "description": "Number of reconstructed function spans.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "sample_count": {
+          "description": "Number of statistical samples.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "function_span_count",
+        "sample_count"
+      ],
+      "type": "object"
+    },
+    "SamplingHotspot": {
+      "description": "Statistical hotspot data obtained from program-counter samples.",
+      "properties": {
+        "address": {
+          "description": "Raw sampled address when no function resolution is available.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "context_id": {
+          "description": "Context identifier when the report is context-partitioned.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "estimated_share": {
+          "description": "Estimated fraction of represented samples in the inclusive range 0 to 1.",
+          "format": "double",
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        "function_id": {
+          "description": "Resolved function identifier when available.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "quality": {
+          "$ref": "#/$defs/Quality",
+          "description": "Evidence quality, normally [`Quality::Statistical`]."
+        },
+        "sample_count": {
+          "description": "Number of samples attributed to this row.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "sample_count",
+        "estimated_share",
+        "quality"
+      ],
+      "type": "object"
+    },
+    "SessionError": {
+      "description": "Structured terminal failure stored in durable session state.",
+      "properties": {
+        "code": {
+          "description": "Stable machine-readable error code.",
+          "type": "string"
+        },
+        "details": {
+          "additionalProperties": true,
+          "description": "Structured diagnostic details.",
+          "type": "object"
+        },
+        "message": {
+          "description": "Concise human-readable error message.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "type": "object"
+    },
+    "SessionState": {
+      "description": "Atomically replaced durable state for one session operation.",
+      "properties": {
+        "created_at": {
+          "description": "RFC 3339 timestamp at which the Session was created.",
+          "type": "string"
+        },
+        "error": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SessionError"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Terminal failure detail, present only for [`SessionStatus::Failed`]."
+        },
+        "operation_id": {
+          "description": "Identifier of the operation owning this state sequence.",
+          "type": "string"
+        },
+        "revision": {
+          "description": "Monotonically increasing state revision.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "schema": {
+          "const": "t32perf.state/v1",
+          "description": "The state schema version.",
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/SessionStatus",
+          "description": "Current lifecycle status."
+        },
+        "updated_at": {
+          "description": "RFC 3339 timestamp of the latest durable update.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema",
+        "created_at",
+        "state",
+        "operation_id",
+        "revision",
+        "updated_at"
+      ],
+      "type": "object"
+    },
+    "SessionStatus": {
+      "description": "Durable lifecycle status of a session.",
+      "oneOf": [
+        {
+          "const": "created",
+          "description": "The session directory and initial metadata exist.",
+          "type": "string"
+        },
+        {
+          "const": "capturing",
+          "description": "Trace capture is in progress.",
+          "type": "string"
+        },
+        {
+          "const": "captured",
+          "description": "Trace capture completed and raw artifacts are durable.",
+          "type": "string"
+        },
+        {
+          "const": "processing",
+          "description": "Host-side normalization or analysis is in progress.",
+          "type": "string"
+        },
+        {
+          "const": "complete",
+          "description": "All requested artifacts completed successfully.",
+          "type": "string"
+        },
+        {
+          "const": "failed",
+          "description": "The current operation failed.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.perf-surface/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Versioned result returned by every exact `perf_*` host operation.",
+  "oneOf": [
+    {
+      "description": "Capability workflow response.",
+      "properties": {
+        "operation": {
+          "const": "perf_capabilities",
+          "type": "string"
+        },
+        "payload": {
+          "$ref": "#/$defs/PerfControlPayload"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "Capture workflow response.",
+      "properties": {
+        "operation": {
+          "const": "perf_capture",
+          "type": "string"
+        },
+        "payload": {
+          "$ref": "#/$defs/PerfControlPayload"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "Session status response.",
+      "properties": {
+        "operation": {
+          "const": "perf_get_status",
+          "type": "string"
+        },
+        "payload": {
+          "$ref": "#/$defs/PerfGetStatusPayload"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "Bounded analysis-summary response.",
+      "properties": {
+        "operation": {
+          "const": "perf_get_summary",
+          "type": "string"
+        },
+        "payload": {
+          "$ref": "#/$defs/PerfGetSummaryPayload"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "Paginated artifact-list response.",
+      "properties": {
+        "operation": {
+          "const": "perf_list_artifacts",
+          "type": "string"
+        },
+        "payload": {
+          "$ref": "#/$defs/PerfListArtifactsPayload"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "Report conversion response.",
+      "properties": {
+        "operation": {
+          "const": "perf_convert",
+          "type": "string"
+        },
+        "payload": {
+          "$ref": "#/$defs/PerfConvertPayload"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "Cross-session comparison response.",
+      "properties": {
+        "operation": {
+          "const": "perf_compare",
+          "type": "string"
+        },
+        "payload": {
+          "$ref": "#/$defs/PerfComparePayload"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "Closed performance-run workflow response.",
+      "properties": {
+        "operation": {
+          "const": "perf_run",
+          "type": "string"
+        },
+        "payload": {
+          "$ref": "#/$defs/PerfRunPayload"
+        }
+      },
+      "required": [
+        "operation",
+        "payload"
+      ],
+      "type": "object"
+    }
+  ],
+  "properties": {
+    "schema": {
+      "const": "t32perf.perf-surface/v1",
+      "description": "The façade schema version.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema"
+  ],
+  "title": "PerfSurfaceEnvelope",
+  "type": "object",
+  "unevaluatedProperties": false
+}

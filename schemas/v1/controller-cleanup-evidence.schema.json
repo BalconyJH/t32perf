@@ -1,0 +1,65 @@
+{
+  "$defs": {
+    "ControllerCleanupEvidenceSchemaVersion": {
+      "description": "Supported cleanup-evidence schema version.",
+      "oneOf": [
+        {
+          "const": "t32perf.controller-cleanup-evidence/v1",
+          "description": "The only supported version or operation marker.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerCleanupOperation": {
+      "description": "Fixed target-cleanup operation marker.",
+      "oneOf": [
+        {
+          "const": "perf_cleanup",
+          "description": "The only supported version or operation marker.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.controller-cleanup-evidence/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Versioned evidence produced by a successful target-cleanup operation.",
+  "properties": {
+    "adapter_state_restored": {
+      "description": "Must be true only after adapter-owned capture state was restored.",
+      "type": "boolean"
+    },
+    "binding_sha256": {
+      "description": "Exact controller binding echoed by the adapter.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "files_deleted": {
+      "description": "Must always be false; cleanup never deletes Session files.",
+      "type": "boolean"
+    },
+    "operation": {
+      "$ref": "#/$defs/ControllerCleanupOperation",
+      "description": "Fixed operation marker."
+    },
+    "schema": {
+      "$ref": "#/$defs/ControllerCleanupEvidenceSchemaVersion",
+      "description": "Versioned document family."
+    },
+    "target_state_restored": {
+      "description": "Must be true only after the adapter restored its target-state contract.",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "schema",
+    "operation",
+    "binding_sha256",
+    "adapter_state_restored",
+    "target_state_restored",
+    "files_deleted"
+  ],
+  "title": "ControllerCleanupEvidence",
+  "type": "object"
+}

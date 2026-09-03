@@ -1,0 +1,164 @@
+{
+  "$defs": {
+    "FunctionSpan": {
+      "description": "A reconstructed function activation.",
+      "properties": {
+        "active_ns": {
+          "description": "Time for which this activation was executing, including active children.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "context_id": {
+          "description": "Execution context to which the activation belongs.",
+          "type": "string"
+        },
+        "core_id": {
+          "description": "Core on which the activation ran.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "elapsed_ns": {
+          "description": "Wall-clock time from start to end.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "end_ns": {
+          "description": "Session-relative end timestamp.",
+          "format": "int64",
+          "type": "integer"
+        },
+        "frame_id": {
+          "description": "Adapter-provided activation identifier when available.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "function_id": {
+          "description": "Function dictionary identifier.",
+          "type": "string"
+        },
+        "incomplete": {
+          "description": "Whether one or both span boundaries required incomplete-trace recovery.",
+          "type": "boolean"
+        },
+        "preempted_ns": {
+          "description": "Time for which this activation was preempted or descheduled.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "quality": {
+          "$ref": "#/$defs/Quality",
+          "description": "Evidence quality of the reconstructed span."
+        },
+        "self_active_ns": {
+          "description": "Active time excluding active child function spans.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "source_id": {
+          "description": "Source stream that supplied the activation evidence.",
+          "type": "string"
+        },
+        "source_seq_end": {
+          "description": "Last source sequence contributing to the span.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "source_seq_start": {
+          "description": "First source sequence contributing to the span.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "start_ns": {
+          "description": "Session-relative start timestamp.",
+          "format": "int64",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "source_id",
+        "core_id",
+        "context_id",
+        "function_id",
+        "start_ns",
+        "end_ns",
+        "elapsed_ns",
+        "active_ns",
+        "self_active_ns",
+        "preempted_ns",
+        "quality",
+        "incomplete"
+      ],
+      "type": "object"
+    },
+    "Quality": {
+      "description": "Describes how directly a value is supported by the captured trace.",
+      "oneOf": [
+        {
+          "const": "exact",
+          "description": "The trace directly and completely determines the value.",
+          "type": "string"
+        },
+        {
+          "const": "inferred",
+          "description": "The value is reconstructed from incomplete but deterministic evidence.",
+          "type": "string"
+        },
+        {
+          "const": "statistical",
+          "description": "The value is an estimate obtained from statistical samples.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.derived/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Derived host-side event data for one session.",
+  "properties": {
+    "function_spans": {
+      "description": "Reconstructed function activations.",
+      "items": {
+        "$ref": "#/$defs/FunctionSpan"
+      },
+      "type": "array"
+    },
+    "input_artifact_ids": {
+      "description": "Manifest artifact identifiers used as analysis inputs.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "schema": {
+      "const": "t32perf.derived/v1",
+      "description": "The derived-data schema version.",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "The session from which this data was derived.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "session_id",
+    "function_spans"
+  ],
+  "title": "DerivedDocument",
+  "type": "object"
+}

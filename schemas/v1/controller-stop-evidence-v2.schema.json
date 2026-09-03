@@ -1,0 +1,119 @@
+{
+  "$defs": {
+    "ControllerSamplingPreStopState": {
+      "description": "SNOOPer state captured immediately before explicit `SNOOPer.OFF`.",
+      "oneOf": [
+        {
+          "const": "arm",
+          "description": "Sampling was still armed when stop was requested.",
+          "type": "string"
+        },
+        {
+          "const": "break",
+          "description": "Sampling had stopped before the request, requiring reason classification.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerStopEvidenceV2SchemaVersion": {
+      "description": "Supported statistical-sampling stop-evidence schema version.",
+      "oneOf": [
+        {
+          "const": "t32perf.controller-stop-evidence/v2",
+          "description": "The only supported version or operation marker.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerStopOperation": {
+      "description": "Fixed capture-stop operation marker.",
+      "oneOf": [
+        {
+          "const": "perf_stop",
+          "description": "The only supported version or operation marker.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerTargetState": {
+      "description": "Target execution state observed by a verified adapter.",
+      "oneOf": [
+        {
+          "const": "running",
+          "description": "The target was running.",
+          "type": "string"
+        },
+        {
+          "const": "halted",
+          "description": "The target was halted.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.controller-stop-evidence/v2",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Versioned stop evidence for a SNOOPer statistical capture.",
+  "properties": {
+    "binding_sha256": {
+      "description": "Exact controller binding echoed by the adapter.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "capacity_records": {
+      "description": "Fixed Stack capacity in records.",
+      "format": "uint64",
+      "minimum": 1,
+      "type": "integer"
+    },
+    "capture_stopped": {
+      "description": "Must be true only after explicit `SNOOPer.OFF` was verified.",
+      "type": "boolean"
+    },
+    "operation": {
+      "$ref": "#/$defs/ControllerStopOperation",
+      "description": "Fixed operation marker."
+    },
+    "pre_stop_state": {
+      "$ref": "#/$defs/ControllerSamplingPreStopState",
+      "description": "SNOOPer state captured before the OFF command."
+    },
+    "recorded_records": {
+      "description": "Records observed before OFF.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "schema": {
+      "$ref": "#/$defs/ControllerStopEvidenceV2SchemaVersion",
+      "description": "Versioned document family."
+    },
+    "target_state_after_stop": {
+      "$ref": "#/$defs/ControllerTargetState",
+      "description": "Target state after stop; the adapter never changes execution state itself."
+    },
+    "time_origin_zeroed_to_first_record": {
+      "description": "Whether SNOOPer.ZERO was set to the first retained record after OFF.",
+      "type": "boolean"
+    },
+    "workload_identity": {
+      "description": "Exact fixed workload/window identity.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "operation",
+    "binding_sha256",
+    "capture_stopped",
+    "workload_identity",
+    "target_state_after_stop",
+    "pre_stop_state",
+    "capacity_records",
+    "recorded_records",
+    "time_origin_zeroed_to_first_record"
+  ],
+  "title": "ControllerStopEvidenceV2",
+  "type": "object"
+}

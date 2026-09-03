@@ -1,0 +1,322 @@
+{
+  "$defs": {
+    "ControllerAbortReason": {
+      "description": "Bounded reasons for abandoning an external execution.",
+      "oneOf": [
+        {
+          "const": "timeout",
+          "description": "The external script exceeded its deployment deadline.",
+          "type": "string"
+        },
+        {
+          "const": "transport_failure",
+          "description": "The MCP transport failed before a final response was available.",
+          "type": "string"
+        },
+        {
+          "const": "operator_request",
+          "description": "An operator explicitly abandoned the transaction.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerBinding": {
+      "additionalProperties": false,
+      "description": "Fields cryptographically bound into every controller transaction.",
+      "properties": {
+        "binding_sha256": {
+          "description": "Digest of every preceding binding field with a versioned domain separator.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "nonce": {
+          "description": "Independent replay-prevention nonce.",
+          "type": "string"
+        },
+        "session_id": {
+          "description": "Session receiving the transaction artifacts.",
+          "type": "string"
+        },
+        "session_operation_id": {
+          "description": "Immutable operation identifier from Session state.",
+          "type": "string"
+        },
+        "session_request_sha256": {
+          "description": "Digest of the immutable Session request.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "transaction_id": {
+          "description": "Unique transaction identifier.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "session_id",
+        "session_operation_id",
+        "session_request_sha256",
+        "transaction_id",
+        "nonce",
+        "binding_sha256"
+      ],
+      "type": "object"
+    },
+    "ControllerDriverEventKind": {
+      "description": "Stable append-only event names emitted by the trusted host driver.",
+      "oneOf": [
+        {
+          "const": "dispatch_intent",
+          "description": "The immutable request is durably selected for upstream dispatch.",
+          "type": "string"
+        },
+        {
+          "const": "fault_intent",
+          "description": "The immutable fault action is durably selected for execution.",
+          "type": "string"
+        },
+        {
+          "const": "fault_triggered",
+          "description": "The selected one-shot fault action returned successfully.",
+          "type": "string"
+        },
+        {
+          "const": "abort_attempt",
+          "description": "The host is about to invoke the ownership-free upstream abort tool.",
+          "type": "string"
+        },
+        {
+          "const": "abort_success_observed",
+          "description": "The host observed a successful return from the upstream abort tool.",
+          "type": "string"
+        },
+        {
+          "const": "workload_intent",
+          "description": "The accepted Start workload is durably selected for execution.",
+          "type": "string"
+        },
+        {
+          "const": "workload_complete",
+          "description": "The accepted Start workload hook returned successfully.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerDriverEventSchemaVersion": {
+      "description": "Supported host-driver journal-event schema version.",
+      "oneOf": [
+        {
+          "const": "t32perf.controller-driver-event/v1",
+          "description": "Version 1.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerFaultAction": {
+      "description": "A closed deployment-owned fault action for one controller request.",
+      "oneOf": [
+        {
+          "const": "trace32_disconnect_at_stop",
+          "description": "Disconnect the TRACE32 endpoint at the fixed stop boundary.",
+          "type": "string"
+        },
+        {
+          "const": "driver_disconnect_at_export",
+          "description": "Disconnect the deployment driver at the fixed export boundary.",
+          "type": "string"
+        },
+        {
+          "const": "cmm_abort_at_start",
+          "description": "Invoke the official t32mcp abort flow at the fixed start boundary.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerTargetState": {
+      "description": "Target execution state observed by a verified adapter.",
+      "oneOf": [
+        {
+          "const": "running",
+          "description": "The target was running.",
+          "type": "string"
+        },
+        {
+          "const": "halted",
+          "description": "The target was halted.",
+          "type": "string"
+        }
+      ]
+    },
+    "PerfOperation": {
+      "description": "A fixed script operation exposed by the TRACE32 performance skill.",
+      "oneOf": [
+        {
+          "const": "perf_get_capabilities",
+          "description": "Capability discovery.",
+          "type": "string"
+        },
+        {
+          "const": "perf_configure",
+          "description": "Target-specific configuration.",
+          "type": "string"
+        },
+        {
+          "const": "perf_start",
+          "description": "Capture start.",
+          "type": "string"
+        },
+        {
+          "const": "perf_stop",
+          "description": "Capture stop.",
+          "type": "string"
+        },
+        {
+          "const": "perf_get_health",
+          "description": "Health retrieval.",
+          "type": "string"
+        },
+        {
+          "const": "perf_export",
+          "description": "Artifact export.",
+          "type": "string"
+        },
+        {
+          "const": "perf_get_hotspots",
+          "description": "Hotspot retrieval.",
+          "type": "string"
+        },
+        {
+          "const": "perf_cleanup",
+          "description": "Capture-state cleanup.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.controller-driver-event/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One deterministic append-only host-driver journal marker.\n\nThe marker is evidence of host intent or observation only. It never\nreplaces an accepted controller response or confirmed abort receipt.",
+  "properties": {
+    "abort_reason": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ControllerAbortReason"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Abort reason copied from the immutable abort plan for abort events."
+    },
+    "abort_request_artifact_id": {
+      "description": "Abort-plan artifact identifier for abort events.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "abort_request_artifact_sha256": {
+      "description": "Digest of the exact abort-plan bytes for abort events.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "binding": {
+      "$ref": "#/$defs/ControllerBinding",
+      "description": "Complete immutable controller transaction binding."
+    },
+    "event": {
+      "$ref": "#/$defs/ControllerDriverEventKind",
+      "description": "Stable event name used in the deterministic artifact identity."
+    },
+    "fault_action": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ControllerFaultAction"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Fault action selected by the immutable request, when present."
+    },
+    "initial_target_state": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ControllerTargetState"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Accepted initial target state for workload events."
+    },
+    "operation": {
+      "$ref": "#/$defs/PerfOperation",
+      "description": "Fixed controller operation selected by the immutable request."
+    },
+    "performance_run_deployment_binding_artifact_id": {
+      "description": "Immutable performance-run deployment binding artifact referenced by a\nworkload event.  The bound document carries the full deployment,\nworkload executable, and signer identities without exposing commands.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "performance_run_deployment_binding_artifact_sha256": {
+      "description": "Digest of the immutable deployment-binding artifact.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "performance_run_deployment_sha256": {
+      "description": "Digest covering the complete performance-run deployment block.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "request_artifact_id": {
+      "description": "Artifact identifier of the immutable controller request.",
+      "type": "string"
+    },
+    "request_artifact_sha256": {
+      "description": "Digest of the exact immutable controller request bytes.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "schema": {
+      "$ref": "#/$defs/ControllerDriverEventSchemaVersion",
+      "description": "Versioned document family."
+    },
+    "workload_executable_sha256": {
+      "description": "Digest of the executable that owns workload side effects.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "workload_identity": {
+      "description": "Accepted external workload identity for workload events.",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "schema",
+    "event",
+    "binding",
+    "request_artifact_id",
+    "request_artifact_sha256",
+    "operation"
+  ],
+  "title": "ControllerDriverEvent",
+  "type": "object"
+}

@@ -1,0 +1,90 @@
+{
+  "$defs": {
+    "ControllerHealthEvidenceSchemaVersion": {
+      "description": "Supported health-evidence schema version.",
+      "oneOf": [
+        {
+          "const": "t32perf.controller-health-evidence/v1",
+          "description": "The only supported version or operation marker.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerHealthOperation": {
+      "description": "Fixed hardware-health operation marker.",
+      "oneOf": [
+        {
+          "const": "perf_get_health",
+          "description": "The only supported version or operation marker.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.controller-health-evidence/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Versioned evidence produced by a successful hardware-health operation.",
+  "properties": {
+    "binding_sha256": {
+      "description": "Exact controller binding echoed by the adapter.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "capture_stopped": {
+      "description": "Must remain true while health is collected for an exportable capture.",
+      "type": "boolean"
+    },
+    "elf_matches_firmware": {
+      "description": "Whether the executing firmware matched the declared ELF.",
+      "type": "boolean"
+    },
+    "flow_error": {
+      "description": "Whether a flow error was observed.",
+      "type": "boolean"
+    },
+    "operation": {
+      "$ref": "#/$defs/ControllerHealthOperation",
+      "description": "Fixed operation marker."
+    },
+    "program_flow_closed": {
+      "description": "Whether the adapter's program-flow completeness check passed.",
+      "type": "boolean"
+    },
+    "schema": {
+      "$ref": "#/$defs/ControllerHealthEvidenceSchemaVersion",
+      "description": "Versioned document family."
+    },
+    "timestamp_discontinuity": {
+      "description": "Whether an unexplained timestamp discontinuity was observed.",
+      "type": "boolean"
+    },
+    "trace_gap": {
+      "description": "Whether a trace gap was observed.",
+      "type": "boolean"
+    },
+    "trace_overflow": {
+      "description": "Whether overflow was observed.",
+      "type": "boolean"
+    },
+    "truncated": {
+      "description": "Whether the raw capture or export was truncated.",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "schema",
+    "operation",
+    "binding_sha256",
+    "capture_stopped",
+    "trace_overflow",
+    "flow_error",
+    "trace_gap",
+    "truncated",
+    "timestamp_discontinuity",
+    "elf_matches_firmware",
+    "program_flow_closed"
+  ],
+  "title": "ControllerHealthEvidence",
+  "type": "object"
+}

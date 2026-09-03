@@ -1,0 +1,85 @@
+{
+  "$defs": {
+    "ControllerStartEvidenceSchemaVersion": {
+      "description": "Supported start-evidence schema version.",
+      "oneOf": [
+        {
+          "const": "t32perf.controller-start-evidence/v1",
+          "description": "The only supported version or operation marker.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerStartOperation": {
+      "description": "Fixed capture-start operation marker.",
+      "oneOf": [
+        {
+          "const": "perf_start",
+          "description": "The only supported version or operation marker.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerTargetState": {
+      "description": "Target execution state observed by a verified adapter.",
+      "oneOf": [
+        {
+          "const": "running",
+          "description": "The target was running.",
+          "type": "string"
+        },
+        {
+          "const": "halted",
+          "description": "The target was halted.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.controller-start-evidence/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Versioned evidence produced by a successful capture-start operation.",
+  "properties": {
+    "binding_sha256": {
+      "description": "Exact controller binding echoed by the adapter.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "capture_started": {
+      "description": "Must be true only after capture start was verified.",
+      "type": "boolean"
+    },
+    "initial_target_state": {
+      "$ref": "#/$defs/ControllerTargetState",
+      "description": "Target state observed when start was requested."
+    },
+    "operation": {
+      "$ref": "#/$defs/ControllerStartOperation",
+      "description": "Fixed operation marker."
+    },
+    "schema": {
+      "$ref": "#/$defs/ControllerStartEvidenceSchemaVersion",
+      "description": "Versioned document family."
+    },
+    "workload_identity": {
+      "description": "Exact fixed workload identity owned by the adapter.",
+      "type": "string"
+    },
+    "workload_owned": {
+      "description": "Must be true only when workload execution ownership is explicit.",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "schema",
+    "operation",
+    "binding_sha256",
+    "initial_target_state",
+    "capture_started",
+    "workload_owned",
+    "workload_identity"
+  ],
+  "title": "ControllerStartEvidence",
+  "type": "object"
+}

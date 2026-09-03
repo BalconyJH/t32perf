@@ -1,0 +1,114 @@
+{
+  "$defs": {
+    "StackUsageEntry": {
+      "additionalProperties": false,
+      "description": "One GCC `.su` function entry.",
+      "properties": {
+        "artifact_line": {
+          "description": "One-based `.su` artifact line containing this entry.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "bytes": {
+          "description": "Stack bytes with semantics determined by [`StackUsageEntry::kind`].",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "column": {
+          "description": "Source column recorded by GCC.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "file": {
+          "description": "Source file recorded by GCC.",
+          "maxLength": 4096,
+          "minLength": 1,
+          "type": "string"
+        },
+        "function": {
+          "description": "GCC function spelling, including any signature or qualification.",
+          "maxLength": 4096,
+          "minLength": 1,
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/StackUsageKind",
+          "description": "Static, dynamic, or bounded-dynamic semantics."
+        },
+        "line": {
+          "description": "Source line recorded by GCC.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "file",
+        "line",
+        "column",
+        "function",
+        "bytes",
+        "kind",
+        "artifact_line"
+      ],
+      "type": "object"
+    },
+    "StackUsageKind": {
+      "description": "GCC stack-usage qualifier semantics.",
+      "oneOf": [
+        {
+          "const": "static",
+          "description": "Fixed frame size; no dynamic stack adjustment occurs in the function.",
+          "type": "string"
+        },
+        {
+          "const": "dynamic",
+          "description": "Dynamic adjustment has no compile-time upper bound; bytes cover only the bounded part.",
+          "type": "string"
+        },
+        {
+          "const": "dynamic,bounded",
+          "description": "Dynamic adjustment is compile-time bounded; bytes are an upper bound of total usage.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.stack-usage-report/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Aggregate GCC stack-usage report.",
+  "properties": {
+    "functions": {
+      "description": "Function table in artifact order.",
+      "items": {
+        "$ref": "#/$defs/StackUsageEntry"
+      },
+      "maxItems": 100000,
+      "type": "array"
+    },
+    "maximum_static_bytes": {
+      "description": "Largest byte count among entries qualified exactly as `static`.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "schema": {
+      "const": "t32perf.stack-usage/gcc-stack-usage-v1",
+      "description": "Versioned report schema.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "functions"
+  ],
+  "title": "StackUsageReport",
+  "type": "object"
+}

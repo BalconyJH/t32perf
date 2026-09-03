@@ -1,0 +1,118 @@
+{
+  "$defs": {
+    "ControllerConfigureEvidenceSchemaVersion": {
+      "description": "Supported configuration-evidence schema version.",
+      "oneOf": [
+        {
+          "const": "t32perf.controller-configure-evidence/v1",
+          "description": "The only supported version or operation marker.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerConfigureOperation": {
+      "description": "Fixed configuration operation marker.",
+      "oneOf": [
+        {
+          "const": "perf_configure",
+          "description": "The only supported version or operation marker.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerTargetState": {
+      "description": "Target execution state observed by a verified adapter.",
+      "oneOf": [
+        {
+          "const": "running",
+          "description": "The target was running.",
+          "type": "string"
+        },
+        {
+          "const": "halted",
+          "description": "The target was halted.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.controller-configure-evidence/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Versioned evidence produced by a successful configuration operation.",
+  "properties": {
+    "binding_sha256": {
+      "description": "Exact controller binding echoed by the adapter.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "capture_mode": {
+      "description": "Exact selected capture mode.",
+      "type": "string"
+    },
+    "configuration_sha256": {
+      "description": "Semantic digest of the authoritative capture configuration.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "covered_cores": {
+      "description": "Cores configured for capture.",
+      "items": {
+        "format": "uint32",
+        "minimum": 0,
+        "type": "integer"
+      },
+      "maxItems": 256,
+      "minItems": 1,
+      "type": "array"
+    },
+    "filters_verified": {
+      "description": "Whether the fixed filter configuration was applied and verified.",
+      "type": "boolean"
+    },
+    "initial_target_state": {
+      "$ref": "#/$defs/ControllerTargetState",
+      "description": "Target state observed before configuration."
+    },
+    "operation": {
+      "$ref": "#/$defs/ControllerConfigureOperation",
+      "description": "Fixed operation marker."
+    },
+    "schema": {
+      "$ref": "#/$defs/ControllerConfigureEvidenceSchemaVersion",
+      "description": "Versioned document family."
+    },
+    "timestamp_enabled": {
+      "description": "Whether timestamps were configured.",
+      "type": "boolean"
+    },
+    "trace_sink": {
+      "description": "Exact selected trace sink.",
+      "type": "string"
+    },
+    "trigger_verified": {
+      "description": "Whether the fixed trigger configuration was applied and verified.",
+      "type": "boolean"
+    },
+    "workload_identity": {
+      "description": "Exact fixed workload identity selected by the authoritative configuration.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "operation",
+    "binding_sha256",
+    "configuration_sha256",
+    "capture_mode",
+    "trace_sink",
+    "timestamp_enabled",
+    "filters_verified",
+    "trigger_verified",
+    "initial_target_state",
+    "workload_identity",
+    "covered_cores"
+  ],
+  "title": "ControllerConfigureEvidence",
+  "type": "object"
+}

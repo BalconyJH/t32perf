@@ -1,0 +1,548 @@
+{
+  "$defs": {
+    "AdapterInfo": {
+      "description": "Capture-adapter identity recorded in a manifest.",
+      "properties": {
+        "id": {
+          "description": "Stable adapter identifier.",
+          "type": "string"
+        },
+        "version": {
+          "description": "Adapter contract or implementation version.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "type": "object"
+    },
+    "CaptureAttestationPayload": {
+      "additionalProperties": false,
+      "description": "Signed statement that binds trusted capture facts to one immutable observation artifact.",
+      "properties": {
+        "capture_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CaptureConfigArtifactClaim"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Exact immutable capture-configuration artifact covered by the signature."
+        },
+        "controller_health": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ControllerHealthArtifactClaim"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Exact controller-validated hardware-health evidence covered by the signature."
+        },
+        "key_id": {
+          "description": "Trust-policy key used to sign this statement.",
+          "type": "string"
+        },
+        "nonce": {
+          "description": "Unique Session operation identifier preventing cross-Session replay.",
+          "type": "string"
+        },
+        "observation_artifact_id": {
+          "description": "Observation artifact identifier covered by the signature.",
+          "type": "string"
+        },
+        "observation_sha256": {
+          "description": "Digest of the exact normalized observation bytes.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "receipt": {
+          "$ref": "#/$defs/CaptureReceipt",
+          "description": "Adapter-provided capture facts covered by the signature."
+        },
+        "schema": {
+          "const": "t32perf.capture-attestation/v1",
+          "description": "The capture-attestation schema version.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema",
+        "key_id",
+        "nonce",
+        "receipt",
+        "observation_artifact_id",
+        "observation_sha256"
+      ],
+      "type": "object"
+    },
+    "CaptureCapabilities": {
+      "description": "Evidence support for the observation families a capture can provide.",
+      "properties": {
+        "context_switches": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "RTOS or scheduler context-switch evidence."
+        },
+        "counters": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Numeric resource and application counters."
+        },
+        "custom_events": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Target-provided custom instant and span events."
+        },
+        "function_events": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Complete function enter/exit evidence."
+        },
+        "interrupt_events": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Interrupt enter/exit evidence."
+        },
+        "samples": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Statistical program-counter samples."
+        }
+      },
+      "required": [
+        "function_events",
+        "context_switches",
+        "interrupt_events",
+        "samples",
+        "custom_events",
+        "counters"
+      ],
+      "type": "object"
+    },
+    "CaptureConfigArtifactClaim": {
+      "additionalProperties": false,
+      "description": "Exact immutable claim for the capture configuration used to produce observations.",
+      "properties": {
+        "artifact_id": {
+          "description": "Registered capture-configuration artifact identifier.",
+          "type": "string"
+        },
+        "configuration_sha256": {
+          "description": "SHA-256 of the canonical configuration with its owning Session identity removed.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "sha256": {
+          "description": "SHA-256 of the exact registered configuration bytes.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "sha256",
+        "configuration_sha256"
+      ],
+      "type": "object"
+    },
+    "CaptureReceipt": {
+      "description": "Immutable controller-produced evidence describing one completed capture.",
+      "properties": {
+        "adapter": {
+          "$ref": "#/$defs/AdapterInfo",
+          "description": "Versioned adapter that produced the receipt."
+        },
+        "capabilities": {
+          "$ref": "#/$defs/CaptureCapabilities",
+          "description": "Evidence support for each observation family."
+        },
+        "capture_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CaptureConfigArtifactClaim"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Exact immutable configuration that governed this capture."
+        },
+        "clocks": {
+          "description": "Clock domains required to interpret timestamps.",
+          "items": {
+            "$ref": "#/$defs/ClockInfo"
+          },
+          "type": "array"
+        },
+        "controller_health": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ControllerHealthArtifactClaim"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Exact controller-validated hardware-health evidence covered by an external attestation."
+        },
+        "covered_cores": {
+          "description": "Cores for which the receipt claims coverage.",
+          "items": {
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        "firmware": {
+          "$ref": "#/$defs/FirmwareInfo",
+          "description": "Firmware identity bound to the capture."
+        },
+        "health_observations": {
+          "description": "Raw capture- and parser-health facts supplied to host policy.",
+          "items": {
+            "$ref": "#/$defs/HealthObservation"
+          },
+          "type": "array"
+        },
+        "mode": {
+          "description": "Capture mode, such as `etm`, `sampling`, or `instrumentation`.",
+          "type": "string"
+        },
+        "properties": {
+          "additionalProperties": true,
+          "description": "Adapter-specific, non-authoritative capture evidence.",
+          "type": "object"
+        },
+        "provider": {
+          "description": "Capture provider, such as `synthetic` or `trace32`.",
+          "type": "string"
+        },
+        "request_sha256": {
+          "description": "Digest of the immutable Session request.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "schema": {
+          "const": "t32perf.capture-receipt/v1",
+          "description": "The capture-receipt schema version.",
+          "type": "string"
+        },
+        "session_id": {
+          "description": "Session that owns this receipt and its artifacts.",
+          "type": "string"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TargetInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Target identity when known."
+        },
+        "trace32": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Trace32Info"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "TRACE32 installation and probe evidence when TRACE32 was used."
+        }
+      },
+      "required": [
+        "schema",
+        "session_id",
+        "provider",
+        "mode",
+        "adapter",
+        "firmware",
+        "capabilities",
+        "request_sha256"
+      ],
+      "type": "object"
+    },
+    "ClockInfo": {
+      "description": "A clock domain relevant to timestamp conversion or analysis.",
+      "properties": {
+        "frequency_hz": {
+          "description": "Clock frequency in hertz when known.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "id": {
+          "description": "Stable clock-domain identifier.",
+          "type": "string"
+        },
+        "properties": {
+          "additionalProperties": true,
+          "description": "Clock-specific metadata.",
+          "type": "object"
+        },
+        "source": {
+          "description": "Source or derivation of the frequency value.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "ControllerHealthArtifactClaim": {
+      "additionalProperties": false,
+      "description": "Exact immutable claim for controller-validated hardware-health evidence.",
+      "properties": {
+        "artifact_id": {
+          "description": "Registered controller health-evidence artifact identifier.",
+          "type": "string"
+        },
+        "sha256": {
+          "description": "SHA-256 of the exact registered evidence bytes.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "sha256"
+      ],
+      "type": "object"
+    },
+    "FirmwareInfo": {
+      "description": "Firmware identity used during a capture.",
+      "properties": {
+        "build_id": {
+          "description": "Firmware build identifier extracted from the image.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "elf_path": {
+          "description": "User-provided ELF path when disclosure is permitted.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "elf_sha256": {
+          "description": "SHA-256 digest of the ELF file.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "HealthObservation": {
+      "description": "A source fact consumed by the versioned host health policy.",
+      "properties": {
+        "artifact_id": {
+          "description": "Related manifest artifact identifier.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "code": {
+          "description": "Stable machine-readable observation code.",
+          "type": "string"
+        },
+        "end_ns": {
+          "description": "End of the affected session-relative interval.",
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "evidence": {
+          "additionalProperties": true,
+          "description": "Structured source evidence used by host policy.",
+          "type": "object"
+        },
+        "record": {
+          "description": "Related source record number.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "source": {
+          "description": "Adapter, parser, or analysis component that observed the fact.",
+          "type": "string"
+        },
+        "start_ns": {
+          "description": "Start of the affected session-relative interval.",
+          "format": "int64",
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "code",
+        "source",
+        "evidence"
+      ],
+      "type": "object"
+    },
+    "MetricSupportEntry": {
+      "description": "Support and explanatory reasons for one metric.",
+      "properties": {
+        "reasons": {
+          "description": "Stable or human-readable reasons for the declared level.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "support": {
+          "$ref": "#/$defs/MetricSupportLevel",
+          "description": "Available support level."
+        }
+      },
+      "required": [
+        "support",
+        "reasons"
+      ],
+      "type": "object"
+    },
+    "MetricSupportLevel": {
+      "description": "The support level for one analysis metric.",
+      "oneOf": [
+        {
+          "const": "exact",
+          "description": "The capture directly supports exact computation.",
+          "type": "string"
+        },
+        {
+          "const": "inferred",
+          "description": "The metric can be deterministically inferred with documented caveats.",
+          "type": "string"
+        },
+        {
+          "const": "statistical",
+          "description": "Only a statistical estimate is available.",
+          "type": "string"
+        },
+        {
+          "const": "unavailable",
+          "description": "The capture cannot support this metric.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetInfo": {
+      "description": "Target identity and capability metadata.",
+      "properties": {
+        "architecture": {
+          "description": "Target architecture name.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "board": {
+          "description": "Board name or revision.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "core_count": {
+          "description": "Number of traced processor cores.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "device": {
+          "description": "MCU, SoC, or device name.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "properties": {
+          "additionalProperties": true,
+          "description": "Adapter-specific target metadata.",
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "Trace32Info": {
+      "description": "TRACE32 installation and probe metadata.",
+      "properties": {
+        "architecture_package": {
+          "description": "Loaded TRACE32 architecture package.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "build": {
+          "description": "TRACE32 build identifier.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "probe": {
+          "description": "Probe model or serial-safe identifier.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "properties": {
+          "additionalProperties": true,
+          "description": "Additional TRACE32 metadata.",
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "$id": "t32perf.capture-attestation/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Ed25519-signed capture attestation supplied by an external trusted adapter.",
+  "properties": {
+    "payload": {
+      "$ref": "#/$defs/CaptureAttestationPayload",
+      "description": "Signed payload."
+    },
+    "signature_ed25519": {
+      "description": "Lowercase hexadecimal 64-byte Ed25519 signature.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "payload",
+    "signature_ed25519"
+  ],
+  "title": "CaptureAttestation",
+  "type": "object"
+}

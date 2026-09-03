@@ -1,0 +1,386 @@
+{
+  "$defs": {
+    "DebuggerHotspotLocation": {
+      "additionalProperties": false,
+      "description": "One optional TRACE32 symbol-table label for a sampled histogram bucket.",
+      "properties": {
+        "bucket_end_address": {
+          "description": "Exclusive end address of the parent sampled bucket.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "bucket_start_address": {
+          "description": "Inclusive start address of the parent sampled bucket.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "dominant_end_address": {
+          "description": "Exclusive end of the refined dominant PC interval.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "dominant_hits": {
+          "description": "Hits observed in the refined dominant PC interval.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "dominant_start_address": {
+          "description": "Inclusive start of the refined dominant PC interval.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "function_name": {
+          "description": "Optional function name reported by TRACE32.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "hits": {
+          "description": "Exact hit count of the parent sampled bucket.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "source_file": {
+          "description": "Optional source-file basename reported by TRACE32.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_line": {
+          "description": "Optional one-based source line reported by TRACE32.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "bucket_start_address",
+        "bucket_end_address",
+        "hits",
+        "dominant_start_address",
+        "dominant_end_address",
+        "dominant_hits"
+      ],
+      "type": "object"
+    },
+    "HeatmapCell": {
+      "additionalProperties": false,
+      "description": "A coarse heatmap cell with a statistical PC-hit count.",
+      "properties": {
+        "debugger_location": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DebuggerHotspotLocation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Optional TRACE32-reported label for this exact address bucket."
+        },
+        "display_name": {
+          "description": "Human-readable cell label; it is not part of the stable cell identity.",
+          "maxLength": 256,
+          "minLength": 1,
+          "type": "string"
+        },
+        "hits": {
+          "description": "Attributed PC hits represented by this cell.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "key": {
+          "$ref": "#/$defs/HeatmapCellKey",
+          "description": "Typed identity for the cell."
+        }
+      },
+      "required": [
+        "key",
+        "display_name",
+        "hits"
+      ],
+      "type": "object"
+    },
+    "HeatmapCellKey": {
+      "description": "A strictly typed heatmap-cell identity.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "description": "One half-open sampled program-counter interval.",
+          "properties": {
+            "end_address": {
+              "description": "Exclusive interval end.",
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "kind": {
+              "const": "address_range",
+              "type": "string"
+            },
+            "start_address": {
+              "description": "Inclusive interval start.",
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "kind",
+            "start_address",
+            "end_address"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One executable function.",
+          "properties": {
+            "function_id": {
+              "description": "Stable function identity from the bound executable.",
+              "maxLength": 256,
+              "minLength": 1,
+              "type": "string"
+            },
+            "kind": {
+              "const": "function",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "function_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One source line from the bound executable's debug information.",
+          "properties": {
+            "kind": {
+              "const": "source_line",
+              "type": "string"
+            },
+            "line": {
+              "description": "One-based source line number.",
+              "format": "uint32",
+              "minimum": 1,
+              "type": "integer"
+            },
+            "source_path": {
+              "description": "Source path as recorded by debug information.",
+              "maxLength": 4096,
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "source_path",
+            "line"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "HeatmapProjectionKind": {
+      "description": "The single projection granularity represented by all cells in a heatmap.",
+      "oneOf": [
+        {
+          "const": "address_range",
+          "description": "Half-open sampled address ranges.",
+          "type": "string"
+        },
+        {
+          "const": "function",
+          "description": "Executable functions.",
+          "type": "string"
+        },
+        {
+          "const": "source_line",
+          "description": "Source-file lines.",
+          "type": "string"
+        }
+      ]
+    },
+    "HeatmapQuality": {
+      "description": "The one allowed evidence quality for a coarse sampling heatmap.",
+      "oneOf": [
+        {
+          "const": "statistical",
+          "description": "Cells are statistical estimates from PC samples.",
+          "type": "string"
+        }
+      ]
+    },
+    "OutOfScopeHits": {
+      "description": "Out-of-scope hit accounting when TRACE32 can or cannot provide it.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "description": "TRACE32 reported a count outside the declared address scope.",
+          "properties": {
+            "hits": {
+              "description": "Count outside the declared scope.",
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "status": {
+              "const": "known",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "hits"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "TRACE32 did not provide a reliable count outside the declared scope.",
+          "properties": {
+            "status": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "QuantitativePolicy": {
+      "additionalProperties": false,
+      "description": "Quantitative admission thresholds persisted with a heatmap projection.",
+      "properties": {
+        "max_snoop_failures": {
+          "description": "Maximum allowed TRACE32 PC-snoop failures.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "min_in_scope_hits": {
+          "description": "Minimum in-scope PC hits needed for analysis.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "min_observed_duration_ns": {
+          "description": "Minimum observed capture duration needed for analysis.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "min_stop_and_go_retained_runtime_percent": {
+          "description": "Minimum retained runtime accepted for Stop-and-Go sampling.",
+          "format": "double",
+          "maximum": 100.0,
+          "minimum": 0.0,
+          "type": "number"
+        }
+      },
+      "required": [
+        "min_in_scope_hits",
+        "min_observed_duration_ns",
+        "min_stop_and_go_retained_runtime_percent",
+        "max_snoop_failures"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "t32perf.heatmap/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A bounded, statistical heatmap projected from a PC-hit histogram.",
+  "properties": {
+    "attributed_hits": {
+      "description": "Hits assigned to typed cells.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "cells": {
+      "description": "Unique typed cells, bounded for portable rendering.",
+      "items": {
+        "$ref": "#/$defs/HeatmapCell"
+      },
+      "maxItems": 16384,
+      "type": "array"
+    },
+    "denominator_hits": {
+      "description": "Number of in-scope hits used as every derived cell-share denominator.",
+      "format": "uint64",
+      "minimum": 1,
+      "type": "integer"
+    },
+    "histogram_sha256": {
+      "description": "Digest of the exact PC-hit histogram used for this projection.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "out_of_scope_hits": {
+      "$ref": "#/$defs/OutOfScopeHits",
+      "description": "Whether out-of-scope hit accounting is known."
+    },
+    "projection_kind": {
+      "$ref": "#/$defs/HeatmapProjectionKind",
+      "description": "Projection granularity shared by every cell."
+    },
+    "quality": {
+      "$ref": "#/$defs/HeatmapQuality",
+      "description": "The fixed evidence quality of all heatmap cells."
+    },
+    "quantitative_policy": {
+      "$ref": "#/$defs/QuantitativePolicy",
+      "description": "Admission thresholds required before this projection is quantitative."
+    },
+    "schema": {
+      "const": "t32perf.heatmap/v1",
+      "description": "The heatmap schema version.",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "Session that produced the source histogram.",
+      "maxLength": 64,
+      "minLength": 1,
+      "type": "string"
+    },
+    "unattributed_hits": {
+      "description": "In-scope hits not assigned to a typed cell.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema",
+    "session_id",
+    "histogram_sha256",
+    "quality",
+    "projection_kind",
+    "quantitative_policy",
+    "denominator_hits",
+    "attributed_hits",
+    "unattributed_hits",
+    "out_of_scope_hits",
+    "cells"
+  ],
+  "title": "Heatmap",
+  "type": "object"
+}

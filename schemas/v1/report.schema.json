@@ -1,0 +1,224 @@
+{
+  "$defs": {
+    "ComparisonVerdict": {
+      "description": "Capture-wide comparison verdict.",
+      "oneOf": [
+        {
+          "const": "improved",
+          "description": "At least one material improvement and no regression were found.",
+          "type": "string"
+        },
+        {
+          "const": "unchanged",
+          "description": "No material regression or improvement was found.",
+          "type": "string"
+        },
+        {
+          "const": "regressed",
+          "description": "At least one material regression was found.",
+          "type": "string"
+        },
+        {
+          "const": "inconclusive",
+          "description": "Health or metric support prevents strict comparison.",
+          "type": "string"
+        }
+      ]
+    },
+    "HealthSeverity": {
+      "description": "Severity assigned to a host-policy issue.",
+      "oneOf": [
+        {
+          "const": "info",
+          "description": "Informational evidence that does not reduce trust.",
+          "type": "string"
+        },
+        {
+          "const": "warning",
+          "description": "A warning that may constrain interpretation.",
+          "type": "string"
+        },
+        {
+          "const": "error",
+          "description": "A serious problem that invalidates affected quantitative conclusions.",
+          "type": "string"
+        },
+        {
+          "const": "fatal",
+          "description": "A capture-wide failure that makes the trace unusable.",
+          "type": "string"
+        }
+      ]
+    },
+    "HealthVerdict": {
+      "description": "Host-policy verdict for the trustworthiness of a capture.",
+      "oneOf": [
+        {
+          "const": "VALID",
+          "description": "Quantitative results and strict comparisons are permitted.",
+          "type": "string"
+        },
+        {
+          "const": "DEGRADED",
+          "description": "Timeline inspection is permitted, but strict comparison is not.",
+          "type": "string"
+        },
+        {
+          "const": "INVALID",
+          "description": "Only diagnostic output is trustworthy.",
+          "type": "string"
+        }
+      ]
+    },
+    "ReportArtifactLink": {
+      "description": "A reference from a report to a manifest artifact.",
+      "properties": {
+        "artifact_id": {
+          "description": "Referenced manifest artifact identifier.",
+          "type": "string"
+        },
+        "role": {
+          "description": "Artifact role in the report, such as `timeline`, `health`, or `hotspots`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "role"
+      ],
+      "type": "object"
+    },
+    "ReportFinding": {
+      "description": "One structured report finding.",
+      "properties": {
+        "code": {
+          "description": "Stable machine-readable finding code.",
+          "type": "string"
+        },
+        "evidence": {
+          "additionalProperties": true,
+          "description": "Structured values supporting the finding.",
+          "type": "object"
+        },
+        "message": {
+          "description": "Concise finding explanation.",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/$defs/HealthSeverity",
+          "description": "Finding severity."
+        },
+        "title": {
+          "description": "Short finding title.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "severity",
+        "title",
+        "message",
+        "evidence"
+      ],
+      "type": "object"
+    },
+    "ReportSummary": {
+      "description": "Compact summary embedded in a human-facing report.",
+      "properties": {
+        "capture_duration_ns": {
+          "description": "Wall-clock capture duration when known.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "comparison_verdict": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ComparisonVerdict"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Comparison verdict when the report includes a comparison artifact."
+        },
+        "function_span_count": {
+          "description": "Number of reconstructed function spans.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "sample_count": {
+          "description": "Number of statistical samples.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "function_span_count",
+        "sample_count"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "t32perf.report/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Versioned, human-facing analysis report metadata.\n\nThis is a non-authoritative, bounded presentation projection emitted by a\nreport surface such as the `summary` command. Stage integrity is established\nby [`crate::AnalysisStageReceipt`] and [`crate::AnalysisSummaryDocument`];\nlarge or independently versioned data remains in artifacts referenced by ID.",
+  "properties": {
+    "artifacts": {
+      "description": "References to the authoritative report artifacts.",
+      "items": {
+        "$ref": "#/$defs/ReportArtifactLink"
+      },
+      "type": "array"
+    },
+    "findings": {
+      "description": "Structured findings in presentation order.",
+      "items": {
+        "$ref": "#/$defs/ReportFinding"
+      },
+      "type": "array"
+    },
+    "generated_at": {
+      "description": "RFC 3339 report generation timestamp.",
+      "type": "string"
+    },
+    "health_verdict": {
+      "$ref": "#/$defs/HealthVerdict",
+      "description": "Health verdict that gates interpretation of the report."
+    },
+    "schema": {
+      "const": "t32perf.report/v1",
+      "description": "The report schema version.",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "Session summarized by the report.",
+      "type": "string"
+    },
+    "summary": {
+      "$ref": "#/$defs/ReportSummary",
+      "description": "Compact capture and analysis counts."
+    },
+    "title": {
+      "description": "Human-readable report title.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "session_id",
+    "generated_at",
+    "title",
+    "health_verdict",
+    "summary",
+    "findings",
+    "artifacts"
+  ],
+  "title": "AnalysisReport",
+  "type": "object"
+}

@@ -1,0 +1,353 @@
+{
+  "$defs": {
+    "AnalysisContracts": {
+      "additionalProperties": false,
+      "description": "Versioned contract identifiers used to interpret one analysis stage.",
+      "properties": {
+        "analysis_summary_schema": {
+          "const": "t32perf.analysis-summary/v1",
+          "description": "Analysis-summary artifact schema written by the stage.",
+          "type": "string"
+        },
+        "analyzer": {
+          "description": "Analyzer behavior and aggregation contract.",
+          "type": "string"
+        },
+        "derived_stream_schema": {
+          "const": "t32perf.derived-stream/v1",
+          "description": "Derived NDJSON stream schema written by the stage.",
+          "type": "string"
+        },
+        "health_policy": {
+          "description": "Health-policy behavior contract.",
+          "type": "string"
+        },
+        "health_schema": {
+          "const": "t32perf.health/v1",
+          "description": "Health artifact schema interpreted by the stage.",
+          "type": "string"
+        },
+        "hotspots_schema": {
+          "const": "t32perf.hotspots/v1",
+          "description": "Hotspot artifact schema supported by the stage.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "analyzer",
+        "health_policy",
+        "health_schema",
+        "derived_stream_schema",
+        "hotspots_schema",
+        "analysis_summary_schema"
+      ],
+      "type": "object"
+    },
+    "AnalysisDiagnosticCounts": {
+      "description": "Counts that remain useful for diagnosis even when quantitative results are gated.",
+      "properties": {
+        "function_span_count": {
+          "description": "Number of derived function-span records emitted, including incomplete spans.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "health_issue_count": {
+          "description": "Number of diagnosed health issues retained by the health report.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "health_observation_count": {
+          "description": "Number of raw health observations retained by the health report.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "incomplete_function_span_count": {
+          "description": "Number of derived spans excluded from trusted aggregation.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "observation_count": {
+          "description": "Number of normalized observations consumed by the analyzer.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "observation_count",
+        "function_span_count",
+        "incomplete_function_span_count",
+        "health_observation_count",
+        "health_issue_count"
+      ],
+      "type": "object"
+    },
+    "Artifact": {
+      "description": "One immutable file artifact and its provenance.",
+      "properties": {
+        "id": {
+          "description": "Stable artifact identifier unique within the session.",
+          "type": "string"
+        },
+        "input_artifact_ids": {
+          "description": "Artifact identifiers consumed to produce this artifact.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "kind": {
+          "description": "Extensible artifact kind such as `raw_trace` or `perfetto`.",
+          "type": "string"
+        },
+        "media_type": {
+          "description": "IANA media type of the file.",
+          "type": "string"
+        },
+        "producer": {
+          "description": "Tool or stage identifier that produced the file.",
+          "type": "string"
+        },
+        "relative_path": {
+          "description": "Canonical path relative to the session directory.",
+          "maxLength": 1024,
+          "minLength": 1,
+          "pattern": "^(?=[\\u0020-\\u007E]+$)(?!/)(?!.*[<>:\"\\\\|?*])(?!.*//)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*/$)(?!.*[. ](?:/|$))(?!(?:.*?/)?(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Nn][Ii][Nn]\\$|[Cc][Oo][Nn][Oo][Uu][Tt]\\$|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9]) *(?:\\.[^/]*)?(?:/|$)).+$",
+          "type": "string"
+        },
+        "sha256": {
+          "description": "SHA-256 digest of the complete file.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "size_bytes": {
+          "description": "File size in bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "relative_path",
+        "media_type",
+        "size_bytes",
+        "sha256",
+        "producer",
+        "input_artifact_ids"
+      ],
+      "type": "object"
+    },
+    "HealthVerdict": {
+      "description": "Host-policy verdict for the trustworthiness of a capture.",
+      "oneOf": [
+        {
+          "const": "VALID",
+          "description": "Quantitative results and strict comparisons are permitted.",
+          "type": "string"
+        },
+        {
+          "const": "DEGRADED",
+          "description": "Timeline inspection is permitted, but strict comparison is not.",
+          "type": "string"
+        },
+        {
+          "const": "INVALID",
+          "description": "Only diagnostic output is trustworthy.",
+          "type": "string"
+        }
+      ]
+    },
+    "MetricSupport": {
+      "description": "Support matrix covering all required timeline and timing metrics.",
+      "properties": {
+        "active": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Support for active function duration excluding preemption."
+        },
+        "call_count": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Support for exact or estimated function call counts."
+        },
+        "elapsed": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Support for wall-clock elapsed function duration."
+        },
+        "function_timeline": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Support for reconstructed function timeline slices."
+        },
+        "isr_timeline": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Support for the interrupt execution timeline."
+        },
+        "resource_counters": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "default": {
+            "reasons": [
+              "resource_counter_support_not_recorded"
+            ],
+            "support": "unavailable"
+          },
+          "description": "Support for explicitly defined numeric resource counters."
+        },
+        "self": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Support for self active function duration excluding children."
+        },
+        "task_timeline": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Support for the task execution timeline."
+        }
+      },
+      "required": [
+        "function_timeline",
+        "call_count",
+        "elapsed",
+        "active",
+        "self",
+        "task_timeline",
+        "isr_timeline"
+      ],
+      "type": "object"
+    },
+    "MetricSupportEntry": {
+      "description": "Support and explanatory reasons for one metric.",
+      "properties": {
+        "reasons": {
+          "description": "Stable or human-readable reasons for the declared level.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "support": {
+          "$ref": "#/$defs/MetricSupportLevel",
+          "description": "Available support level."
+        }
+      },
+      "required": [
+        "support",
+        "reasons"
+      ],
+      "type": "object"
+    },
+    "MetricSupportLevel": {
+      "description": "The support level for one analysis metric.",
+      "oneOf": [
+        {
+          "const": "exact",
+          "description": "The capture directly supports exact computation.",
+          "type": "string"
+        },
+        {
+          "const": "inferred",
+          "description": "The metric can be deterministically inferred with documented caveats.",
+          "type": "string"
+        },
+        {
+          "const": "statistical",
+          "description": "Only a statistical estimate is available.",
+          "type": "string"
+        },
+        {
+          "const": "unavailable",
+          "description": "The capture cannot support this metric.",
+          "type": "string"
+        }
+      ]
+    },
+    "ToolInfo": {
+      "description": "Version and provenance of the t32perf tool writing a manifest.",
+      "properties": {
+        "commit": {
+          "description": "Source-control commit when available.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "name": {
+          "description": "Tool or executable name.",
+          "type": "string"
+        },
+        "version": {
+          "description": "Tool semantic version or build version.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "t32perf.analysis-stage/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Immutable receipt binding an analysis run to exact input and output bytes.",
+  "properties": {
+    "contracts": {
+      "$ref": "#/$defs/AnalysisContracts",
+      "description": "Versioned contracts used by the stage."
+    },
+    "diagnostics": {
+      "$ref": "#/$defs/AnalysisDiagnosticCounts",
+      "description": "Diagnostic counts bound to the output documents."
+    },
+    "health_verdict": {
+      "$ref": "#/$defs/HealthVerdict",
+      "description": "Health verdict produced by the declared policy."
+    },
+    "input_artifacts": {
+      "description": "Exact immutable external inputs to the analysis stage.",
+      "items": {
+        "$ref": "#/$defs/Artifact"
+      },
+      "type": "array"
+    },
+    "metric_support": {
+      "$ref": "#/$defs/MetricSupport",
+      "description": "Metric support produced by the declared policy."
+    },
+    "output_artifacts": {
+      "description": "Exact immutable outputs committed before this receipt.",
+      "items": {
+        "$ref": "#/$defs/Artifact"
+      },
+      "type": "array"
+    },
+    "schema": {
+      "const": "t32perf.analysis-stage/v1",
+      "description": "The analysis-stage receipt schema version.",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "Session that owns every claimed artifact.",
+      "type": "string"
+    },
+    "tool": {
+      "$ref": "#/$defs/ToolInfo",
+      "description": "Tool build that executed the stage."
+    }
+  },
+  "required": [
+    "schema",
+    "session_id",
+    "tool",
+    "contracts",
+    "health_verdict",
+    "metric_support",
+    "diagnostics",
+    "input_artifacts",
+    "output_artifacts"
+  ],
+  "title": "AnalysisStageReceipt",
+  "type": "object"
+}

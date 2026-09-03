@@ -1,0 +1,384 @@
+{
+  "$defs": {
+    "AdapterInfo": {
+      "description": "Capture-adapter identity recorded in a manifest.",
+      "properties": {
+        "id": {
+          "description": "Stable adapter identifier.",
+          "type": "string"
+        },
+        "version": {
+          "description": "Adapter contract or implementation version.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "type": "object"
+    },
+    "CaptureDurationConfig": {
+      "additionalProperties": false,
+      "description": "Capture duration or record-count limits requested from the adapter.",
+      "properties": {
+        "duration_ns": {
+          "description": "Requested capture-duration limit in nanoseconds.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "observation_limit": {
+          "description": "Requested observation-count limit when capture is count bounded.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "CaptureFilterConfig": {
+      "additionalProperties": false,
+      "description": "One explicit adapter filter applied to the capture source.",
+      "properties": {
+        "enabled": {
+          "description": "Whether this filter was enabled for the capture.",
+          "type": "boolean"
+        },
+        "identity": {
+          "description": "Stable subject or rule identity.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Adapter-defined, versioned filter kind.",
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": true,
+          "description": "Bounded authoritative adapter parameters for this filter.",
+          "type": "object"
+        }
+      },
+      "required": [
+        "kind",
+        "identity",
+        "enabled"
+      ],
+      "type": "object"
+    },
+    "CaptureInstrumentationConfig": {
+      "additionalProperties": false,
+      "description": "Target instrumentation method and independently measured incremental cost.",
+      "properties": {
+        "method": {
+          "description": "Versioned target-side API or marker method, such as `t32perf-c-wire/v1`.",
+          "type": "string"
+        },
+        "overhead": {
+          "$ref": "#/$defs/CaptureInstrumentationOverhead",
+          "description": "Controlled measurement used to quantify incremental instrumentation cost."
+        },
+        "transport": {
+          "description": "Versioned transport identity, such as `shared-memory-ring-buffer/v1`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "method",
+        "transport",
+        "overhead"
+      ],
+      "type": "object"
+    },
+    "CaptureInstrumentationOverhead": {
+      "additionalProperties": false,
+      "description": "One controlled measurement of target-side instrumentation overhead.\n\nThe incremental cost is `instrumented_duration_ns - baseline_duration_ns`.\nKeeping both source durations and the emitted-event count avoids a rounded\nfloating-point average in the authoritative contract.",
+      "properties": {
+        "baseline_duration_ns": {
+          "description": "Duration of the uninstrumented reference workload.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "emitted_event_count": {
+          "description": "Number of target events emitted during the instrumented workload.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "evidence_artifact_id": {
+          "description": "Immutable artifact containing raw measurement evidence.",
+          "type": "string"
+        },
+        "instrumented_duration_ns": {
+          "description": "Duration of the same workload with instrumentation enabled.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "measurement_method": {
+          "description": "Versioned benchmark or calibration procedure.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "measurement_method",
+        "baseline_duration_ns",
+        "instrumented_duration_ns",
+        "emitted_event_count",
+        "evidence_artifact_id"
+      ],
+      "type": "object"
+    },
+    "CaptureRtosAwarenessConfig": {
+      "additionalProperties": false,
+      "description": "RTOS-awareness configuration and its immutable metadata dependencies.",
+      "properties": {
+        "kind": {
+          "description": "Adapter-defined RTOS-awareness kind, such as `none` or a versioned decoder identity.",
+          "type": "string"
+        },
+        "metadata_artifact_ids": {
+          "description": "Immutable Session artifacts used as RTOS metadata.",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 256,
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "type": "object"
+    },
+    "CaptureSinkConfig": {
+      "additionalProperties": false,
+      "description": "Trace sink configured by the capture adapter.",
+      "properties": {
+        "capacity_bytes": {
+          "description": "Configured sink capacity when the sink is bounded.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "id": {
+          "description": "Stable sink identity within the adapter deployment.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Adapter-defined, versioned sink kind.",
+          "type": "string"
+        },
+        "stream_destination_identity": {
+          "description": "Stable destination identity for streaming sinks; never contains credentials.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "type": "object"
+    },
+    "CaptureTimestampConfig": {
+      "additionalProperties": false,
+      "description": "Timestamp configuration applied by the capture adapter.",
+      "properties": {
+        "clock_id": {
+          "description": "Clock-domain identifier used by those timestamps.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "enabled": {
+          "description": "Whether captured records carry timestamps.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "enabled"
+      ],
+      "type": "object"
+    },
+    "CaptureTriggerConfig": {
+      "additionalProperties": false,
+      "description": "Trigger configuration applied by the capture adapter.",
+      "properties": {
+        "condition_identity": {
+          "description": "Stable identity of an adapter-owned trigger condition.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "kind": {
+          "description": "Adapter-defined, versioned trigger kind.",
+          "type": "string"
+        },
+        "post_trigger_ns": {
+          "description": "Requested post-trigger capture duration.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "pre_trigger_ns": {
+          "description": "Requested pre-trigger capture duration.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "type": "object"
+    },
+    "InitialTargetState": {
+      "description": "Target execution state at the instant capture configuration became authoritative.",
+      "oneOf": [
+        {
+          "const": "running",
+          "description": "The target was running.",
+          "type": "string"
+        },
+        {
+          "const": "halted",
+          "description": "The target was halted.",
+          "type": "string"
+        },
+        {
+          "const": "unknown",
+          "description": "The adapter could not establish the target state.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.capture-config/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Authoritative, language-neutral capture configuration recorded before normalization.",
+  "properties": {
+    "adapter": {
+      "$ref": "#/$defs/AdapterInfo",
+      "description": "Versioned adapter responsible for applying the configuration."
+    },
+    "adapter_parameters": {
+      "additionalProperties": true,
+      "description": "Bounded authoritative parameters not represented by the common contract.",
+      "type": "object"
+    },
+    "covered_cores": {
+      "description": "Cores selected for capture.",
+      "items": {
+        "format": "uint32",
+        "minimum": 0,
+        "type": "integer"
+      },
+      "maxItems": 1024,
+      "minItems": 1,
+      "type": "array"
+    },
+    "duration": {
+      "$ref": "#/$defs/CaptureDurationConfig",
+      "description": "Duration or record-count limits."
+    },
+    "filters": {
+      "description": "Explicit bounded filters applied by the adapter.",
+      "items": {
+        "$ref": "#/$defs/CaptureFilterConfig"
+      },
+      "maxItems": 256,
+      "type": "array"
+    },
+    "initial_target_state": {
+      "$ref": "#/$defs/InitialTargetState",
+      "description": "Initial target execution state observed by the adapter."
+    },
+    "instrumentation": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CaptureInstrumentationConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Target custom-event instrumentation and measured overhead, when used."
+    },
+    "mode": {
+      "description": "Adapter-defined capture mode.",
+      "type": "string"
+    },
+    "provider": {
+      "description": "Capture provider responsible for applying the configuration.",
+      "type": "string"
+    },
+    "rtos_awareness": {
+      "$ref": "#/$defs/CaptureRtosAwarenessConfig",
+      "description": "RTOS-awareness configuration."
+    },
+    "schema": {
+      "const": "t32perf.capture-config/v1",
+      "description": "The capture-config schema version.",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "Session that owns this configuration and its resulting artifacts.",
+      "type": "string"
+    },
+    "sink": {
+      "$ref": "#/$defs/CaptureSinkConfig",
+      "description": "Configured capture sink."
+    },
+    "timestamp": {
+      "$ref": "#/$defs/CaptureTimestampConfig",
+      "description": "Configured timestamp source."
+    },
+    "trigger": {
+      "$ref": "#/$defs/CaptureTriggerConfig",
+      "description": "Trigger configuration."
+    },
+    "workload_identity": {
+      "description": "Stable workload identity executed during capture.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "session_id",
+    "provider",
+    "adapter",
+    "mode",
+    "covered_cores",
+    "sink",
+    "timestamp",
+    "trigger",
+    "duration",
+    "workload_identity",
+    "initial_target_state",
+    "rtos_awareness"
+  ],
+  "title": "CaptureConfigDocument",
+  "type": "object"
+}

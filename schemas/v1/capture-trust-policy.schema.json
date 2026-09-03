@@ -1,0 +1,427 @@
+{
+  "$defs": {
+    "AdapterInfo": {
+      "description": "Capture-adapter identity recorded in a manifest.",
+      "properties": {
+        "id": {
+          "description": "Stable adapter identifier.",
+          "type": "string"
+        },
+        "version": {
+          "description": "Adapter contract or implementation version.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version"
+      ],
+      "type": "object"
+    },
+    "CaptureCapabilities": {
+      "description": "Evidence support for the observation families a capture can provide.",
+      "properties": {
+        "context_switches": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "RTOS or scheduler context-switch evidence."
+        },
+        "counters": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Numeric resource and application counters."
+        },
+        "custom_events": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Target-provided custom instant and span events."
+        },
+        "function_events": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Complete function enter/exit evidence."
+        },
+        "interrupt_events": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Interrupt enter/exit evidence."
+        },
+        "samples": {
+          "$ref": "#/$defs/MetricSupportEntry",
+          "description": "Statistical program-counter samples."
+        }
+      },
+      "required": [
+        "function_events",
+        "context_switches",
+        "interrupt_events",
+        "samples",
+        "custom_events",
+        "counters"
+      ],
+      "type": "object"
+    },
+    "CaptureConfigConstraints": {
+      "additionalProperties": false,
+      "description": "Optional semantic and digest restrictions placed on capture configs signed by one key.",
+      "properties": {
+        "allowed_config_sha256": {
+          "description": "Exact cross-Session configuration digests this key may attest.",
+          "items": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "maxItems": 256,
+          "type": "array"
+        },
+        "allowed_initial_target_states": {
+          "description": "Allowed initial target states; empty permits any signed state.",
+          "items": {
+            "$ref": "#/$defs/InitialTargetState"
+          },
+          "maxItems": 3,
+          "type": "array"
+        },
+        "allowed_rtos_awareness_kinds": {
+          "description": "Allowed RTOS-awareness kinds; empty permits any signed kind.",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 256,
+          "type": "array"
+        },
+        "allowed_sink_ids": {
+          "description": "Allowed stable sink identities; empty permits any signed sink identity.",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 256,
+          "type": "array"
+        },
+        "allowed_sink_kinds": {
+          "description": "Allowed sink kinds; empty permits any signed sink kind.",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 256,
+          "type": "array"
+        },
+        "max_sink_capacity_bytes": {
+          "description": "Maximum sink capacity the key may attest.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "require_timestamp_enabled": {
+          "description": "Required timestamp-enabled value when constrained.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "CaptureTrustKey": {
+      "additionalProperties": false,
+      "description": "One trusted external adapter key and the strongest claims it may make.",
+      "properties": {
+        "adapter": {
+          "$ref": "#/$defs/AdapterInfo",
+          "description": "Exact adapter identity bound to the key."
+        },
+        "allowed_cores": {
+          "description": "Cores this deployment is permitted to claim as covered.",
+          "items": {
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        "allowed_firmware_elf_sha256": {
+          "description": "Exact firmware ELF SHA-256 digests this deployment is permitted to attest.",
+          "items": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "maxItems": 256,
+          "type": "array"
+        },
+        "allowed_modes": {
+          "description": "Capture modes this key may attest.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "capability_ceiling": {
+          "$ref": "#/$defs/CaptureCapabilities",
+          "description": "Strongest evidence level this key may claim for each observation family."
+        },
+        "clocks": {
+          "description": "Exact clock domains the deployment may claim.",
+          "items": {
+            "$ref": "#/$defs/ClockInfo"
+          },
+          "type": "array"
+        },
+        "config_constraints": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CaptureConfigConstraints"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Optional deployment restrictions for signed capture configurations."
+        },
+        "key_id": {
+          "description": "Stable key identifier referenced by attestations.",
+          "type": "string"
+        },
+        "producer": {
+          "description": "Durable artifact producer assigned by the host after verification.",
+          "type": "string"
+        },
+        "provider": {
+          "description": "Capture provider this key may attest, such as `trace32`.",
+          "type": "string"
+        },
+        "public_key_ed25519": {
+          "description": "Lowercase hexadecimal 32-byte Ed25519 public key.",
+          "type": "string"
+        },
+        "target": {
+          "$ref": "#/$defs/TargetInfo",
+          "description": "Exact target identity bound to this trusted adapter deployment."
+        },
+        "trace32": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Trace32Info"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Exact TRACE32 installation and probe identity when required."
+        }
+      },
+      "required": [
+        "key_id",
+        "public_key_ed25519",
+        "producer",
+        "provider",
+        "adapter",
+        "allowed_modes",
+        "target",
+        "clocks",
+        "allowed_cores",
+        "capability_ceiling"
+      ],
+      "type": "object"
+    },
+    "ClockInfo": {
+      "description": "A clock domain relevant to timestamp conversion or analysis.",
+      "properties": {
+        "frequency_hz": {
+          "description": "Clock frequency in hertz when known.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "id": {
+          "description": "Stable clock-domain identifier.",
+          "type": "string"
+        },
+        "properties": {
+          "additionalProperties": true,
+          "description": "Clock-specific metadata.",
+          "type": "object"
+        },
+        "source": {
+          "description": "Source or derivation of the frequency value.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "InitialTargetState": {
+      "description": "Target execution state at the instant capture configuration became authoritative.",
+      "oneOf": [
+        {
+          "const": "running",
+          "description": "The target was running.",
+          "type": "string"
+        },
+        {
+          "const": "halted",
+          "description": "The target was halted.",
+          "type": "string"
+        },
+        {
+          "const": "unknown",
+          "description": "The adapter could not establish the target state.",
+          "type": "string"
+        }
+      ]
+    },
+    "MetricSupportEntry": {
+      "description": "Support and explanatory reasons for one metric.",
+      "properties": {
+        "reasons": {
+          "description": "Stable or human-readable reasons for the declared level.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "support": {
+          "$ref": "#/$defs/MetricSupportLevel",
+          "description": "Available support level."
+        }
+      },
+      "required": [
+        "support",
+        "reasons"
+      ],
+      "type": "object"
+    },
+    "MetricSupportLevel": {
+      "description": "The support level for one analysis metric.",
+      "oneOf": [
+        {
+          "const": "exact",
+          "description": "The capture directly supports exact computation.",
+          "type": "string"
+        },
+        {
+          "const": "inferred",
+          "description": "The metric can be deterministically inferred with documented caveats.",
+          "type": "string"
+        },
+        {
+          "const": "statistical",
+          "description": "Only a statistical estimate is available.",
+          "type": "string"
+        },
+        {
+          "const": "unavailable",
+          "description": "The capture cannot support this metric.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetInfo": {
+      "description": "Target identity and capability metadata.",
+      "properties": {
+        "architecture": {
+          "description": "Target architecture name.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "board": {
+          "description": "Board name or revision.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "core_count": {
+          "description": "Number of traced processor cores.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "device": {
+          "description": "MCU, SoC, or device name.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "properties": {
+          "additionalProperties": true,
+          "description": "Adapter-specific target metadata.",
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "Trace32Info": {
+      "description": "TRACE32 installation and probe metadata.",
+      "properties": {
+        "architecture_package": {
+          "description": "Loaded TRACE32 architecture package.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "build": {
+          "description": "TRACE32 build identifier.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "probe": {
+          "description": "Probe model or serial-safe identifier.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "properties": {
+          "additionalProperties": true,
+          "description": "Additional TRACE32 metadata.",
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "$id": "t32perf.capture-trust-policy/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Deployment-owned allowlist of external capture signing keys.",
+  "properties": {
+    "keys": {
+      "description": "Trusted adapter signing keys and their maximum claims.",
+      "items": {
+        "$ref": "#/$defs/CaptureTrustKey"
+      },
+      "type": "array"
+    },
+    "policy_id": {
+      "description": "Stable deployment policy identity retained in Session provenance.",
+      "type": "string"
+    },
+    "schema": {
+      "const": "t32perf.capture-trust-policy/v1",
+      "description": "The capture-trust-policy schema version.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "policy_id",
+    "keys"
+  ],
+  "title": "CaptureTrustPolicy",
+  "type": "object"
+}

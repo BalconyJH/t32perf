@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "t32perf.comparison-artifact/v1",
+  "title": "T32Perf content-addressed comparison artifact",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "tool",
+    "policy_sha256",
+    "policy",
+    "baseline",
+    "candidate",
+    "report"
+  ],
+  "properties": {
+    "schema": {
+      "const": "t32perf.comparison-artifact/v1"
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "const": "t32perf" },
+        "version": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    },
+    "policy_sha256": { "$ref": "#/$defs/sha256" },
+    "policy": {
+      "type": "object",
+      "description": "Exact validated ComparisonPolicy consumed by the comparison engine."
+    },
+    "baseline": { "$ref": "#/$defs/inputClaims" },
+    "candidate": { "$ref": "#/$defs/inputClaims" },
+    "report": { "$ref": "comparison.schema.json" }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "inputClaims": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "session_id",
+        "canonical_manifest_sha256",
+        "analysis_stage_sha256",
+        "health_sha256",
+        "hotspots_sha256",
+        "analysis_summary_sha256"
+      ],
+      "properties": {
+        "session_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "canonical_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "analysis_stage_sha256": { "$ref": "#/$defs/sha256" },
+        "health_sha256": { "$ref": "#/$defs/sha256" },
+        "hotspots_sha256": {
+          "oneOf": [
+            { "$ref": "#/$defs/sha256" },
+            { "type": "null" }
+          ]
+        },
+        "analysis_summary_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

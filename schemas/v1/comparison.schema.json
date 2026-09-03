@@ -1,0 +1,929 @@
+{
+  "$defs": {
+    "ComparisonMetricKind": {
+      "description": "Built-in metric that can be compared.",
+      "oneOf": [
+        {
+          "const": "inclusive_active_ns",
+          "description": "Inclusive active time in nanoseconds.",
+          "type": "string"
+        },
+        {
+          "const": "self_active_ns",
+          "description": "Self active time in nanoseconds.",
+          "type": "string"
+        },
+        {
+          "const": "count",
+          "description": "Function activation count.",
+          "type": "string"
+        },
+        {
+          "const": "min_active_ns",
+          "description": "Minimum active activation time in nanoseconds.",
+          "type": "string"
+        },
+        {
+          "const": "max_active_ns",
+          "description": "Maximum active activation time in nanoseconds.",
+          "type": "string"
+        },
+        {
+          "const": "avg_active_ns",
+          "description": "Mean active activation time in nanoseconds.",
+          "type": "string"
+        },
+        {
+          "const": "sample_count",
+          "description": "Statistical sample count.",
+          "type": "string"
+        },
+        {
+          "const": "estimated_share",
+          "description": "Estimated sampling share in the inclusive range 0 to 1.",
+          "type": "string"
+        }
+      ]
+    },
+    "ComparisonSubject": {
+      "description": "Stable identity of an entity compared across two sessions.",
+      "properties": {
+        "context_id": {
+          "description": "Optional execution-context partition.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "description": "Dictionary ID or other stable identity.",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ComparisonSubjectKind",
+          "description": "Semantic kind of the entity."
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "type": "object"
+    },
+    "ComparisonSubjectKind": {
+      "description": "Kind of entity to which a compared metric belongs.",
+      "oneOf": [
+        {
+          "const": "function",
+          "description": "A function dictionary entry.",
+          "type": "string"
+        },
+        {
+          "const": "task",
+          "description": "An RTOS task or thread context.",
+          "type": "string"
+        },
+        {
+          "const": "isr",
+          "description": "An interrupt context.",
+          "type": "string"
+        },
+        {
+          "const": "capture",
+          "description": "The complete capture session.",
+          "type": "string"
+        },
+        {
+          "const": "custom",
+          "description": "An extension-defined entity.",
+          "type": "string"
+        }
+      ]
+    },
+    "ComparisonVerdict": {
+      "description": "Capture-wide comparison verdict.",
+      "oneOf": [
+        {
+          "const": "improved",
+          "description": "At least one material improvement and no regression were found.",
+          "type": "string"
+        },
+        {
+          "const": "unchanged",
+          "description": "No material regression or improvement was found.",
+          "type": "string"
+        },
+        {
+          "const": "regressed",
+          "description": "At least one material regression was found.",
+          "type": "string"
+        },
+        {
+          "const": "inconclusive",
+          "description": "Health or metric support prevents strict comparison.",
+          "type": "string"
+        }
+      ]
+    },
+    "CounterSemantic": {
+      "description": "Stable, extensible semantic identity for one counter family.\n\nValues use lower-case dot-separated identifiers. Standard semantics are\ninterpreted only through [`Self::standard_spec`]; unknown valid identifiers\nremain extension-defined generic counters.",
+      "maxLength": 128,
+      "minLength": 3,
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$",
+      "type": "string"
+    },
+    "CounterSubject": {
+      "description": "Stable identity of the resource measured by a counter.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "description": "The complete capture session.",
+          "properties": {
+            "kind": {
+              "const": "capture",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One allocator instance.",
+          "properties": {
+            "allocator_id": {
+              "description": "Stable allocator identity.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "allocator",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "allocator_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One execution context.",
+          "properties": {
+            "context_id": {
+              "description": "Referenced context dictionary identity.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "context",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "context_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One processor core.",
+          "properties": {
+            "core_id": {
+              "description": "Zero-based core identity.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "kind": {
+              "const": "core",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "core_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One runtime stack.",
+          "properties": {
+            "context_id": {
+              "description": "Referenced Task or ISR context when applicable.",
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "core_id": {
+              "description": "Referenced core for MSP, PSP, or core-local stacks.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "kind": {
+              "const": "stack",
+              "type": "string"
+            },
+            "role": {
+              "$ref": "#/$defs/StackRole",
+              "description": "Semantic role of the stack."
+            },
+            "stack_id": {
+              "description": "Stable physical-stack identity.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "stack_id",
+            "role"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One target memory region.",
+          "properties": {
+            "kind": {
+              "const": "memory_region",
+              "type": "string"
+            },
+            "region_id": {
+              "description": "Stable region identity.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "region_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "One trace-capture buffer.",
+          "properties": {
+            "buffer_id": {
+              "description": "Stable buffer identity.",
+              "type": "string"
+            },
+            "core_id": {
+              "description": "Core owning the buffer when it is core-local.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "kind": {
+              "const": "trace_buffer",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "buffer_id"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Extension-defined resource identity.",
+          "properties": {
+            "id": {
+              "description": "Stable identity within the namespace.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "custom",
+              "type": "string"
+            },
+            "namespace": {
+              "description": "Lower-case extension namespace.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "namespace",
+            "id"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "HealthVerdict": {
+      "description": "Host-policy verdict for the trustworthiness of a capture.",
+      "oneOf": [
+        {
+          "const": "VALID",
+          "description": "Quantitative results and strict comparisons are permitted.",
+          "type": "string"
+        },
+        {
+          "const": "DEGRADED",
+          "description": "Timeline inspection is permitted, but strict comparison is not.",
+          "type": "string"
+        },
+        {
+          "const": "INVALID",
+          "description": "Only diagnostic output is trustworthy.",
+          "type": "string"
+        }
+      ]
+    },
+    "MetricComparison": {
+      "description": "Comparison of one metric for one stable subject.",
+      "properties": {
+        "baseline": {
+          "description": "Baseline metric value.",
+          "format": "double",
+          "type": "number"
+        },
+        "candidate": {
+          "description": "Candidate metric value.",
+          "format": "double",
+          "type": "number"
+        },
+        "delta": {
+          "description": "`candidate - baseline` in the metric's native unit.",
+          "format": "double",
+          "type": "number"
+        },
+        "metric": {
+          "$ref": "#/$defs/ComparisonMetricKind",
+          "description": "Metric being compared."
+        },
+        "outcome": {
+          "$ref": "#/$defs/MetricComparisonOutcome",
+          "description": "Policy outcome for this row."
+        },
+        "quality": {
+          "$ref": "#/$defs/Quality",
+          "description": "Evidence quality of the compared values."
+        },
+        "reasons": {
+          "description": "Reasons or policy rules that explain the outcome.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "relative_change": {
+          "description": "`(candidate - baseline) / baseline`, absent for a zero baseline.",
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "subject": {
+          "$ref": "#/$defs/ComparisonSubject",
+          "description": "Entity being compared."
+        }
+      },
+      "required": [
+        "subject",
+        "metric",
+        "baseline",
+        "candidate",
+        "delta",
+        "quality",
+        "outcome"
+      ],
+      "type": "object"
+    },
+    "MetricComparisonOutcome": {
+      "description": "Outcome assigned to one metric comparison.",
+      "oneOf": [
+        {
+          "const": "improved",
+          "description": "The metric improved according to the configured policy.",
+          "type": "string"
+        },
+        {
+          "const": "unchanged",
+          "description": "The change remains within the configured tolerance.",
+          "type": "string"
+        },
+        {
+          "const": "regressed",
+          "description": "The metric regressed according to the configured policy.",
+          "type": "string"
+        },
+        {
+          "const": "inconclusive",
+          "description": "Health, support, or baseline constraints prevent a conclusion.",
+          "type": "string"
+        }
+      ]
+    },
+    "MetricSupportLevel": {
+      "description": "The support level for one analysis metric.",
+      "oneOf": [
+        {
+          "const": "exact",
+          "description": "The capture directly supports exact computation.",
+          "type": "string"
+        },
+        {
+          "const": "inferred",
+          "description": "The metric can be deterministically inferred with documented caveats.",
+          "type": "string"
+        },
+        {
+          "const": "statistical",
+          "description": "Only a statistical estimate is available.",
+          "type": "string"
+        },
+        {
+          "const": "unavailable",
+          "description": "The capture cannot support this metric.",
+          "type": "string"
+        }
+      ]
+    },
+    "Quality": {
+      "description": "Describes how directly a value is supported by the captured trace.",
+      "oneOf": [
+        {
+          "const": "exact",
+          "description": "The trace directly and completely determines the value.",
+          "type": "string"
+        },
+        {
+          "const": "inferred",
+          "description": "The value is reconstructed from incomplete but deterministic evidence.",
+          "type": "string"
+        },
+        {
+          "const": "statistical",
+          "description": "The value is an estimate obtained from statistical samples.",
+          "type": "string"
+        }
+      ]
+    },
+    "ResourceComparisonAggregate": {
+      "description": "Aggregate selected from one resource-counter summary.",
+      "oneOf": [
+        {
+          "const": "latest",
+          "description": "Last value observed in the capture.",
+          "type": "string"
+        },
+        {
+          "const": "min",
+          "description": "Minimum value observed in the capture.",
+          "type": "string"
+        },
+        {
+          "const": "max",
+          "description": "Maximum value observed in the capture.",
+          "type": "string"
+        },
+        {
+          "const": "mean",
+          "description": "Arithmetic mean of values observed in the capture.",
+          "type": "string"
+        },
+        {
+          "const": "delta",
+          "description": "Last value minus first value in a valid semantic window.",
+          "type": "string"
+        },
+        {
+          "const": "rate_per_second",
+          "description": "Per-second rate derived from a valid monotonic window.",
+          "type": "string"
+        }
+      ]
+    },
+    "ResourceComparisonDirection": {
+      "description": "Direction used to interpret a configured resource metric.",
+      "oneOf": [
+        {
+          "const": "lower_is_better",
+          "description": "A smaller candidate value is an improvement.",
+          "type": "string"
+        },
+        {
+          "const": "higher_is_better",
+          "description": "A larger candidate value is an improvement.",
+          "type": "string"
+        }
+      ]
+    },
+    "ResourceMetricComparison": {
+      "description": "Comparison of one aggregate for one semantic resource identity.\n\nThe authoritative identity is `(semantic, subject)`. Counter dictionary IDs\nare retained only to diagnose renames and malformed identity reuse.",
+      "properties": {
+        "absolute_threshold": {
+          "description": "Configured absolute threshold, absent for an informational row.",
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "aggregate": {
+          "$ref": "#/$defs/ResourceComparisonAggregate",
+          "description": "Aggregate selected for comparison."
+        },
+        "baseline": {
+          "description": "Baseline aggregate value.",
+          "format": "double",
+          "type": "number"
+        },
+        "baseline_source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ResourceMetricSource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Baseline source, absent when an allowed subject addition is compared with zero."
+        },
+        "baseline_support": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MetricSupportLevel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Baseline support level, absent when that subject is missing."
+        },
+        "baseline_unit": {
+          "description": "Baseline unit as persisted by the analyzer.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "candidate": {
+          "description": "Candidate aggregate value.",
+          "format": "double",
+          "type": "number"
+        },
+        "candidate_source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ResourceMetricSource"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Candidate source, absent when an allowed subject removal is compared with zero."
+        },
+        "candidate_support": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MetricSupportLevel"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Candidate support level, absent when that subject is missing."
+        },
+        "candidate_unit": {
+          "description": "Candidate unit as persisted by the analyzer.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "delta": {
+          "description": "`candidate - baseline` in the recorded unit.",
+          "format": "double",
+          "type": "number"
+        },
+        "direction": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ResourceComparisonDirection"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Configured direction, absent for an informational row."
+        },
+        "outcome": {
+          "$ref": "#/$defs/ResourceMetricComparisonOutcome",
+          "description": "Policy outcome or informational disposition."
+        },
+        "quality": {
+          "$ref": "#/$defs/Quality",
+          "description": "Worst evidence quality of values present on either side."
+        },
+        "reasons": {
+          "description": "Reasons explaining membership, support, unit, or policy behavior.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "relative_change": {
+          "description": "`(candidate - baseline) / baseline`, absent for a zero baseline.",
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "relative_threshold": {
+          "description": "Configured relative threshold, absent for an informational row.",
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "semantic": {
+          "$ref": "#/$defs/CounterSemantic",
+          "description": "Explicit counter semantic."
+        },
+        "subject": {
+          "$ref": "#/$defs/CounterSubject",
+          "description": "Exact resource subject."
+        }
+      },
+      "required": [
+        "semantic",
+        "subject",
+        "aggregate",
+        "baseline",
+        "candidate",
+        "delta",
+        "quality",
+        "outcome"
+      ],
+      "type": "object"
+    },
+    "ResourceMetricComparisonOutcome": {
+      "description": "Policy outcome for one dynamic-resource comparison row.",
+      "oneOf": [
+        {
+          "const": "improved",
+          "description": "The configured rule classifies the candidate as improved.",
+          "type": "string"
+        },
+        {
+          "const": "unchanged",
+          "description": "The configured rule classifies the change as within tolerance.",
+          "type": "string"
+        },
+        {
+          "const": "regressed",
+          "description": "The configured rule classifies the candidate as regressed.",
+          "type": "string"
+        },
+        {
+          "const": "inconclusive",
+          "description": "A configured rule could not produce a strict result.",
+          "type": "string"
+        },
+        {
+          "const": "informational",
+          "description": "No rule is configured; the row is diagnostic only.",
+          "type": "string"
+        }
+      ]
+    },
+    "ResourceMetricSource": {
+      "description": "Diagnostic source of one compared dynamic-resource value.",
+      "oneOf": [
+        {
+          "description": "Direct aggregate from one counter dictionary entry.",
+          "properties": {
+            "counter_id": {
+              "description": "Counter dictionary ID used only for diagnosis.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "counter",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "counter_id"
+          ],
+          "type": "object"
+        },
+        {
+          "description": "Analyzer-derived value supported by one or more source counters.",
+          "properties": {
+            "kind": {
+              "const": "derived",
+              "type": "string"
+            },
+            "source_counter_ids": {
+              "description": "Counter dictionary IDs that supplied the evidence.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "kind",
+            "source_counter_ids"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "StackRole": {
+      "description": "Semantic role assigned to one runtime stack.",
+      "oneOf": [
+        {
+          "const": "task",
+          "description": "RTOS Task stack.",
+          "type": "string"
+        },
+        {
+          "const": "isr",
+          "description": "Dedicated ISR stack.",
+          "type": "string"
+        },
+        {
+          "const": "msp",
+          "description": "Arm Main Stack Pointer stack.",
+          "type": "string"
+        },
+        {
+          "const": "psp",
+          "description": "Arm Process Stack Pointer stack.",
+          "type": "string"
+        },
+        {
+          "const": "custom",
+          "description": "Extension-defined stack role.",
+          "type": "string"
+        }
+      ]
+    },
+    "StaticRamMetricComparison": {
+      "description": "Exact lower-is-better comparison of one static-RAM quantity.",
+      "properties": {
+        "baseline_bytes": {
+          "description": "Baseline byte count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "candidate_bytes": {
+          "description": "Candidate byte count.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "metric": {
+          "$ref": "#/$defs/StaticRamMetricKind",
+          "description": "Static-RAM quantity being compared."
+        },
+        "outcome": {
+          "$ref": "#/$defs/MetricComparisonOutcome",
+          "description": "Lower-is-better outcome."
+        },
+        "reasons": {
+          "description": "Explanatory reasons.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "metric",
+        "baseline_bytes",
+        "candidate_bytes",
+        "outcome"
+      ],
+      "type": "object"
+    },
+    "StaticRamMetricKind": {
+      "description": "Static-RAM quantity compared between two analysis summaries.",
+      "oneOf": [
+        {
+          "const": "total",
+          "description": "Sum of every classified static-RAM kind.",
+          "type": "string"
+        },
+        {
+          "const": "data",
+          "description": "Initialized `.data` bytes.",
+          "type": "string"
+        },
+        {
+          "const": "bss",
+          "description": "Zero-initialized `.bss` bytes.",
+          "type": "string"
+        },
+        {
+          "const": "noinit",
+          "description": "Non-initialized `.noinit` bytes.",
+          "type": "string"
+        },
+        {
+          "const": "dma",
+          "description": "Explicit DMA-section bytes.",
+          "type": "string"
+        },
+        {
+          "const": "rtos",
+          "description": "Explicit RTOS-section bytes.",
+          "type": "string"
+        },
+        {
+          "const": "custom",
+          "description": "Explicit custom-section bytes.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.comparison/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Versioned comparison between a baseline and candidate session.",
+  "properties": {
+    "baseline_health": {
+      "$ref": "#/$defs/HealthVerdict",
+      "description": "Health verdict of the baseline input."
+    },
+    "baseline_session_id": {
+      "description": "Baseline session identifier.",
+      "type": "string"
+    },
+    "candidate_health": {
+      "$ref": "#/$defs/HealthVerdict",
+      "description": "Health verdict of the candidate input."
+    },
+    "candidate_session_id": {
+      "description": "Candidate session identifier.",
+      "type": "string"
+    },
+    "metrics": {
+      "description": "Per-subject metric comparisons.",
+      "items": {
+        "$ref": "#/$defs/MetricComparison"
+      },
+      "type": "array"
+    },
+    "reasons": {
+      "description": "Capture-wide explanatory reasons.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "resource_metrics": {
+      "description": "Dynamic-resource comparisons keyed by semantic identity and exact subject.",
+      "items": {
+        "$ref": "#/$defs/ResourceMetricComparison"
+      },
+      "type": "array"
+    },
+    "schema": {
+      "const": "t32perf.comparison/v1",
+      "description": "The comparison schema version.",
+      "type": "string"
+    },
+    "static_ram_metrics": {
+      "description": "Static-RAM total and per-kind comparisons.",
+      "items": {
+        "$ref": "#/$defs/StaticRamMetricComparison"
+      },
+      "type": "array"
+    },
+    "verdict": {
+      "$ref": "#/$defs/ComparisonVerdict",
+      "description": "Capture-wide comparison verdict."
+    }
+  },
+  "required": [
+    "schema",
+    "baseline_session_id",
+    "candidate_session_id",
+    "baseline_health",
+    "candidate_health",
+    "verdict",
+    "metrics"
+  ],
+  "title": "ComparisonReport",
+  "type": "object"
+}

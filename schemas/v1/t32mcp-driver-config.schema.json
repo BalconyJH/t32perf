@@ -1,0 +1,477 @@
+{
+  "$defs": {
+    "DriverAttestationDeployment": {
+      "additionalProperties": false,
+      "description": "Deployment-owned capture-attestation signer and trust-root selection.",
+      "properties": {
+        "idempotent_by_signing_request_sha256": {
+          "const": true,
+          "description": "Required signer protocol guarantee for safe exact-request retry.",
+          "type": "boolean"
+        },
+        "key_id": {
+          "description": "Exact signing-key identity that must exist in the policy.",
+          "maxLength": 4096,
+          "minLength": 1,
+          "type": "string"
+        },
+        "policy_id": {
+          "description": "Exact policy identity expected inside the strict policy document.",
+          "maxLength": 4096,
+          "minLength": 1,
+          "type": "string"
+        },
+        "policy_path": {
+          "description": "Absolute plain-file path of the approved capture trust policy.",
+          "maxLength": 4096,
+          "minLength": 1,
+          "type": "string"
+        },
+        "policy_sha256": {
+          "description": "Exact digest of the approved capture trust policy bytes.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "signer_command": {
+          "$ref": "#/$defs/DriverCommand",
+          "description": "Direct-argv signer invocation. Attestation bytes are written only to its output path."
+        }
+      },
+      "required": [
+        "policy_path",
+        "policy_sha256",
+        "policy_id",
+        "key_id",
+        "signer_command",
+        "idempotent_by_signing_request_sha256"
+      ],
+      "type": "object"
+    },
+    "DriverCommand": {
+      "additionalProperties": false,
+      "description": "One direct executable invocation with a closed, non-shell argument template.",
+      "properties": {
+        "arguments": {
+          "description": "Separate argv entries; no command line or shell parsing is permitted.",
+          "items": {
+            "maxLength": 4096,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 16,
+          "type": "array"
+        },
+        "executable": {
+          "description": "Executable passed directly to the operating-system process API.",
+          "maxLength": 4096,
+          "minLength": 1,
+          "type": "string"
+        },
+        "expected_executable_sha256": {
+          "description": "Exact executable digest from an administrator-verified deployment artifact.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "timeout_ms": {
+          "description": "Independent wall-clock timeout for this invocation.",
+          "format": "uint64",
+          "maximum": 3600000,
+          "minimum": 100,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "executable",
+        "expected_executable_sha256",
+        "arguments",
+        "timeout_ms"
+      ],
+      "type": "object"
+    },
+    "DriverFaultActions": {
+      "additionalProperties": false,
+      "description": "Closed set of external fault-injection hooks.\n\nCMM abort is intentionally absent because it must use the official t32mcp\nabort operation rather than an arbitrary deployment command.",
+      "properties": {
+        "trace32_disconnect_at_stop": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DriverCommand"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Optional command that disconnects TRACE32 at the accepted stop boundary."
+        }
+      },
+      "type": "object"
+    },
+    "DriverFirmwareDeployment": {
+      "additionalProperties": false,
+      "description": "Deployment-owned immutable firmware input used by the one-request performance workflow.",
+      "properties": {
+        "path": {
+          "description": "Absolute plain-file path of the approved firmware ELF.",
+          "maxLength": 4096,
+          "minLength": 1,
+          "type": "string"
+        },
+        "sha256": {
+          "description": "Exact digest of the approved firmware ELF.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "type": "object"
+    },
+    "DriverPerformanceRunCustomEventResources": {
+      "additionalProperties": false,
+      "description": "All required inputs for a qualified custom-event capture.",
+      "properties": {
+        "c_wire_mapping": {
+          "$ref": "#/$defs/DriverPerformanceRunResourceInput",
+          "description": "Approved C SDK wire context/counter mapping."
+        },
+        "instrumentation_overhead": {
+          "$ref": "#/$defs/DriverPerformanceRunResourceInput",
+          "description": "Approved instrumentation overhead evidence."
+        }
+      },
+      "required": [
+        "c_wire_mapping",
+        "instrumentation_overhead"
+      ],
+      "type": "object"
+    },
+    "DriverPerformanceRunDeployment": {
+      "additionalProperties": false,
+      "description": "Optional deployment inputs required by the one-request performance workflow.",
+      "properties": {
+        "attestation": {
+          "$ref": "#/$defs/DriverAttestationDeployment",
+          "description": "Approved trust policy and external signer."
+        },
+        "firmware": {
+          "$ref": "#/$defs/DriverFirmwareDeployment",
+          "description": "Approved firmware source copied into each new performance Session."
+        },
+        "max_duration_ns": {
+          "description": "Maximum caller-requested workload duration admitted by this deployment.",
+          "format": "uint64",
+          "maximum": 1800000000000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "qualification": {
+          "$ref": "#/$defs/DriverPerformanceRunQualificationDeployment",
+          "description": "Approved qualification inputs provisioned into every performance Session."
+        },
+        "resources": {
+          "$ref": "#/$defs/DriverPerformanceRunResources",
+          "default": {},
+          "description": "Closed optional build resources provisioned with this deployment."
+        },
+        "workload_command": {
+          "$ref": "#/$defs/DriverCommand",
+          "description": "Deployment-owned workload that consumes the exact requested duration."
+        }
+      },
+      "required": [
+        "max_duration_ns",
+        "firmware",
+        "workload_command",
+        "qualification",
+        "attestation"
+      ],
+      "type": "object"
+    },
+    "DriverPerformanceRunProgramFlowResources": {
+      "additionalProperties": false,
+      "description": "All required inputs for a qualified TRACE32 TASKEVENTS program-flow capture.",
+      "properties": {
+        "orti": {
+          "$ref": "#/$defs/DriverPerformanceRunResourceInput",
+          "description": "Approved OSEK/ORTI awareness input."
+        },
+        "task_events_mapping_template": {
+          "$ref": "#/$defs/DriverPerformanceRunResourceInput",
+          "description": "Approved TASKEVENTS mapping template materialized after capture binding."
+        },
+        "task_markers": {
+          "$ref": "#/$defs/DriverPerformanceRunResourceInput",
+          "description": "Approved task marker input emitted by the workload build."
+        }
+      },
+      "required": [
+        "orti",
+        "task_markers",
+        "task_events_mapping_template"
+      ],
+      "type": "object"
+    },
+    "DriverPerformanceRunQualificationDeployment": {
+      "additionalProperties": false,
+      "description": "Deployment-owned target-adapter qualification inputs for `perf_run` provisioning.",
+      "properties": {
+        "hil_receipt": {
+          "$ref": "#/$defs/DriverQualificationInput",
+          "description": "Approved HIL verification receipt bound by the qualification receipt."
+        },
+        "policy_id": {
+          "description": "Exact qualification trust-policy identity selected from the artifact-root deployment.",
+          "maxLength": 4096,
+          "minLength": 1,
+          "type": "string"
+        },
+        "qualification_receipt": {
+          "$ref": "#/$defs/DriverQualificationInput",
+          "description": "Approved target-adapter qualification receipt."
+        },
+        "recovery_evidence": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DriverQualificationInput"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Optional approved recovery evidence required by a recovery HIL receipt."
+        }
+      },
+      "required": [
+        "policy_id",
+        "qualification_receipt",
+        "hil_receipt"
+      ],
+      "type": "object"
+    },
+    "DriverPerformanceRunResourceInput": {
+      "additionalProperties": false,
+      "description": "One immutable build resource admitted solely by its path and exact digest.\n\nResource identity, artifact kind, and media type are deliberately not\nconfigurable at the deployment boundary. The consuming `perf_run` stage\nassigns those closed semantics from the field that carries this input.",
+      "properties": {
+        "path": {
+          "description": "Absolute plain-file path of the approved build resource.",
+          "maxLength": 4096,
+          "minLength": 1,
+          "type": "string"
+        },
+        "sha256": {
+          "description": "Exact digest of the approved build resource bytes.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "type": "object"
+    },
+    "DriverPerformanceRunResources": {
+      "additionalProperties": false,
+      "description": "Optional immutable build resources provisioned by a performance deployment.",
+      "properties": {
+        "custom_events": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DriverPerformanceRunCustomEventResources"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Optional all-or-nothing custom-event resources."
+        },
+        "linker_map": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DriverPerformanceRunResourceInput"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Optional linker map for static RAM analysis."
+        },
+        "program_flow": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DriverPerformanceRunProgramFlowResources"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Optional all-or-nothing program-flow resources."
+        },
+        "stack_usage": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DriverPerformanceRunResourceInput"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Optional compiler stack-usage report."
+        },
+        "static_ram_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DriverPerformanceRunResourceInput"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Optional static-RAM parser configuration."
+        }
+      },
+      "type": "object"
+    },
+    "DriverQualificationInput": {
+      "additionalProperties": false,
+      "description": "One immutable deployment-owned input file admitted by exact digest.",
+      "properties": {
+        "path": {
+          "description": "Absolute plain-file path of the approved input.",
+          "maxLength": 4096,
+          "minLength": 1,
+          "type": "string"
+        },
+        "sha256": {
+          "description": "Exact digest of the approved input bytes.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "type": "object"
+    },
+    "T32mcpDriverConfigSchemaVersion": {
+      "description": "Supported t32mcp driver configuration schema version.",
+      "oneOf": [
+        {
+          "const": "t32perf.t32mcp-driver-config/v1",
+          "description": "Version 1.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.t32mcp-driver-config/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Complete deployment-owned configuration for one real t32mcp endpoint.",
+  "properties": {
+    "executable": {
+      "description": "Official t32mcp executable passed directly to the process API.",
+      "maxLength": 4096,
+      "minLength": 1,
+      "type": "string"
+    },
+    "expected_bundle_sha256": {
+      "description": "Exact digest of the verified fixed t32mcp skill/adapter bundle.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "expected_executable_sha256": {
+      "description": "Exact official t32mcp executable digest from an administrator-verified release.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "expected_t32mcp_version": {
+      "const": "0.2.2",
+      "description": "Exact upstream implementation version admitted by this release.",
+      "pattern": "^0\\.2\\.2$",
+      "type": "string"
+    },
+    "fault_actions": {
+      "$ref": "#/$defs/DriverFaultActions",
+      "description": "Closed external fault-injection hooks."
+    },
+    "max_stderr_bytes": {
+      "description": "Maximum stderr bytes retained from one child process.",
+      "format": "uint64",
+      "maximum": 1048576,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "operation_timeout_ms": {
+      "description": "Default wall-clock deadline for one official MCP operation.",
+      "format": "uint64",
+      "maximum": 3600000,
+      "minimum": 100,
+      "type": "integer"
+    },
+    "performance_run": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DriverPerformanceRunDeployment"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Optional deployment inputs for the one-request performance workflow."
+    },
+    "poll_interval_ms": {
+      "description": "Interval between bounded collection polls.",
+      "format": "uint64",
+      "maximum": 10000,
+      "minimum": 10,
+      "type": "integer"
+    },
+    "schema": {
+      "$ref": "#/$defs/T32mcpDriverConfigSchemaVersion",
+      "description": "Versioned configuration family."
+    },
+    "skills_root": {
+      "description": "Read-only root containing the installed fixed PRACTICE skills.",
+      "maxLength": 4096,
+      "minLength": 1,
+      "type": "string"
+    },
+    "trace32_port": {
+      "description": "Nonzero TCP port for the single-tenant TRACE32 endpoint.",
+      "format": "uint16",
+      "maximum": 65535,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "workload": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DriverCommand"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Optional external owner for the fixed workload window."
+    }
+  },
+  "required": [
+    "schema",
+    "executable",
+    "expected_executable_sha256",
+    "skills_root",
+    "trace32_port",
+    "expected_t32mcp_version",
+    "expected_bundle_sha256",
+    "poll_interval_ms",
+    "operation_timeout_ms",
+    "max_stderr_bytes",
+    "fault_actions"
+  ],
+  "title": "T32mcpDriverConfig",
+  "type": "object"
+}

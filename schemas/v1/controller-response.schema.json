@@ -1,0 +1,265 @@
+{
+  "$defs": {
+    "Artifact": {
+      "description": "One immutable file artifact and its provenance.",
+      "properties": {
+        "id": {
+          "description": "Stable artifact identifier unique within the session.",
+          "type": "string"
+        },
+        "input_artifact_ids": {
+          "description": "Artifact identifiers consumed to produce this artifact.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "kind": {
+          "description": "Extensible artifact kind such as `raw_trace` or `perfetto`.",
+          "type": "string"
+        },
+        "media_type": {
+          "description": "IANA media type of the file.",
+          "type": "string"
+        },
+        "producer": {
+          "description": "Tool or stage identifier that produced the file.",
+          "type": "string"
+        },
+        "relative_path": {
+          "description": "Canonical path relative to the session directory.",
+          "maxLength": 1024,
+          "minLength": 1,
+          "pattern": "^(?=[\\u0020-\\u007E]+$)(?!/)(?!.*[<>:\"\\\\|?*])(?!.*//)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*/$)(?!.*[. ](?:/|$))(?!(?:.*?/)?(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Nn][Ii][Nn]\\$|[Cc][Oo][Nn][Oo][Uu][Tt]\\$|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9]) *(?:\\.[^/]*)?(?:/|$)).+$",
+          "type": "string"
+        },
+        "sha256": {
+          "description": "SHA-256 digest of the complete file.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "size_bytes": {
+          "description": "File size in bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "relative_path",
+        "media_type",
+        "size_bytes",
+        "sha256",
+        "producer",
+        "input_artifact_ids"
+      ],
+      "type": "object"
+    },
+    "ControllerBinding": {
+      "additionalProperties": false,
+      "description": "Fields cryptographically bound into every controller transaction.",
+      "properties": {
+        "binding_sha256": {
+          "description": "Digest of every preceding binding field with a versioned domain separator.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "nonce": {
+          "description": "Independent replay-prevention nonce.",
+          "type": "string"
+        },
+        "session_id": {
+          "description": "Session receiving the transaction artifacts.",
+          "type": "string"
+        },
+        "session_operation_id": {
+          "description": "Immutable operation identifier from Session state.",
+          "type": "string"
+        },
+        "session_request_sha256": {
+          "description": "Digest of the immutable Session request.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "transaction_id": {
+          "description": "Unique transaction identifier.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "session_id",
+        "session_operation_id",
+        "session_request_sha256",
+        "transaction_id",
+        "nonce",
+        "binding_sha256"
+      ],
+      "type": "object"
+    },
+    "ControllerResponseSchemaVersion": {
+      "description": "Supported controller response schema version.",
+      "oneOf": [
+        {
+          "const": "t32perf.controller-response/v1",
+          "description": "Version 1.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerScriptResponse": {
+      "additionalProperties": false,
+      "description": "Serializable subset of the strict fixed-script frame.",
+      "properties": {
+        "code": {
+          "description": "Stable operation result code.",
+          "type": "string"
+        },
+        "files_deleted": {
+          "description": "Cleanup evidence when present.",
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "operation": {
+          "$ref": "#/$defs/PerfOperation",
+          "description": "Fixed script operation."
+        },
+        "status": {
+          "$ref": "#/$defs/PerfStatus",
+          "description": "Fixed script status string."
+        }
+      },
+      "required": [
+        "operation",
+        "status",
+        "code"
+      ],
+      "type": "object"
+    },
+    "PerfOperation": {
+      "description": "A fixed script operation exposed by the TRACE32 performance skill.",
+      "oneOf": [
+        {
+          "const": "perf_get_capabilities",
+          "description": "Capability discovery.",
+          "type": "string"
+        },
+        {
+          "const": "perf_configure",
+          "description": "Target-specific configuration.",
+          "type": "string"
+        },
+        {
+          "const": "perf_start",
+          "description": "Capture start.",
+          "type": "string"
+        },
+        {
+          "const": "perf_stop",
+          "description": "Capture stop.",
+          "type": "string"
+        },
+        {
+          "const": "perf_get_health",
+          "description": "Health retrieval.",
+          "type": "string"
+        },
+        {
+          "const": "perf_export",
+          "description": "Artifact export.",
+          "type": "string"
+        },
+        {
+          "const": "perf_get_hotspots",
+          "description": "Hotspot retrieval.",
+          "type": "string"
+        },
+        {
+          "const": "perf_cleanup",
+          "description": "Capture-state cleanup.",
+          "type": "string"
+        }
+      ]
+    },
+    "PerfStatus": {
+      "description": "Typed status returned by a fixed PRACTICE script.",
+      "oneOf": [
+        {
+          "const": "OK",
+          "description": "The requested script operation completed.",
+          "type": "string"
+        },
+        {
+          "const": "INVALID_ARGUMENT",
+          "description": "Script arguments were rejected.",
+          "type": "string"
+        },
+        {
+          "const": "UNSUPPORTED_NEEDS_TRACE32",
+          "description": "Real TRACE32, target, build, mapping, or adapter evidence is required.",
+          "type": "string"
+        },
+        {
+          "const": "HOST_PROCESSING_REQUIRED",
+          "description": "A host parser or analysis stage must continue the operation.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.controller-response/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Host-validated response bound to an immutable controller request artifact.",
+  "properties": {
+    "binding": {
+      "$ref": "#/$defs/ControllerBinding",
+      "description": "Binding copied from and verified against the immutable request."
+    },
+    "output_artifact": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Artifact"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Immutable exported trace artifact, only after an `OK` export."
+    },
+    "raw_response_artifact": {
+      "$ref": "#/$defs/Artifact",
+      "description": "Immutable raw t32mcp wrapper artifact."
+    },
+    "request_artifact_id": {
+      "description": "Artifact identifier of the immutable controller request.",
+      "type": "string"
+    },
+    "request_artifact_sha256": {
+      "description": "Digest of the exact immutable controller request bytes.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "schema": {
+      "$ref": "#/$defs/ControllerResponseSchemaVersion",
+      "description": "Versioned document family."
+    },
+    "script_response": {
+      "$ref": "#/$defs/ControllerScriptResponse",
+      "description": "Parsed fixed-script response."
+    }
+  },
+  "required": [
+    "schema",
+    "binding",
+    "request_artifact_id",
+    "request_artifact_sha256",
+    "script_response",
+    "raw_response_artifact"
+  ],
+  "title": "ControllerResponse",
+  "type": "object"
+}

@@ -1,0 +1,136 @@
+{
+  "$defs": {
+    "TargetAdapterAdmissionSnapshotSchemaVersion": {
+      "description": "The single supported admission-snapshot schema version.",
+      "oneOf": [
+        {
+          "const": "t32perf.target-adapter-admission-snapshot/v1",
+          "description": "Version 1.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetAdapterScenario": {
+      "description": "A fixed target-adapter execution scenario.",
+      "oneOf": [
+        {
+          "const": "normal",
+          "description": "Normal capture without injected faults.",
+          "type": "string"
+        },
+        {
+          "const": "trace_overflow",
+          "description": "Deliberately force trace-buffer or transport overflow.",
+          "type": "string"
+        },
+        {
+          "const": "flow_error",
+          "description": "Deliberately force a TRACE32 flow error.",
+          "type": "string"
+        },
+        {
+          "const": "sampling_buffer_full",
+          "description": "Use a fixed small SNOOPer Stack buffer and let it stop at capacity.",
+          "type": "string"
+        },
+        {
+          "const": "sampling_unexpected_stop",
+          "description": "Observe an unclassified early SNOOPer stop.",
+          "type": "string"
+        },
+        {
+          "const": "trace32_disconnect",
+          "description": "Disconnect TRACE32 during a fixed operation.",
+          "type": "string"
+        },
+        {
+          "const": "driver_disconnect",
+          "description": "Disconnect the deployment driver during a fixed operation.",
+          "type": "string"
+        },
+        {
+          "const": "cmm_abort",
+          "description": "Abort the active CMM transaction through the fixed t32mcp abort flow.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.target-adapter-admission-snapshot/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Host-derived durable record of the exact evidence admitted for one Session.\n\nThis is not an authorization root.  It records the raw immutable artifacts\nthat were accepted under a separately ACL-protected policy.",
+  "properties": {
+    "allowed_scenarios": {
+      "description": "Canonical authorized adapter scenarios.",
+      "items": {
+        "$ref": "#/$defs/TargetAdapterScenario"
+      },
+      "maxItems": 8,
+      "minItems": 1,
+      "type": "array"
+    },
+    "candidate_profile_sha256": {
+      "description": "Candidate profile digest with its qualification claim cleared.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "firmware_elf_sha256": {
+      "description": "Exact firmware ELF digest.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "hil_verification_receipt_sha256": {
+      "description": "SHA-256 of the HIL receipt raw bytes.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "implementation_sha256": {
+      "description": "Deployment-verified expected release-bundle manifest digest.\n\nUpstream t32mcp does not runtime-attest the installed skill bytes.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "policy_id": {
+      "description": "ACL policy snapshot identifier.",
+      "type": "string"
+    },
+    "policy_sha256": {
+      "description": "SHA-256 of the policy artifact raw bytes.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "qualification_receipt_sha256": {
+      "description": "SHA-256 of the qualification receipt raw bytes.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "qualified_profile_sha256": {
+      "description": "Complete qualified profile digest with its receipt claim bound.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "schema": {
+      "$ref": "#/$defs/TargetAdapterAdmissionSnapshotSchemaVersion",
+      "description": "Snapshot document version."
+    },
+    "t32mcp_version": {
+      "description": "Exact t32mcp version pin.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "policy_id",
+    "policy_sha256",
+    "hil_verification_receipt_sha256",
+    "qualification_receipt_sha256",
+    "candidate_profile_sha256",
+    "qualified_profile_sha256",
+    "implementation_sha256",
+    "firmware_elf_sha256",
+    "t32mcp_version",
+    "allowed_scenarios"
+  ],
+  "title": "TargetAdapterAdmissionSnapshot",
+  "type": "object"
+}

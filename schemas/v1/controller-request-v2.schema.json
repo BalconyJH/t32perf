@@ -1,0 +1,928 @@
+{
+  "$defs": {
+    "Artifact": {
+      "description": "One immutable file artifact and its provenance.",
+      "properties": {
+        "id": {
+          "description": "Stable artifact identifier unique within the session.",
+          "type": "string"
+        },
+        "input_artifact_ids": {
+          "description": "Artifact identifiers consumed to produce this artifact.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "kind": {
+          "description": "Extensible artifact kind such as `raw_trace` or `perfetto`.",
+          "type": "string"
+        },
+        "media_type": {
+          "description": "IANA media type of the file.",
+          "type": "string"
+        },
+        "producer": {
+          "description": "Tool or stage identifier that produced the file.",
+          "type": "string"
+        },
+        "relative_path": {
+          "description": "Canonical path relative to the session directory.",
+          "maxLength": 1024,
+          "minLength": 1,
+          "pattern": "^(?=[\\u0020-\\u007E]+$)(?!/)(?!.*[<>:\"\\\\|?*])(?!.*//)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*/$)(?!.*[. ](?:/|$))(?!(?:.*?/)?(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Nn][Ii][Nn]\\$|[Cc][Oo][Nn][Oo][Uu][Tt]\\$|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9]) *(?:\\.[^/]*)?(?:/|$)).+$",
+          "type": "string"
+        },
+        "sha256": {
+          "description": "SHA-256 digest of the complete file.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "size_bytes": {
+          "description": "File size in bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "relative_path",
+        "media_type",
+        "size_bytes",
+        "sha256",
+        "producer",
+        "input_artifact_ids"
+      ],
+      "type": "object"
+    },
+    "ControllerBinding": {
+      "additionalProperties": false,
+      "description": "Fields cryptographically bound into every controller transaction.",
+      "properties": {
+        "binding_sha256": {
+          "description": "Digest of every preceding binding field with a versioned domain separator.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "nonce": {
+          "description": "Independent replay-prevention nonce.",
+          "type": "string"
+        },
+        "session_id": {
+          "description": "Session receiving the transaction artifacts.",
+          "type": "string"
+        },
+        "session_operation_id": {
+          "description": "Immutable operation identifier from Session state.",
+          "type": "string"
+        },
+        "session_request_sha256": {
+          "description": "Digest of the immutable Session request.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "transaction_id": {
+          "description": "Unique transaction identifier.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "session_id",
+        "session_operation_id",
+        "session_request_sha256",
+        "transaction_id",
+        "nonce",
+        "binding_sha256"
+      ],
+      "type": "object"
+    },
+    "ControllerFaultAction": {
+      "description": "A closed deployment-owned fault action for one controller request.",
+      "oneOf": [
+        {
+          "const": "trace32_disconnect_at_stop",
+          "description": "Disconnect the TRACE32 endpoint at the fixed stop boundary.",
+          "type": "string"
+        },
+        {
+          "const": "driver_disconnect_at_export",
+          "description": "Disconnect the deployment driver at the fixed export boundary.",
+          "type": "string"
+        },
+        {
+          "const": "cmm_abort_at_start",
+          "description": "Invoke the official t32mcp abort flow at the fixed start boundary.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerFirmwareImageBinding": {
+      "additionalProperties": false,
+      "description": "Exact registered firmware image and host-derived sparse S3 measurement.",
+      "properties": {
+        "measurement_artifact": {
+          "$ref": "#/$defs/Artifact",
+          "description": "Immutable canonical sparse S3 artifact derived by the trusted host."
+        },
+        "script_input_path": {
+          "description": "Exact absolute measurement path passed to fixed PRACTICE scripts.",
+          "type": "string"
+        },
+        "source_elf_artifact": {
+          "$ref": "#/$defs/Artifact",
+          "description": "Immutable source ELF artifact registered in the Session."
+        }
+      },
+      "required": [
+        "source_elf_artifact",
+        "measurement_artifact",
+        "script_input_path"
+      ],
+      "type": "object"
+    },
+    "ControllerMcpHandoff": {
+      "additionalProperties": false,
+      "description": "The complete MCP handoff for one transaction.",
+      "properties": {
+        "abort": {
+          "$ref": "#/$defs/NoArgumentsToolCall",
+          "description": "Fail-safe abort call. It has no execution ownership in upstream t32mcp."
+        },
+        "collect": {
+          "$ref": "#/$defs/NoArgumentsToolCall",
+          "description": "Polls only when execute reports `<NOT FINISHED>`."
+        },
+        "execute": {
+          "$ref": "#/$defs/ExecutePracticeSkillCall",
+          "description": "Starts the fixed PRACTICE script."
+        }
+      },
+      "required": [
+        "execute",
+        "collect",
+        "abort"
+      ],
+      "type": "object"
+    },
+    "ControllerOutputReservation": {
+      "additionalProperties": false,
+      "description": "File reserved by the controller for a successful TRACE32 export.",
+      "properties": {
+        "artifact_id": {
+          "description": "Artifact identifier used when accepting the completed export.",
+          "type": "string"
+        },
+        "destination_relative_path": {
+          "description": "Immutable destination below the Session.",
+          "maxLength": 1024,
+          "minLength": 1,
+          "pattern": "^(?=[\\u0020-\\u007E]+$)(?!/)(?!.*[<>:\"\\\\|?*])(?!.*//)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*/$)(?!.*[. ](?:/|$))(?!(?:.*?/)?(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Nn][Ii][Nn]\\$|[Cc][Oo][Nn][Oo][Uu][Tt]\\$|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9]) *(?:\\.[^/]*)?(?:/|$)).+$",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Artifact kind.",
+          "type": "string"
+        },
+        "max_bytes": {
+          "description": "Independent bound applied before the exported file becomes durable.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "media_type": {
+          "description": "Artifact media type.",
+          "type": "string"
+        },
+        "producer": {
+          "description": "Internal controller producer identity.",
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/$defs/ControllerOutputRole",
+          "description": "Semantic role of the reserved output."
+        },
+        "script_output_path": {
+          "description": "Exact absolute path passed to the fixed export script.",
+          "type": "string"
+        },
+        "staged_relative_path": {
+          "description": "Path below `capture/staging` that TRACE32 may create once.",
+          "maxLength": 1024,
+          "minLength": 1,
+          "pattern": "^(?=[\\u0020-\\u007E]+$)(?!/)(?!.*[<>:\"\\\\|?*])(?!.*//)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*/$)(?!.*[. ](?:/|$))(?!(?:.*?/)?(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Nn][Ii][Nn]\\$|[Cc][Oo][Nn][Oo][Uu][Tt]\\$|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9]) *(?:\\.[^/]*)?(?:/|$)).+$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "staged_relative_path",
+        "script_output_path",
+        "artifact_id",
+        "destination_relative_path",
+        "kind",
+        "media_type",
+        "producer",
+        "max_bytes"
+      ],
+      "type": "object"
+    },
+    "ControllerOutputReservationV2": {
+      "additionalProperties": false,
+      "description": "One closed V2 output slot with the complete reservation envelope.",
+      "properties": {
+        "artifact_id": {
+          "description": "Artifact identifier used when the slot is accepted.",
+          "type": "string"
+        },
+        "destination_relative_path": {
+          "description": "Immutable destination below the Session.",
+          "maxLength": 1024,
+          "minLength": 1,
+          "pattern": "^(?=[\\u0020-\\u007E]+$)(?!/)(?!.*[<>:\"\\\\|?*])(?!.*//)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*/$)(?!.*[. ](?:/|$))(?!(?:.*?/)?(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Nn][Ii][Nn]\\$|[Cc][Oo][Nn][Oo][Uu][Tt]\\$|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9]) *(?:\\.[^/]*)?(?:/|$)).+$",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Artifact kind.",
+          "type": "string"
+        },
+        "max_bytes": {
+          "description": "Independent bounded size limit.",
+          "format": "uint64",
+          "maximum": 1099511627776,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "media_type": {
+          "description": "Artifact media type.",
+          "type": "string"
+        },
+        "producer": {
+          "description": "Internal controller producer identity.",
+          "type": "string"
+        },
+        "role": {
+          "$ref": "#/$defs/ControllerOutputRoleV2",
+          "description": "Semantic output role."
+        },
+        "script_output_path": {
+          "description": "Exact PRACTICE-safe path passed under the role's fixed argument key.",
+          "type": "string"
+        },
+        "staged_relative_path": {
+          "description": "Path below Session staging that the fixed script may create once.",
+          "maxLength": 1024,
+          "minLength": 1,
+          "pattern": "^(?=[\\u0020-\\u007E]+$)(?!/)(?!.*[<>:\"\\\\|?*])(?!.*//)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*/$)(?!.*[. ](?:/|$))(?!(?:.*?/)?(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Nn][Ii][Nn]\\$|[Cc][Oo][Nn][Oo][Uu][Tt]\\$|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9]) *(?:\\.[^/]*)?(?:/|$)).+$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "staged_relative_path",
+        "script_output_path",
+        "artifact_id",
+        "destination_relative_path",
+        "kind",
+        "media_type",
+        "producer",
+        "max_bytes"
+      ],
+      "type": "object"
+    },
+    "ControllerOutputRole": {
+      "description": "Semantic role of a Controller-owned script output.",
+      "oneOf": [
+        {
+          "const": "trace_export",
+          "description": "Potentially large raw trace export.",
+          "type": "string"
+        },
+        {
+          "const": "machine_evidence",
+          "description": "Bounded machine-readable target-control evidence.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerOutputRoleV2": {
+      "description": "Closed semantic role of one V2 controller output slot.",
+      "oneOf": [
+        {
+          "const": "trace_export",
+          "description": "Potentially large raw trace export.",
+          "type": "string"
+        },
+        {
+          "const": "custom_events",
+          "description": "Target custom-event stream exported independently from program flow.",
+          "type": "string"
+        },
+        {
+          "const": "counters",
+          "description": "Runtime counter stream.",
+          "type": "string"
+        },
+        {
+          "const": "resource_counters",
+          "description": "Resource counter or resource-report stream.",
+          "type": "string"
+        },
+        {
+          "const": "machine_evidence",
+          "description": "Bounded machine-readable target-control evidence.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerRequestV2SchemaVersion": {
+      "description": "Supported multi-output controller request schema version.",
+      "oneOf": [
+        {
+          "const": "t32perf.controller-request/v2",
+          "description": "Version 2.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerTargetAdapterBinding": {
+      "additionalProperties": false,
+      "description": "Exact admitted adapter implementation bound into every controller request.",
+      "properties": {
+        "adapter_id": {
+          "description": "Stable compiled adapter identity selected by the trusted host.",
+          "type": "string"
+        },
+        "adapter_version": {
+          "description": "Exact adapter implementation version.",
+          "type": "string"
+        },
+        "architecture_package": {
+          "description": "Exact architecture package selected from capabilities.",
+          "type": "string"
+        },
+        "capture_kind": {
+          "$ref": "#/$defs/TargetAdapterCaptureKind",
+          "description": "Exact typed capture-family contract selected by deployment."
+        },
+        "controller_protocol": {
+          "$ref": "#/$defs/TargetAdapterControllerProtocol",
+          "description": "Explicit Controller request/response protocol copied from the selected profile."
+        },
+        "custom_event_collector": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TargetAdapterCustomEventCollectorContract"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Exact custom-event collector contract copied from the selected profile."
+        },
+        "implementation_sha256": {
+          "description": "Deployment-verified expected digest of the canonical release bundle.\n\nUpstream t32mcp does not runtime-attest the installed skill bytes.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "probe_identifier": {
+          "description": "Exact probe identity selected from capabilities.",
+          "type": "string"
+        },
+        "profile_sha256": {
+          "description": "Digest of the complete selected profile document.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "qualification_sha256": {
+          "description": "Verified qualification receipt digest, absent for evidence-only candidates.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "scenario": {
+          "$ref": "#/$defs/TargetAdapterScenario",
+          "description": "Deployment-owned fixed scenario; public callers cannot relabel it."
+        },
+        "target_identifier": {
+          "description": "Exact target identity selected from capabilities.",
+          "type": "string"
+        },
+        "trace32_build": {
+          "description": "Exact TRACE32 build selected from capabilities.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "trace32_release": {
+          "description": "Canonical TRACE32 release selected from capabilities.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "adapter_id",
+        "adapter_version",
+        "trace32_release",
+        "trace32_build",
+        "architecture_package",
+        "target_identifier",
+        "probe_identifier",
+        "profile_sha256",
+        "implementation_sha256",
+        "scenario",
+        "capture_kind"
+      ],
+      "type": "object"
+    },
+    "ExecutePracticeSkillArguments": {
+      "additionalProperties": false,
+      "description": "Arguments accepted by official `execute_practice_skill`.",
+      "properties": {
+        "script_args": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Bounded scalar arguments serialized by t32mcp as `key=value` parameters.",
+          "type": "object"
+        },
+        "script_name": {
+          "description": "Fixed repository-owned PRACTICE script name.",
+          "type": "string"
+        },
+        "skill_name": {
+          "description": "Fixed logical skill name.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "skill_name",
+        "script_name",
+        "script_args"
+      ],
+      "type": "object"
+    },
+    "ExecutePracticeSkillCall": {
+      "additionalProperties": false,
+      "description": "Exact invocation of official `execute_practice_skill`.",
+      "properties": {
+        "arguments": {
+          "$ref": "#/$defs/ExecutePracticeSkillArguments",
+          "description": "Typed tool arguments."
+        },
+        "tool": {
+          "$ref": "#/$defs/T32mcpTool",
+          "description": "Exact official tool name."
+        }
+      },
+      "required": [
+        "tool",
+        "arguments"
+      ],
+      "type": "object"
+    },
+    "NoArguments": {
+      "additionalProperties": false,
+      "description": "Empty arguments for official collect and abort tools.",
+      "type": "object"
+    },
+    "NoArgumentsToolCall": {
+      "additionalProperties": false,
+      "description": "Exact invocation of an official t32mcp tool with no arguments.",
+      "properties": {
+        "arguments": {
+          "$ref": "#/$defs/NoArguments",
+          "description": "Required empty object."
+        },
+        "tool": {
+          "$ref": "#/$defs/T32mcpTool",
+          "description": "Exact official tool name."
+        }
+      },
+      "required": [
+        "tool",
+        "arguments"
+      ],
+      "type": "object"
+    },
+    "PerfOperation": {
+      "description": "A fixed script operation exposed by the TRACE32 performance skill.",
+      "oneOf": [
+        {
+          "const": "perf_get_capabilities",
+          "description": "Capability discovery.",
+          "type": "string"
+        },
+        {
+          "const": "perf_configure",
+          "description": "Target-specific configuration.",
+          "type": "string"
+        },
+        {
+          "const": "perf_start",
+          "description": "Capture start.",
+          "type": "string"
+        },
+        {
+          "const": "perf_stop",
+          "description": "Capture stop.",
+          "type": "string"
+        },
+        {
+          "const": "perf_get_health",
+          "description": "Health retrieval.",
+          "type": "string"
+        },
+        {
+          "const": "perf_export",
+          "description": "Artifact export.",
+          "type": "string"
+        },
+        {
+          "const": "perf_get_hotspots",
+          "description": "Hotspot retrieval.",
+          "type": "string"
+        },
+        {
+          "const": "perf_cleanup",
+          "description": "Capture-state cleanup.",
+          "type": "string"
+        }
+      ]
+    },
+    "T32mcpTool": {
+      "description": "One of the three tools exposed by the official t32mcp server.",
+      "oneOf": [
+        {
+          "const": "execute_practice_skill",
+          "description": "Start one fixed PRACTICE skill script.",
+          "type": "string"
+        },
+        {
+          "const": "collect_practice_skill_response",
+          "description": "Poll or collect the response from the active script.",
+          "type": "string"
+        },
+        {
+          "const": "abort_practice_skill",
+          "description": "Abort the globally active PRACTICE script.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetAdapterCaptureKind": {
+      "description": "Capture-family-specific contract without cross-family placeholder fields.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "description": "Bounded statistical sampling where Stack capacity is measured in records.",
+          "properties": {
+            "capacity_records": {
+              "description": "Exact SNOOPer Stack capacity in records.",
+              "format": "uint64",
+              "minimum": 1,
+              "type": "integer"
+            },
+            "kind": {
+              "const": "sampling",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "capacity_records"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Complete program-flow capture exported through the strict TASKEVENTS profile.",
+          "properties": {
+            "export_profile_id": {
+              "description": "Exact deployment-owned TASKEVENTS mapping/export profile identifier.",
+              "type": "string"
+            },
+            "kind": {
+              "const": "program_flow_task_events",
+              "type": "string"
+            },
+            "orti_artifact_id": {
+              "description": "Immutable ORTI metadata artifact identifier.",
+              "type": "string"
+            },
+            "rtos_awareness": {
+              "description": "Exact RTOS-awareness package identity verified by the adapter.",
+              "type": "string"
+            },
+            "task_marker_artifact_id": {
+              "description": "Immutable task/ISR/runnable marker metadata artifact identifier.",
+              "type": "string"
+            },
+            "timestamp_clock_id": {
+              "description": "Exact timestamp clock identity used by the TASKEVENTS export.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "export_profile_id",
+            "rtos_awareness",
+            "timestamp_clock_id",
+            "orti_artifact_id",
+            "task_marker_artifact_id"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "TargetAdapterControllerProtocol": {
+      "description": "Closed Controller request/response protocol selected by one adapter profile.",
+      "oneOf": [
+        {
+          "const": "v1",
+          "description": "Single-output Controller request/response protocol.",
+          "type": "string"
+        },
+        {
+          "const": "v2_custom_events_export",
+          "description": "Multi-output Controller V2 with one trace export and one custom-event export.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetAdapterCustomEventClockContract": {
+      "additionalProperties": false,
+      "description": "Exact shared clock domain used by one custom-event collector.",
+      "properties": {
+        "clock_id": {
+          "description": "Stable clock-domain identity shared with the program-flow export.",
+          "type": "string"
+        },
+        "frequency_hz": {
+          "description": "Integer raw-tick frequency.",
+          "format": "uint64",
+          "maximum": 1000000000000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "max_forward_ticks": {
+          "description": "Maximum accepted forward step between adjacent raw records.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "origin_ns": {
+          "description": "Session-relative nanoseconds assigned to `origin_ticks`.",
+          "format": "int64",
+          "type": "integer"
+        },
+        "origin_ticks": {
+          "description": "Exact raw timestamp assigned to the session origin.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "timestamp_modulus": {
+          "description": "Raw timestamp modulus used for bounded wrap expansion.",
+          "format": "uint64",
+          "minimum": 2,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "clock_id",
+        "frequency_hz",
+        "timestamp_modulus",
+        "max_forward_ticks",
+        "origin_ticks",
+        "origin_ns"
+      ],
+      "type": "object"
+    },
+    "TargetAdapterCustomEventCollectorContract": {
+      "additionalProperties": false,
+      "description": "Adapter-owned custom-event collection and normalization contract.",
+      "properties": {
+        "clock": {
+          "$ref": "#/$defs/TargetAdapterCustomEventClockContract",
+          "description": "Exact clock-domain conversion and origin."
+        },
+        "core_id": {
+          "description": "Core affinity assigned to emitted custom events.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "instrumentation_overhead_artifact_id": {
+          "description": "Fixed immutable instrumentation-overhead evidence identity.",
+          "type": "string"
+        },
+        "mapping_artifact_id": {
+          "description": "Fixed immutable deployment mapping artifact identity.",
+          "type": "string"
+        },
+        "max_output_bytes": {
+          "description": "Independent bound for the raw custom-event output slot.",
+          "format": "uint64",
+          "maximum": 1099511627776,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "merge_order": {
+          "$ref": "#/$defs/TargetAdapterCustomEventMergeOrder",
+          "description": "Exact cross-source ordering policy."
+        },
+        "source_id": {
+          "description": "Stable normalized source identity.",
+          "type": "string"
+        },
+        "transport": {
+          "description": "Versioned target-to-host transport identity.",
+          "type": "string"
+        },
+        "wire_protocol": {
+          "$ref": "#/$defs/TargetAdapterCustomEventWireProtocol",
+          "description": "Exact target-side wire representation."
+        }
+      },
+      "required": [
+        "wire_protocol",
+        "source_id",
+        "core_id",
+        "clock",
+        "transport",
+        "mapping_artifact_id",
+        "instrumentation_overhead_artifact_id",
+        "max_output_bytes",
+        "merge_order"
+      ],
+      "type": "object"
+    },
+    "TargetAdapterCustomEventMergeOrder": {
+      "description": "Closed merge-order policy for combining custom events with program flow.",
+      "oneOf": [
+        {
+          "const": "reject_ambiguous_ties",
+          "description": "Reject equal-timestamp records whose cross-source order is not authoritative.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetAdapterCustomEventWireProtocol": {
+      "description": "Closed raw custom-event wire representation emitted by an adapter collector.",
+      "oneOf": [
+        {
+          "const": "c_wire_v1",
+          "description": "T32Perf C SDK wire format version 1.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetAdapterScenario": {
+      "description": "A fixed target-adapter execution scenario.",
+      "oneOf": [
+        {
+          "const": "normal",
+          "description": "Normal capture without injected faults.",
+          "type": "string"
+        },
+        {
+          "const": "trace_overflow",
+          "description": "Deliberately force trace-buffer or transport overflow.",
+          "type": "string"
+        },
+        {
+          "const": "flow_error",
+          "description": "Deliberately force a TRACE32 flow error.",
+          "type": "string"
+        },
+        {
+          "const": "sampling_buffer_full",
+          "description": "Use a fixed small SNOOPer Stack buffer and let it stop at capacity.",
+          "type": "string"
+        },
+        {
+          "const": "sampling_unexpected_stop",
+          "description": "Observe an unclassified early SNOOPer stop.",
+          "type": "string"
+        },
+        {
+          "const": "trace32_disconnect",
+          "description": "Disconnect TRACE32 during a fixed operation.",
+          "type": "string"
+        },
+        {
+          "const": "driver_disconnect",
+          "description": "Disconnect the deployment driver during a fixed operation.",
+          "type": "string"
+        },
+        {
+          "const": "cmm_abort",
+          "description": "Abort the active CMM transaction through the fixed t32mcp abort flow.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.controller-request/v2",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Immutable multi-output request prepared before invoking a V2 fixed script.",
+  "properties": {
+    "adapter_catalog_sha256": {
+      "description": "Digest of the operation-specific adapter catalog used for selection.\nEndpoint-only operations bind all compiled candidates; target operations\nbind the exact Session admission catalog.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "binding": {
+      "$ref": "#/$defs/ControllerBinding",
+      "description": "Cryptographic transaction binding."
+    },
+    "fault_action": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ControllerFaultAction"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Closed deployment fault action, present only at its fixed operation."
+    },
+    "firmware_image": {
+      "$ref": "#/$defs/ControllerFirmwareImageBinding",
+      "description": "Exact source firmware and trusted sparse-S3 measurement used by target checks."
+    },
+    "max_response_bytes": {
+      "description": "Independent bound for the final collected wrapper.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "mcp": {
+      "$ref": "#/$defs/ControllerMcpHandoff",
+      "description": "Exact official MCP calls available to the trusted controller."
+    },
+    "operation": {
+      "$ref": "#/$defs/PerfOperation",
+      "description": "Fixed skill operation."
+    },
+    "output": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ControllerOutputReservation"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Legacy V1 reservation field; V2 requires this to remain absent."
+    },
+    "outputs": {
+      "description": "Closed, deterministically ordered V2 output slots.",
+      "items": {
+        "$ref": "#/$defs/ControllerOutputReservationV2"
+      },
+      "maxItems": 5,
+      "minItems": 1,
+      "type": "array"
+    },
+    "response_staging_path": {
+      "description": "Controller-owned staging path where the final collected wrapper is written.",
+      "maxLength": 1024,
+      "minLength": 1,
+      "pattern": "^(?=[\\u0020-\\u007E]+$)(?!/)(?!.*[<>:\"\\\\|?*])(?!.*//)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*/$)(?!.*[. ](?:/|$))(?!(?:.*?/)?(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Nn][Ii][Nn]\\$|[Cc][Oo][Nn][Oo][Uu][Tt]\\$|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9]) *(?:\\.[^/]*)?(?:/|$)).+$",
+      "type": "string"
+    },
+    "schema": {
+      "$ref": "#/$defs/ControllerRequestV2SchemaVersion",
+      "description": "Versioned document family."
+    },
+    "target_adapter": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ControllerTargetAdapterBinding"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Exact admitted target adapter selected after capabilities evidence."
+    }
+  },
+  "required": [
+    "schema",
+    "binding",
+    "operation",
+    "adapter_catalog_sha256",
+    "firmware_image",
+    "mcp",
+    "response_staging_path",
+    "max_response_bytes",
+    "outputs"
+  ],
+  "title": "ControllerRequestV2",
+  "type": "object"
+}

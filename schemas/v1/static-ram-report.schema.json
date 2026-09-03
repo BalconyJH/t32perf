@@ -1,0 +1,364 @@
+{
+  "$defs": {
+    "ElfStaticRamArchitecture": {
+      "description": "Supported embedded architecture recorded for an ELF resource report.",
+      "oneOf": [
+        {
+          "const": "arm",
+          "description": "32-bit Arm ELF.",
+          "type": "string"
+        },
+        {
+          "const": "aarch64",
+          "description": "64-bit Arm ELF.",
+          "type": "string"
+        },
+        {
+          "const": "riscv32",
+          "description": "32-bit RISC-V ELF.",
+          "type": "string"
+        },
+        {
+          "const": "riscv64",
+          "description": "64-bit RISC-V ELF.",
+          "type": "string"
+        },
+        {
+          "const": "tri_core",
+          "description": "32-bit Siemens TriCore ELF.",
+          "type": "string"
+        }
+      ]
+    },
+    "ElfStaticRamClass": {
+      "description": "ELF address class.",
+      "oneOf": [
+        {
+          "const": "elf32",
+          "description": "ELFCLASS32.",
+          "type": "string"
+        },
+        {
+          "const": "elf64",
+          "description": "ELFCLASS64.",
+          "type": "string"
+        }
+      ]
+    },
+    "ElfStaticRamEndianness": {
+      "description": "ELF byte order.",
+      "oneOf": [
+        {
+          "const": "little",
+          "description": "Little-endian ELF.",
+          "type": "string"
+        },
+        {
+          "const": "big",
+          "description": "Big-endian ELF.",
+          "type": "string"
+        }
+      ]
+    },
+    "ElfStaticRamMetadata": {
+      "additionalProperties": false,
+      "description": "Validated ELF identity attached to an `elf-sections-v1` report.",
+      "properties": {
+        "architecture": {
+          "$ref": "#/$defs/ElfStaticRamArchitecture",
+          "description": "Supported machine architecture from the ELF header."
+        },
+        "class": {
+          "$ref": "#/$defs/ElfStaticRamClass",
+          "description": "ELF32 or ELF64 class."
+        },
+        "endianness": {
+          "$ref": "#/$defs/ElfStaticRamEndianness",
+          "description": "ELF byte order."
+        },
+        "object_kind": {
+          "$ref": "#/$defs/ElfStaticRamObjectKind",
+          "description": "Accepted ELF object kind."
+        }
+      },
+      "required": [
+        "architecture",
+        "object_kind",
+        "class",
+        "endianness"
+      ],
+      "type": "object"
+    },
+    "ElfStaticRamObjectKind": {
+      "description": "Supported ELF object kind.",
+      "oneOf": [
+        {
+          "const": "relocatable",
+          "description": "Linker-relocatable ELF object.",
+          "type": "string"
+        },
+        {
+          "const": "executable",
+          "description": "Firmware executable ELF image.",
+          "type": "string"
+        }
+      ]
+    },
+    "StaticRamKindTotals": {
+      "additionalProperties": false,
+      "description": "Checked per-kind static-RAM totals.",
+      "properties": {
+        "bss_bytes": {
+          "description": "Zero-initialized `.bss` bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "custom_bytes": {
+          "description": "Explicit custom-section bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "data_bytes": {
+          "description": "Initialized `.data` bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "dma_bytes": {
+          "description": "Explicit DMA-section bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "noinit_bytes": {
+          "description": "Non-initialized `.noinit` bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "rtos_bytes": {
+          "description": "Explicit RTOS-section bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "data_bytes",
+        "bss_bytes",
+        "noinit_bytes",
+        "dma_bytes",
+        "rtos_bytes",
+        "custom_bytes"
+      ],
+      "type": "object"
+    },
+    "StaticRamSection": {
+      "additionalProperties": false,
+      "description": "One reliably recognized static-RAM output section.",
+      "properties": {
+        "address": {
+          "description": "Virtual memory address from the source artifact.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "kind": {
+          "$ref": "#/$defs/StaticRamSectionKind",
+          "description": "Static-RAM classification."
+        },
+        "name": {
+          "description": "Exact output-section name.",
+          "maxLength": 128,
+          "minLength": 2,
+          "pattern": "^\\.[A-Za-z0-9._-]+$",
+          "type": "string"
+        },
+        "size_bytes": {
+          "description": "Output-section size in bytes.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "source_line": {
+          "description": "One-based map-file line for a GNU ld report.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "source_section_index": {
+          "description": "One-based ELF section-table index for an ELF report.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "address",
+        "size_bytes",
+        "kind"
+      ],
+      "type": "object"
+    },
+    "StaticRamSectionKind": {
+      "description": "Classification assigned to a selected output section.",
+      "oneOf": [
+        {
+          "const": "data",
+          "description": "Initialized static data.",
+          "type": "string"
+        },
+        {
+          "const": "bss",
+          "description": "Zero-initialized static data.",
+          "type": "string"
+        },
+        {
+          "const": "noinit",
+          "description": "Retained or otherwise non-initialized static data.",
+          "type": "string"
+        },
+        {
+          "const": "dma",
+          "description": "Caller-declared DMA storage.",
+          "type": "string"
+        },
+        {
+          "const": "rtos",
+          "description": "Caller-declared RTOS static storage.",
+          "type": "string"
+        },
+        {
+          "const": "custom",
+          "description": "Caller-declared project-specific static storage.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.static-ram-report/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "schema": {
+            "const": "t32perf.static-ram/gnu-ld-map-v1"
+          }
+        },
+        "required": [
+          "schema"
+        ]
+      },
+      "then": {
+        "properties": {
+          "elf": false,
+          "sections": {
+            "items": {
+              "not": {
+                "required": [
+                  "source_section_index"
+                ]
+              },
+              "required": [
+                "source_line"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "schema": {
+            "const": "t32perf.static-ram/elf-sections-v1"
+          }
+        },
+        "required": [
+          "schema"
+        ]
+      },
+      "then": {
+        "properties": {
+          "elf": {
+            "$ref": "#/$defs/ElfStaticRamMetadata"
+          },
+          "sections": {
+            "items": {
+              "not": {
+                "required": [
+                  "source_line"
+                ]
+              },
+              "required": [
+                "source_section_index"
+              ]
+            }
+          }
+        },
+        "required": [
+          "elf"
+        ]
+      }
+    }
+  ],
+  "description": "Selected static-RAM sections and their checked size sum.",
+  "properties": {
+    "elf": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ElfStaticRamMetadata"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "ELF identity; present exactly for `elf-sections-v1`."
+    },
+    "schema": {
+      "description": "Versioned, flavor-specific report schema marker.",
+      "enum": [
+        "t32perf.static-ram/gnu-ld-map-v1",
+        "t32perf.static-ram/elf-sections-v1"
+      ],
+      "type": "string"
+    },
+    "sections": {
+      "description": "Selected output sections in source order.",
+      "items": {
+        "$ref": "#/$defs/StaticRamSection"
+      },
+      "maxItems": 4099,
+      "type": "array"
+    },
+    "total_bytes": {
+      "description": "Checked sum of selected output-section sizes.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "totals": {
+      "$ref": "#/$defs/StaticRamKindTotals",
+      "description": "Checked totals kept separate for every static-RAM classification."
+    }
+  },
+  "required": [
+    "schema",
+    "sections",
+    "total_bytes",
+    "totals"
+  ],
+  "title": "StaticRamReport",
+  "type": "object"
+}

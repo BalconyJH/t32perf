@@ -1,0 +1,115 @@
+{
+  "$defs": {
+    "SessionError": {
+      "description": "Structured terminal failure stored in durable session state.",
+      "properties": {
+        "code": {
+          "description": "Stable machine-readable error code.",
+          "type": "string"
+        },
+        "details": {
+          "additionalProperties": true,
+          "description": "Structured diagnostic details.",
+          "type": "object"
+        },
+        "message": {
+          "description": "Concise human-readable error message.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "type": "object"
+    },
+    "SessionStatus": {
+      "description": "Durable lifecycle status of a session.",
+      "oneOf": [
+        {
+          "const": "created",
+          "description": "The session directory and initial metadata exist.",
+          "type": "string"
+        },
+        {
+          "const": "capturing",
+          "description": "Trace capture is in progress.",
+          "type": "string"
+        },
+        {
+          "const": "captured",
+          "description": "Trace capture completed and raw artifacts are durable.",
+          "type": "string"
+        },
+        {
+          "const": "processing",
+          "description": "Host-side normalization or analysis is in progress.",
+          "type": "string"
+        },
+        {
+          "const": "complete",
+          "description": "All requested artifacts completed successfully.",
+          "type": "string"
+        },
+        {
+          "const": "failed",
+          "description": "The current operation failed.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.state/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Atomically replaced durable state for one session operation.",
+  "properties": {
+    "created_at": {
+      "description": "RFC 3339 timestamp at which the Session was created.",
+      "type": "string"
+    },
+    "error": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SessionError"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Terminal failure detail, present only for [`SessionStatus::Failed`]."
+    },
+    "operation_id": {
+      "description": "Identifier of the operation owning this state sequence.",
+      "type": "string"
+    },
+    "revision": {
+      "description": "Monotonically increasing state revision.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "schema": {
+      "const": "t32perf.state/v1",
+      "description": "The state schema version.",
+      "type": "string"
+    },
+    "state": {
+      "$ref": "#/$defs/SessionStatus",
+      "description": "Current lifecycle status."
+    },
+    "updated_at": {
+      "description": "RFC 3339 timestamp of the latest durable update.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "created_at",
+    "state",
+    "operation_id",
+    "revision",
+    "updated_at"
+  ],
+  "title": "SessionState",
+  "type": "object"
+}

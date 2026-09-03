@@ -1,0 +1,60 @@
+{
+  "$id": "t32perf.instrumentation-overhead-evidence/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Immutable deployment evidence for one controlled instrumentation-overhead measurement.\n\nThe document deliberately omits its own artifact identifier. The Session\ncatalog supplies that identity, and the authoritative capture config binds\nit when converting this evidence into [`CaptureInstrumentationConfig`].",
+  "properties": {
+    "baseline_duration_ns": {
+      "description": "Duration of the uninstrumented reference workload.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "emitted_event_count": {
+      "description": "Number of target events emitted during the instrumented workload.",
+      "format": "uint64",
+      "minimum": 1,
+      "type": "integer"
+    },
+    "instrumentation_method": {
+      "description": "Exact target-side instrumentation API or marker method.",
+      "maxLength": 4096,
+      "minLength": 1,
+      "type": "string"
+    },
+    "instrumented_duration_ns": {
+      "description": "Duration of the same workload with instrumentation enabled.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "measurement_method": {
+      "description": "Versioned benchmark or calibration procedure.",
+      "maxLength": 4096,
+      "minLength": 1,
+      "type": "string"
+    },
+    "schema": {
+      "const": "t32perf.instrumentation-overhead-evidence/v1",
+      "description": "Versioned evidence family.",
+      "type": "string"
+    },
+    "transport": {
+      "description": "Exact adapter-owned transport used by the measured event stream.",
+      "maxLength": 4096,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "instrumentation_method",
+    "transport",
+    "measurement_method",
+    "baseline_duration_ns",
+    "instrumented_duration_ns",
+    "emitted_event_count"
+  ],
+  "title": "InstrumentationOverheadEvidenceDocument",
+  "type": "object"
+}

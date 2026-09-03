@@ -1,0 +1,160 @@
+{
+  "$defs": {
+    "ControllerAbortReason": {
+      "description": "Bounded reasons for abandoning an external execution.",
+      "oneOf": [
+        {
+          "const": "timeout",
+          "description": "The external script exceeded its deployment deadline.",
+          "type": "string"
+        },
+        {
+          "const": "transport_failure",
+          "description": "The MCP transport failed before a final response was available.",
+          "type": "string"
+        },
+        {
+          "const": "operator_request",
+          "description": "An operator explicitly abandoned the transaction.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerAbortRequestSchemaVersion": {
+      "description": "Supported controller abort-request schema version.",
+      "oneOf": [
+        {
+          "const": "t32perf.controller-abort-request/v1",
+          "description": "Version 1.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerBinding": {
+      "additionalProperties": false,
+      "description": "Fields cryptographically bound into every controller transaction.",
+      "properties": {
+        "binding_sha256": {
+          "description": "Digest of every preceding binding field with a versioned domain separator.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "nonce": {
+          "description": "Independent replay-prevention nonce.",
+          "type": "string"
+        },
+        "session_id": {
+          "description": "Session receiving the transaction artifacts.",
+          "type": "string"
+        },
+        "session_operation_id": {
+          "description": "Immutable operation identifier from Session state.",
+          "type": "string"
+        },
+        "session_request_sha256": {
+          "description": "Digest of the immutable Session request.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "transaction_id": {
+          "description": "Unique transaction identifier.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "session_id",
+        "session_operation_id",
+        "session_request_sha256",
+        "transaction_id",
+        "nonce",
+        "binding_sha256"
+      ],
+      "type": "object"
+    },
+    "NoArguments": {
+      "additionalProperties": false,
+      "description": "Empty arguments for official collect and abort tools.",
+      "type": "object"
+    },
+    "NoArgumentsToolCall": {
+      "additionalProperties": false,
+      "description": "Exact invocation of an official t32mcp tool with no arguments.",
+      "properties": {
+        "arguments": {
+          "$ref": "#/$defs/NoArguments",
+          "description": "Required empty object."
+        },
+        "tool": {
+          "$ref": "#/$defs/T32mcpTool",
+          "description": "Exact official tool name."
+        }
+      },
+      "required": [
+        "tool",
+        "arguments"
+      ],
+      "type": "object"
+    },
+    "T32mcpTool": {
+      "description": "One of the three tools exposed by the official t32mcp server.",
+      "oneOf": [
+        {
+          "const": "execute_practice_skill",
+          "description": "Start one fixed PRACTICE skill script.",
+          "type": "string"
+        },
+        {
+          "const": "collect_practice_skill_response",
+          "description": "Poll or collect the response from the active script.",
+          "type": "string"
+        },
+        {
+          "const": "abort_practice_skill",
+          "description": "Abort the globally active PRACTICE script.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.controller-abort-request/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Immutable request to invoke upstream's ownership-free abort tool.",
+  "properties": {
+    "binding": {
+      "$ref": "#/$defs/ControllerBinding",
+      "description": "Binding copied from the transaction being abandoned."
+    },
+    "mcp": {
+      "$ref": "#/$defs/NoArgumentsToolCall",
+      "description": "Exact official abort call. Upstream exposes no execution ownership token."
+    },
+    "reason": {
+      "$ref": "#/$defs/ControllerAbortReason",
+      "description": "Stable fail-closed reason selected by the host controller."
+    },
+    "request_artifact_id": {
+      "description": "Artifact identifier of the immutable controller request.",
+      "type": "string"
+    },
+    "request_artifact_sha256": {
+      "description": "Digest of the exact immutable controller request bytes.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "schema": {
+      "$ref": "#/$defs/ControllerAbortRequestSchemaVersion",
+      "description": "Versioned document family."
+    }
+  },
+  "required": [
+    "schema",
+    "binding",
+    "request_artifact_id",
+    "request_artifact_sha256",
+    "mcp",
+    "reason"
+  ],
+  "title": "ControllerAbortRequest",
+  "type": "object"
+}

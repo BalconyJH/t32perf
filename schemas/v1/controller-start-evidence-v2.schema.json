@@ -1,0 +1,95 @@
+{
+  "$defs": {
+    "ControllerStartEvidenceV2SchemaVersion": {
+      "description": "Supported externally-owned workload start-evidence schema version.",
+      "oneOf": [
+        {
+          "const": "t32perf.controller-start-evidence/v2",
+          "description": "The only supported version or operation marker.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerStartOperation": {
+      "description": "Fixed capture-start operation marker.",
+      "oneOf": [
+        {
+          "const": "perf_start",
+          "description": "The only supported version or operation marker.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerTargetState": {
+      "description": "Target execution state observed by a verified adapter.",
+      "oneOf": [
+        {
+          "const": "running",
+          "description": "The target was running.",
+          "type": "string"
+        },
+        {
+          "const": "halted",
+          "description": "The target was halted.",
+          "type": "string"
+        }
+      ]
+    },
+    "ControllerWorkloadOwner": {
+      "description": "Owner responsible for executing the fixed workload after capture is armed.",
+      "oneOf": [
+        {
+          "const": "target_specific_controller",
+          "description": "The target-specific controller invoked by the host façade.",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$id": "t32perf.controller-start-evidence/v2",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Start evidence for a capture armed before external workload execution.",
+  "properties": {
+    "binding_sha256": {
+      "description": "Exact controller binding echoed by the adapter.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "capture_armed": {
+      "description": "Must be true only after the selected capture family was armed.",
+      "type": "boolean"
+    },
+    "initial_target_state": {
+      "$ref": "#/$defs/ControllerTargetState",
+      "description": "Target state observed when capture was armed."
+    },
+    "operation": {
+      "$ref": "#/$defs/ControllerStartOperation",
+      "description": "Fixed operation marker."
+    },
+    "schema": {
+      "$ref": "#/$defs/ControllerStartEvidenceV2SchemaVersion",
+      "description": "Versioned document family."
+    },
+    "workload_identity": {
+      "description": "Exact fixed workload identity.",
+      "type": "string"
+    },
+    "workload_owner": {
+      "$ref": "#/$defs/ControllerWorkloadOwner",
+      "description": "Explicit external workload owner."
+    }
+  },
+  "required": [
+    "schema",
+    "operation",
+    "binding_sha256",
+    "initial_target_state",
+    "capture_armed",
+    "workload_owner",
+    "workload_identity"
+  ],
+  "title": "ControllerStartEvidenceV2",
+  "type": "object"
+}

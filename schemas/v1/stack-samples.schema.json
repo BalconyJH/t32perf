@@ -1,0 +1,493 @@
+{
+  "$defs": {
+    "DebuggerSymbolizationSource": {
+      "description": "The fixed origin of optional runtime code labels reported by TRACE32.",
+      "oneOf": [
+        {
+          "const": "trace32_symbol_table",
+          "description": "TRACE32 resolved the observed address through its currently loaded symbol table.",
+          "type": "string"
+        }
+      ]
+    },
+    "DebuggerSymbolizationTrust": {
+      "description": "The fixed trust boundary for optional runtime code labels.",
+      "oneOf": [
+        {
+          "const": "debugger_reported",
+          "description": "The label is reported by TRACE32 and does not prove firmware identity.",
+          "type": "string"
+        }
+      ]
+    },
+    "EndpointFingerprintScheme": {
+      "description": "Algorithm used to derive a TRACE32 endpoint fingerprint.\n\nThis is independent of the document schema version: it identifies the\ncryptographic endpoint-binding algorithm.",
+      "oneOf": [
+        {
+          "const": "t32perf.endpoint-fingerprint/v2",
+          "description": "Canonical endpoint identity bound to the observed TRACE32 probe.",
+          "type": "string"
+        }
+      ]
+    },
+    "FirmwareBinding": {
+      "additionalProperties": false,
+      "description": "Firmware identity evidence recorded with a histogram.",
+      "properties": {
+        "elf_sha256": {
+          "description": "Digest of the executable used for address and symbol attribution.",
+          "pattern": "^[0-9a-f]{64}$",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "proof": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FirmwareBindingProof"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Evidence proving how the firmware binding was established."
+        },
+        "status": {
+          "$ref": "#/$defs/FirmwareBindingStatus",
+          "description": "Confidence/status of the executable association."
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "type": "object"
+    },
+    "FirmwareBindingProof": {
+      "description": "Evidence type used to establish a firmware binding.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "description": "A deployment artifact bound the executable digest to the target image.",
+          "properties": {
+            "evidence_artifact_sha256": {
+              "description": "SHA-256 digest of the immutable deployment evidence artifact.",
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "kind": {
+              "const": "digest_bound_deployment",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "evidence_artifact_sha256"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "An immutable capture request asserted the deployed executable digest without comparing\nthe target image.",
+          "properties": {
+            "evidence_artifact_sha256": {
+              "description": "SHA-256 digest of the immutable assertion evidence artifact.",
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "kind": {
+              "const": "precommitted_elf_assertion",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "evidence_artifact_sha256"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "A target-image comparison established or rejected the binding.",
+          "properties": {
+            "evidence_artifact_sha256": {
+              "description": "SHA-256 digest of the immutable target-comparison evidence artifact.",
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "kind": {
+              "const": "target_image_comparison",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "evidence_artifact_sha256"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "FirmwareBindingStatus": {
+      "description": "The confidence of the firmware identity bound to a capture.",
+      "oneOf": [
+        {
+          "const": "verified",
+          "description": "The loaded executable and capture target were verified to match.",
+          "type": "string"
+        },
+        {
+          "const": "deployment_asserted",
+          "description": "An immutable capture request asserted the deployed executable, but the target image was\nnot compared.",
+          "type": "string"
+        },
+        {
+          "const": "unverified",
+          "description": "No target-side identity proof was available.",
+          "type": "string"
+        },
+        {
+          "const": "mismatch",
+          "description": "Target-side identity proof disagreed with the executable.",
+          "type": "string"
+        }
+      ]
+    },
+    "SamplingAddressSpace": {
+      "description": "TRACE32 address space supported by the sampling sidecar.",
+      "oneOf": [
+        {
+          "const": "P",
+          "description": "TRACE32 program address space.",
+          "type": "string"
+        }
+      ]
+    },
+    "StackFrameOrder": {
+      "description": "Fixed order in which TRACE32 frame walks are recorded.",
+      "oneOf": [
+        {
+          "const": "leaf_to_root",
+          "description": "The leaf PC is first and each subsequent frame is its caller.",
+          "type": "string"
+        }
+      ]
+    },
+    "StackSample": {
+      "additionalProperties": false,
+      "description": "One intrusive halt cycle and the frames read while the target was stopped.",
+      "properties": {
+        "frames": {
+          "description": "One or more leaf-to-root frames.",
+          "items": {
+            "$ref": "#/$defs/StackSampleFrame"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "type": "array"
+        },
+        "halt_cycle_duration_ns": {
+          "description": "Host-observed elapsed time from Break invocation through the matching Go return.\nThis is not a measurement of exact target stopped duration.",
+          "format": "uint64",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "sample_index": {
+          "description": "Strictly increasing one-based sample index.",
+          "format": "uint32",
+          "maximum": 512,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "termination": {
+          "$ref": "#/$defs/StackSampleTermination",
+          "description": "Why this bounded frame walk ended; it does not prove unwind completeness."
+        }
+      },
+      "required": [
+        "sample_index",
+        "halt_cycle_duration_ns",
+        "termination",
+        "frames"
+      ],
+      "type": "object"
+    },
+    "StackSampleFrame": {
+      "additionalProperties": false,
+      "description": "One debugger-reported frame in a leaf-to-root sample.",
+      "properties": {
+        "depth": {
+          "description": "Zero-based position in the leaf-to-root walk.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "function_name": {
+          "description": "Optional function label reported by TRACE32's loaded symbols.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pc": {
+          "description": "Program counter reported by TRACE32.",
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "source_file": {
+          "description": "Optional source-file basename reported by TRACE32.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_line": {
+          "description": "Optional one-based source line reported by TRACE32.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "depth",
+        "pc"
+      ],
+      "type": "object"
+    },
+    "StackSampleTermination": {
+      "description": "Reason why one recorded frame walk ended.",
+      "oneOf": [
+        {
+          "const": "terminal_unverified",
+          "description": "TRACE32 reached an outer boundary which is not verified as a complete unwind.",
+          "type": "string"
+        },
+        {
+          "const": "max_frames",
+          "description": "The caller-imposed maximum frame depth was reached.",
+          "type": "string"
+        },
+        {
+          "const": "pc_read_failed",
+          "description": "TRACE32 could not read a program counter for the next frame.",
+          "type": "string"
+        },
+        {
+          "const": "frame_cycle",
+          "description": "A repeated frame identity was detected during the walk.",
+          "type": "string"
+        },
+        {
+          "const": "halt_deadline",
+          "description": "The fixed per-cycle halt budget expired before another caller was observed.",
+          "type": "string"
+        }
+      ]
+    },
+    "StackSamplingMethod": {
+      "description": "Fixed stack collection mechanism.",
+      "oneOf": [
+        {
+          "const": "break_frame_walk",
+          "description": "TRACE32 Break, B::Frame, and Go cycle.",
+          "type": "string"
+        }
+      ]
+    },
+    "TargetExecutionState": {
+      "additionalProperties": false,
+      "description": "A target execution-state observation taken at a capture boundary.",
+      "properties": {
+        "halted": {
+          "description": "Whether TRACE32 reported that the target was halted.",
+          "type": "boolean"
+        },
+        "powered": {
+          "description": "Whether TRACE32 reported target power as available.",
+          "type": "boolean"
+        },
+        "running": {
+          "description": "Whether TRACE32 reported that the target was running.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "powered",
+        "running",
+        "halted"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "t32perf.stack-samples/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Raw samples from intrusive Break-and-frame-walk collection.",
+  "properties": {
+    "address_space": {
+      "$ref": "#/$defs/SamplingAddressSpace",
+      "description": "Program address space used for all PCs."
+    },
+    "attempted_samples": {
+      "description": "Number of halt cycles attempted.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "cleanup_complete": {
+      "description": "Whether cleanup and final restart completed before emission.",
+      "type": "boolean"
+    },
+    "collected_samples": {
+      "description": "Number of samples retained below.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "core_id": {
+      "description": "Core that was halted and inspected.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "cpu": {
+      "description": "CPU identity reported by TRACE32.",
+      "type": "string"
+    },
+    "debugger_symbolization_source": {
+      "$ref": "#/$defs/DebuggerSymbolizationSource",
+      "description": "Fixed origin of optional labels in frames."
+    },
+    "debugger_symbolization_trust": {
+      "$ref": "#/$defs/DebuggerSymbolizationTrust",
+      "description": "Fixed trust boundary of optional labels in frames."
+    },
+    "endpoint_fingerprint": {
+      "description": "Fingerprint of the exclusively leased TRACE32 endpoint.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "endpoint_fingerprint_scheme": {
+      "$ref": "#/$defs/EndpointFingerprintScheme",
+      "description": "Fixed endpoint-fingerprint algorithm."
+    },
+    "firmware": {
+      "$ref": "#/$defs/FirmwareBinding",
+      "description": "Firmware identity evidence; labels remain debugger-reported regardless of this status."
+    },
+    "frame_order": {
+      "$ref": "#/$defs/StackFrameOrder",
+      "description": "Fixed storage order for every sample."
+    },
+    "intrusive": {
+      "description": "Always true: each sample stops and restarts the target.",
+      "type": "boolean"
+    },
+    "max_frames": {
+      "description": "Requested depth bound.",
+      "format": "uint32",
+      "maximum": 8,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "max_samples": {
+      "description": "Requested sample bound.",
+      "format": "uint32",
+      "maximum": 512,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "method": {
+      "$ref": "#/$defs/StackSamplingMethod",
+      "description": "Fixed collection mechanism."
+    },
+    "observed_duration_ms": {
+      "description": "Host-observed capture duration in milliseconds.",
+      "format": "uint32",
+      "minimum": 1,
+      "type": "integer"
+    },
+    "requested_duration_ms": {
+      "description": "Requested capture duration in milliseconds.",
+      "format": "uint32",
+      "minimum": 1,
+      "type": "integer"
+    },
+    "requested_sample_period_ms": {
+      "description": "Requested interval between halt cycles in milliseconds.",
+      "format": "uint32",
+      "maximum": 1000,
+      "minimum": 10,
+      "type": "integer"
+    },
+    "samples": {
+      "description": "Strictly indexed bounded samples.",
+      "items": {
+        "$ref": "#/$defs/StackSample"
+      },
+      "maxItems": 512,
+      "type": "array"
+    },
+    "schema": {
+      "const": "t32perf.stack-samples/v1",
+      "description": "Schema version.",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "Session owning the capture.",
+      "type": "string"
+    },
+    "target_state_after": {
+      "$ref": "#/$defs/TargetExecutionState",
+      "description": "Target state after cleanup and the final restart."
+    },
+    "target_state_before": {
+      "$ref": "#/$defs/TargetExecutionState",
+      "description": "Target state immediately before the first halt cycle."
+    },
+    "total_halt_cycle_duration_ns": {
+      "description": "Sum of host-observed Break-to-Go cycle durations. This is not target CPU time.",
+      "format": "uint64",
+      "minimum": 0,
+      "type": "integer"
+    },
+    "trace32": {
+      "description": "TRACE32 build identity observed during capture.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "session_id",
+    "endpoint_fingerprint",
+    "endpoint_fingerprint_scheme",
+    "trace32",
+    "cpu",
+    "core_id",
+    "address_space",
+    "method",
+    "intrusive",
+    "frame_order",
+    "requested_duration_ms",
+    "observed_duration_ms",
+    "requested_sample_period_ms",
+    "max_samples",
+    "max_frames",
+    "attempted_samples",
+    "collected_samples",
+    "total_halt_cycle_duration_ns",
+    "target_state_before",
+    "target_state_after",
+    "firmware",
+    "cleanup_complete",
+    "debugger_symbolization_source",
+    "debugger_symbolization_trust",
+    "samples"
+  ],
+  "title": "StackSamples",
+  "type": "object"
+}
