@@ -15,9 +15,9 @@ use std::{
 use serde_json::json;
 use sha2::{Digest as _, Sha256};
 use t32perf_model::{Artifact, ArtifactPath, SessionStatus, Sha256Digest, is_portable_artifact_id};
-use t32perf_session::{
-    ArtifactRoot, ArtifactSpec, Session, SessionLock, verify_opened_plain_file_identity,
-};
+#[cfg(windows)]
+use t32perf_session::verify_opened_plain_file_identity;
+use t32perf_session::{ArtifactRoot, ArtifactSpec, Session, SessionLock};
 use t32perf_trace32::{
     MAX_TARGET_ADAPTER_QUALIFICATION_TRUST_STORE_BYTES, MAX_TRICORE_FIRMWARE_ELF_BYTES,
     TargetAdapterAdmissionCatalog, TargetAdapterAdmissionSnapshot,
