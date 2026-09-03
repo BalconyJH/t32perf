@@ -1,0 +1,49 @@
+[package]
+name = "t32perf"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.104"
+atomic-write-file = "0.3.1"
+clap = { version = "4.6.6", features = ["derive"] }
+ed25519-dalek = "3.0.0"
+fs2 = "0.4.3"
+jiff = "0.2.35"
+process-wrap = { version = "9.1.0", features = ["tokio1"] }
+rmcp = { version = "=3.0.1", default-features = false, features = ["client", "macros", "server", "transport-child-process", "transport-io"] }
+schemars = "1.2.2"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+sha2 = "0.11.0"
+t32perf-analysis = { version = "0.1.0", path = "crates/t32perf-analysis" }
+t32perf-flamegraph = { version = "0.1.0", path = "crates/t32perf-flamegraph" }
+t32perf-heatmap = { version = "0.1.0", path = "crates/t32perf-heatmap" }
+t32perf-model = { version = "0.1.0", path = "crates/t32perf-model" }
+t32perf-perfetto = { version = "0.1.0", path = "crates/t32perf-perfetto" }
+t32perf-session = { version = "0.1.0", path = "crates/t32perf-session" }
+t32perf-trace32 = { version = "0.1.0", path = "crates/t32perf-trace32" }
+tokio = { version = "1.53.0", features = ["rt", "time", "process", "io-util", "sync"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "fmt", "json"] }
+uuid = { version = "1.25.0", features = ["v7"] }
+
+[workspace]
+members = [
+    ".",
+    "crates/t32perf-analysis", "crates/t32perf-flamegraph",
+    "crates/t32perf-heatmap",
+    "crates/t32perf-model",
+    "crates/t32perf-perfetto",
+    "crates/t32perf-session",
+    "crates/t32perf-trace32",
+    "xtask",
+]
+resolver = "3"
+
+[dev-dependencies]
+assert_cmd = "2.2.2"
+jsonschema = { version = "0.50.1", default-features = false }
+object = { version = "0.40.0", default-features = false, features = ["write_core", "elf", "std"] }
+predicates = "3.1.4"
+tempfile = "3.27.0"

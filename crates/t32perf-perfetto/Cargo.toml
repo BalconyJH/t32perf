@@ -1,0 +1,10 @@
+[package]
+name = "t32perf-perfetto"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+serde = "1.0.229"
+serde_json = "1.0.151"
+t32perf-model = { version = "0.1.0", path = "../t32perf-model" }
+thiserror = "2.0.20"

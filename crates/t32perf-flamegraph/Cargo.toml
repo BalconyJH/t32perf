@@ -1,0 +1,8 @@
+[package]
+name = "t32perf-flamegraph"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+t32perf-model = { version = "0.1.0", path = "../t32perf-model" }
+takumi = { version = "2.13.3", default-features = false, features = ["svg-backend"] }

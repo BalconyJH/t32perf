@@ -1,0 +1,22 @@
+[package]
+name = "t32perf-session"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+atomic-write-file = "0.3.1"
+fs2 = "0.4.3"
+jiff = "0.2.35"
+libc = "0.2.189"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+sha2 = "0.11.0"
+t32perf-model = { version = "0.1.0", path = "../t32perf-model" }
+thiserror = "2.0.20"
+uuid = { version = "1.25.0", features = ["v7", "serde"] }
+
+[dev-dependencies]
+tempfile = "3.27.0"
+
+[target."cfg(windows)".dependencies]
+windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_Storage_FileSystem"] }
