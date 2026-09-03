@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "t32perf.target-adapter-recovery-evidence/v1",
+  "title": "TargetAdapterRecoveryEvidence",
+  "description": "Strict recovery evidence written by the trusted target Controller.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile_sha256",
+    "binding_sha256",
+    "failed_operation",
+    "failure_kind",
+    "initial_target_state",
+    "restored_target_state",
+    "adapter_state_restored",
+    "upstream_abort_confirmed",
+    "upstream_abort_receipt_sha256",
+    "files_deleted",
+    "new_session_required"
+  ],
+  "properties": {
+    "schema": {"const": "t32perf.target-adapter-recovery-evidence/v1"},
+    "profile_sha256": {"$ref": "#/$defs/sha256"},
+    "binding_sha256": {"$ref": "#/$defs/sha256"},
+    "failed_operation": {
+      "enum": [
+        "perf_get_capabilities",
+        "perf_configure",
+        "perf_start",
+        "perf_stop",
+        "perf_get_health",
+        "perf_export",
+        "perf_get_hotspots",
+        "perf_cleanup"
+      ]
+    },
+    "failure_kind": {
+      "enum": [
+        "trace32_disconnect",
+        "driver_disconnect",
+        "cmm_abort",
+        "operation_failure"
+      ]
+    },
+    "initial_target_state": {"enum": ["running", "halted"]},
+    "restored_target_state": {"enum": ["running", "halted"]},
+    "adapter_state_restored": {"type": "boolean"},
+    "sampling": {
+      "anyOf": [
+        {"$ref": "#/$defs/samplingRecoveryEvidence"},
+        {"type": "null"}
+      ]
+    },
+    "upstream_abort_confirmed": {"const": true},
+    "upstream_abort_receipt_sha256": {"$ref": "#/$defs/sha256"},
+    "files_deleted": {"type": "boolean"},
+    "new_session_required": {"type": "boolean"}
+  },
+  "$defs": {
+    "samplingRecoveryEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "object",
+        "buffer_mode",
+        "state",
+        "requested_rate_ns",
+        "capacity_records",
+        "auto_arm",
+        "auto_init",
+        "zero_reset"
+      ],
+      "properties": {
+        "method": {"const": "real_time"},
+        "object": {"const": "program_counter"},
+        "buffer_mode": {"const": "stack"},
+        "state": {"const": "off"},
+        "requested_rate_ns": {"const": 1000000},
+        "capacity_records": {"const": 65536},
+        "auto_arm": {"const": false},
+        "auto_init": {"const": false},
+        "zero_reset": {"const": true}
+      }
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

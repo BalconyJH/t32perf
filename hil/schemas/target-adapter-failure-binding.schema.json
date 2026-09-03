@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "t32perf.target-adapter-failure-binding/v1",
+  "title": "TargetAdapterFailureBinding",
+  "description": "Controller transaction identity observed before a HIL fault is injected.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "profile_sha256",
+    "binding_sha256",
+    "failed_operation",
+    "failure_kind",
+    "initial_target_state"
+  ],
+  "properties": {
+    "schema": {"const": "t32perf.target-adapter-failure-binding/v1"},
+    "profile_sha256": {"$ref": "#/$defs/sha256"},
+    "binding_sha256": {"$ref": "#/$defs/sha256"},
+    "failed_operation": {
+      "enum": [
+        "perf_get_capabilities",
+        "perf_configure",
+        "perf_start",
+        "perf_stop",
+        "perf_get_health",
+        "perf_export",
+        "perf_get_hotspots",
+        "perf_cleanup"
+      ]
+    },
+    "failure_kind": {
+      "enum": [
+        "trace32_disconnect",
+        "driver_disconnect",
+        "cmm_abort",
+        "operation_failure"
+      ]
+    },
+    "initial_target_state": {"enum": ["running", "halted"]}
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}
