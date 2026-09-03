@@ -1,0 +1,4 @@
+interface:
+  display_name: "TRACE32 Performance"
+  short_description: "Fail-closed TRACE32 controller and evidence orchestration"
+  default_prompt: "Use $trace32-perf to provision an immutable firmware/scenario binding, run the host-managed seven-stage TRACE32 controller, and return only an attested health-gated summary."
