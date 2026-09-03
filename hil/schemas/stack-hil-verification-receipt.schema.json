@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://t32perf.dev/schemas/stack-hil-verification-receipt.schema.json",
+  "title": "Intrusive stack sampling HIL verification receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "source", "board_id", "session_id", "t32perf_sha256", "status", "reason", "capture_request_file_sha256", "session_request_sha256", "capabilities", "capabilities_sha256", "checks", "artifact_bindings"],
+  "properties": {
+    "schema": {"const": "t32perf.stack-hil-verification-receipt/v1"},
+    "source": {"const": "intrusive-stack-sampling-hil"},
+    "board_id": {"type": "string", "minLength": 1},
+    "session_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"},
+    "t32perf_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "status": {"enum": ["PASS", "NOT_READY", "FAIL"]},
+    "reason": {"type": "string", "minLength": 1},
+    "capture_request_file_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "session_request_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "capabilities": {"type": "object"},
+    "capabilities_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "post_capture_capabilities": {"type": "object"},
+    "post_capture_capabilities_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "checks": {"type": "array"},
+    "artifact_bindings": {"type": "array", "maxItems": 4},
+    "operation_id": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+    "endpoint_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "target_before": {"type": "object"}, "target_after": {"type": "object"},
+    "capture_summary": {"type": "object"}, "intrusive": {"type": "boolean"}, "statistical": {"type": "boolean"}, "diagnostic_only": {"type": "boolean"}
+  },
+  "allOf": [{"if": {"properties": {"status": {"const": "PASS"}}}, "then": {"required": ["operation_id", "endpoint_fingerprint", "target_before", "target_after", "capture_summary", "post_capture_capabilities", "post_capture_capabilities_sha256", "intrusive", "statistical", "diagnostic_only"], "properties": {"artifact_bindings": {"minItems": 4, "maxItems": 4}, "intrusive": {"const": true}, "statistical": {"const": true}, "diagnostic_only": {"const": true}}}}]
+}

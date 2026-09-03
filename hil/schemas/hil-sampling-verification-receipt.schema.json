@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://t32perf.dev/schemas/hil-sampling-verification-receipt.schema.json",
+  "title": "Generic PC sampling HIL verification receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "source", "board_id", "session_id", "status", "reason", "capture_request_file_sha256", "session_request_sha256", "capabilities_sha256", "capabilities", "checks", "artifact_bindings", "statistical", "diagnostic_only"],
+  "properties": {
+    "schema": {"const": "t32perf.hil-sampling-verification-receipt/v1"},
+    "source": {"const": "generic-pc-sampling-hil"},
+    "board_id": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "session_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"},
+    "status": {"enum": ["PASS", "NOT_READY", "FAIL"]},
+    "reason": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "capture_request_file_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "session_request_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "capabilities_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "capabilities": {"type": "object"},
+    "endpoint_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "configured_identity": {"$ref": "#/$defs/configured_identity"},
+    "method_policy": {"enum": ["realtime_only", "allow_stop_and_go"]},
+    "selected_method": {"enum": ["realtime", "stop_and_go"]},
+    "target_before": {"$ref": "#/$defs/target_state"},
+    "target_after": {"$ref": "#/$defs/target_state"},
+    "operation_id": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+    "quantitative_policy": {"$ref": "#/$defs/quantitative_policy"},
+    "statistical": {"type": "boolean"},
+    "diagnostic_only": {"type": "boolean"},
+    "checks": {"type": "array", "maxItems": 64, "items": {"type": "object", "additionalProperties": false, "required": ["name", "passed", "reason"], "properties": {"name": {"type": "string"}, "passed": {"type": "boolean"}, "reason": {"type": "string"}}}},
+    "artifact_bindings": {"type": "array", "maxItems": 16, "items": {"type": "object", "additionalProperties": false, "required": ["role", "artifact_id", "sha256"], "properties": {"role": {"enum": ["capture_receipt", "histogram", "address_heatmap", "svg"]}, "artifact_id": {"type": "string", "minLength": 1}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}}}
+  },
+  "$defs": {
+    "target_state": {"type": "object", "additionalProperties": false, "required": ["powered", "running", "halted"], "properties": {"powered": {"enum": [true, false, "unknown"]}, "running": {"enum": [true, false, "unknown"]}, "halted": {"enum": [true, false, "unknown"]}}},
+    "quantitative_policy": {"type": "object", "additionalProperties": false, "required": ["min_in_scope_hits", "min_observed_duration_ns", "min_stop_and_go_retained_runtime_percent", "max_snoop_failures"], "properties": {"min_in_scope_hits": {"type": "integer", "minimum": 100}, "min_observed_duration_ns": {"type": "integer", "minimum": 100000000}, "min_stop_and_go_retained_runtime_percent": {"type": "number", "minimum": 90, "maximum": 100}, "max_snoop_failures": {"const": 0}}},
+    "configured_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mcu_family", "probe_id", "scope", "expected_probe_fingerprint", "observed_probe_fingerprint", "probe_identity_observed", "target_id_observed"],
+      "properties": {
+        "mcu_family": {"type": "string", "minLength": 1},
+        "probe_id": {"type": "string", "minLength": 1},
+        "scope": {"enum": ["configured_endpoint_class", "observed_probe_endpoint_class"]},
+        "expected_probe_fingerprint": {"anyOf": [{"const": "unconfigured"}, {"type": "string", "pattern": "^[0-9a-f]{64}$"}]},
+        "observed_probe_fingerprint": {"anyOf": [{"const": "unobserved"}, {"type": "string", "pattern": "^[0-9a-f]{64}$"}]},
+        "probe_identity_observed": {"type": "boolean"},
+        "target_id_observed": {"const": false}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"scope": {"const": "observed_probe_endpoint_class"}}},
+          "then": {
+            "properties": {
+              "observed_probe_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "probe_identity_observed": {"const": true}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"scope": {"const": "configured_endpoint_class"}}},
+          "then": {
+            "properties": {
+              "observed_probe_fingerprint": {"const": "unobserved"},
+              "probe_identity_observed": {"const": false}
+            }
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [{"if": {"properties": {"status": {"const": "PASS"}}}, "then": {"required": ["operation_id", "endpoint_fingerprint", "configured_identity", "method_policy", "selected_method", "target_before", "target_after", "quantitative_policy"], "properties": {"statistical": {"const": true}, "diagnostic_only": {"const": true}, "target_before": {"const": {"powered": true, "running": true, "halted": false}}, "target_after": {"const": {"powered": true, "running": true, "halted": false}}, "configured_identity": {"properties": {"scope": {"const": "observed_probe_endpoint_class"}, "probe_identity_observed": {"const": true}}}, "capabilities": {"required": ["schema", "endpoint_fingerprint_scheme", "probe_fingerprint", "endpoint_fingerprint"], "properties": {"schema": {"const": "t32perf.sampling-capabilities/v1"}, "endpoint_fingerprint_scheme": {"const": "t32perf.endpoint-fingerprint/v2"}, "probe_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "endpoint_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}}, "checks": {"items": {"properties": {"passed": {"const": true}}}}, "artifact_bindings": {"minItems": 4, "maxItems": 4}}}}]
+}

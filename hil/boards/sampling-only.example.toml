@@ -1,0 +1,45 @@
+# Copy to a private laboratory directory and replace every placeholder before use.
+# This is a configuration template, not HIL evidence and not a board PASS claim.
+
+[board]
+id = "replace-with-lab-board-id"
+mcu_family = "replace-with-mcu-family"
+expected_cpu = "CortexM0+"
+covered_cores = [0]
+lock_file = "../locks/sampling-only.lock"
+
+[trace32]
+release = "R.2026.02"
+build = 190766
+validated_builds = [190766]
+software = "R.2026.02.000190766+190766"
+probe_id = "replace-with-probe-asset-id"
+
+[endpoint]
+host = "localhost"
+port = 20001
+protocol = "TCP"
+# Placeholder probe digest; replace with the sidecar-reported digest, never a serial.
+expected_probe_fingerprint = "0000000000000000000000000000000000000000000000000000000000000000"
+# v2 endpoint digest bound to protocol, loopback endpoint, software, and probe digest.
+expected_fingerprint = "a6eec6adb9f0a4d0b1838d4d3e3f0a61e543a07bb34cc21f984eccd4e6c0b285"
+
+[host]
+t32perf_bin = "../../target/release/t32perf.exe"
+artifact_root = "../artifacts/sampling-only"
+sampling_evidence_root = "../sampling-evidence/sampling-only"
+min_free_bytes = 4294967296
+
+[sampling]
+# Create this request privately, pin its exact bytes, and use core_id = 0.
+capture_request = "../requests/pc-sampling.json"
+capture_request_sha256 = "replace-with-exact-request-sha256"
+
+[driver.commands]
+sampling_prepare = ["uv", "--directory", "../../tools/lauterbach-sampling-mcp", "run", "python", "-m", "lauterbach_sampling_mcp.hil_driver", "--host", "{endpoint_host}", "--port", "{endpoint_port}", "--protocol", "{endpoint_protocol}", "--expected-endpoint-fingerprint", "{endpoint_fingerprint}", "--artifact-root", "{artifact_root}", "--t32perf-bin", "{t32perf_bin}", "prepare", "--session", "{session_id}", "--request", "{request}"]
+sampling_capabilities = ["uv", "--directory", "../../tools/lauterbach-sampling-mcp", "run", "python", "-m", "lauterbach_sampling_mcp.hil_driver", "--host", "{endpoint_host}", "--port", "{endpoint_port}", "--protocol", "{endpoint_protocol}", "--expected-endpoint-fingerprint", "{endpoint_fingerprint}", "--artifact-root", "{artifact_root}", "--t32perf-bin", "{t32perf_bin}", "capabilities", "--session", "{session_id}"]
+sampling_capture = ["uv", "--directory", "../../tools/lauterbach-sampling-mcp", "run", "python", "-m", "lauterbach_sampling_mcp.hil_driver", "--host", "{endpoint_host}", "--port", "{endpoint_port}", "--protocol", "{endpoint_protocol}", "--expected-endpoint-fingerprint", "{endpoint_fingerprint}", "--artifact-root", "{artifact_root}", "--t32perf-bin", "{t32perf_bin}", "capture", "--session", "{session_id}", "--operation", "{operation_id}", "{sidecar_args}"]
+sampling_ingest = ["uv", "--directory", "../../tools/lauterbach-sampling-mcp", "run", "python", "-m", "lauterbach_sampling_mcp.hil_driver", "--host", "{endpoint_host}", "--port", "{endpoint_port}", "--protocol", "{endpoint_protocol}", "--expected-endpoint-fingerprint", "{endpoint_fingerprint}", "--artifact-root", "{artifact_root}", "--t32perf-bin", "{t32perf_bin}", "ingest", "--session", "{session_id}", "--staged", "{staged_path}"]
+sampling_analyze = ["uv", "--directory", "../../tools/lauterbach-sampling-mcp", "run", "python", "-m", "lauterbach_sampling_mcp.hil_driver", "--host", "{endpoint_host}", "--port", "{endpoint_port}", "--protocol", "{endpoint_protocol}", "--expected-endpoint-fingerprint", "{endpoint_fingerprint}", "--artifact-root", "{artifact_root}", "--t32perf-bin", "{t32perf_bin}", "analyze", "--session", "{session_id}", "--histogram", "{histogram_artifact_id}"]
+sampling_summary = ["uv", "--directory", "../../tools/lauterbach-sampling-mcp", "run", "python", "-m", "lauterbach_sampling_mcp.hil_driver", "--host", "{endpoint_host}", "--port", "{endpoint_port}", "--protocol", "{endpoint_protocol}", "--expected-endpoint-fingerprint", "{endpoint_fingerprint}", "--artifact-root", "{artifact_root}", "--t32perf-bin", "{t32perf_bin}", "summary", "--session", "{session_id}", "--heatmap", "{heatmap_artifact_id}"]
+sampling_render = ["uv", "--directory", "../../tools/lauterbach-sampling-mcp", "run", "python", "-m", "lauterbach_sampling_mcp.hil_driver", "--host", "{endpoint_host}", "--port", "{endpoint_port}", "--protocol", "{endpoint_protocol}", "--expected-endpoint-fingerprint", "{endpoint_fingerprint}", "--artifact-root", "{artifact_root}", "--t32perf-bin", "{t32perf_bin}", "render", "--session", "{session_id}", "--heatmap", "{heatmap_artifact_id}"]

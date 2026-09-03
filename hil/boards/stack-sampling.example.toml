@@ -1,0 +1,37 @@
+# Copy privately. This profile deliberately requires a visible intrusive-capture acknowledgement.
+[board]
+id = "replace-with-lab-board-id"
+mcu_family = "replace-with-mcu-family"
+expected_cpu = "CortexM0+"
+lock_file = "../locks/stack-sampling.lock"
+
+[trace32]
+software = "R.2026.02.000190766+190766"
+probe_id = "replace-with-probe-asset-id"
+
+[endpoint]
+host = "localhost"
+port = 20001
+protocol = "TCP"
+expected_probe_fingerprint = "0000000000000000000000000000000000000000000000000000000000000000"
+expected_fingerprint = "a6eec6adb9f0a4d0b1838d4d3e3f0a61e543a07bb34cc21f984eccd4e6c0b285"
+
+[host]
+t32perf_bin = "../../target/release/t32perf.exe"
+t32perf_sha256 = "0000000000000000000000000000000000000000000000000000000000000000" # Replace with the exact Host executable SHA-256.
+artifact_root = "../artifacts/stack-sampling"
+stack_evidence_root = "../stack-evidence/stack-sampling"
+min_free_bytes = 4294967296
+
+[stack]
+capture_request = "../requests/stack-capture.json"
+capture_request_sha256 = "replace-with-exact-request-sha256"
+
+[driver.commands]
+prepare = ["replace-with-stack-wrapper", "--host", "{endpoint_host}", "--port", "{endpoint_port}", "--protocol", "{endpoint_protocol}", "--timeout", "10", "--expected-endpoint-fingerprint", "{endpoint_fingerprint}", "--artifact-root", "{artifact_root}", "--t32perf-bin", "{t32perf_bin}", "prepare", "--session", "{session_id}", "--request", "{request}"]
+capabilities = ["replace-with-stack-wrapper", "--host", "{endpoint_host}", "--port", "{endpoint_port}", "--protocol", "{endpoint_protocol}", "--timeout", "10", "--expected-endpoint-fingerprint", "{endpoint_fingerprint}", "--artifact-root", "{artifact_root}", "--t32perf-bin", "{t32perf_bin}", "capabilities", "--session", "{session_id}"]
+capture = ["replace-with-stack-wrapper", "--host", "{endpoint_host}", "--port", "{endpoint_port}", "--protocol", "{endpoint_protocol}", "--timeout", "10", "--expected-endpoint-fingerprint", "{endpoint_fingerprint}", "--artifact-root", "{artifact_root}", "--t32perf-bin", "{t32perf_bin}", "capture", "--session", "{session_id}", "--operation", "{operation_id}", "{sidecar_args}"]
+ingest = ["replace-with-stack-wrapper", "--host", "{endpoint_host}", "--port", "{endpoint_port}", "--protocol", "{endpoint_protocol}", "--timeout", "10", "--expected-endpoint-fingerprint", "{endpoint_fingerprint}", "--artifact-root", "{artifact_root}", "--t32perf-bin", "{t32perf_bin}", "ingest", "--session", "{session_id}", "--staged", "{staged_path}"]
+analyze = ["replace-with-stack-wrapper", "--host", "{endpoint_host}", "--port", "{endpoint_port}", "--protocol", "{endpoint_protocol}", "--timeout", "10", "--expected-endpoint-fingerprint", "{endpoint_fingerprint}", "--artifact-root", "{artifact_root}", "--t32perf-bin", "{t32perf_bin}", "analyze", "--session", "{session_id}", "--stack-samples", "{raw_artifact_id}"]
+summary = ["replace-with-stack-wrapper", "--host", "{endpoint_host}", "--port", "{endpoint_port}", "--protocol", "{endpoint_protocol}", "--timeout", "10", "--expected-endpoint-fingerprint", "{endpoint_fingerprint}", "--artifact-root", "{artifact_root}", "--t32perf-bin", "{t32perf_bin}", "summary", "--session", "{session_id}"]
+render = ["replace-with-stack-wrapper", "--host", "{endpoint_host}", "--port", "{endpoint_port}", "--protocol", "{endpoint_protocol}", "--timeout", "10", "--expected-endpoint-fingerprint", "{endpoint_fingerprint}", "--artifact-root", "{artifact_root}", "--t32perf-bin", "{t32perf_bin}", "render", "--session", "{session_id}"]
