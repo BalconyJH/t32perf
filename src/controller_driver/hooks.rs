@@ -17,7 +17,14 @@ use std::{
 use std::io;
 
 #[cfg(unix)]
-use process_wrap::tokio::ProcessGroup;
+use nix::{
+    errno::Errno,
+    sys::{
+        signal::{Signal, killpg},
+        wait::{WaitPidFlag, WaitStatus, waitpid},
+    },
+    unistd::Pid,
+};
 use process_wrap::tokio::{ChildWrapper, CommandWrap, KillOnDrop};
 #[cfg(windows)]
 use process_wrap::tokio::{CommandWrapper, JobObject};
@@ -50,6 +57,8 @@ const MAX_CAPTURE_ATTESTATION_BYTES: u64 = 1024 * 1024;
 const MAX_ATTESTATION_RESERVATION_BYTES: u64 = 4 * 1024;
 const ATTESTATION_RESERVATION_SCHEMA: &str = "t32perf.attestation-output-reservation/v1";
 const CHILD_TERMINATION_GRACE: Duration = Duration::from_secs(1);
+#[cfg(unix)]
+const PROCESS_GROUP_POLL_INTERVAL: Duration = Duration::from_millis(10);
 static PROCESS_STARTED_UNIX_NS: OnceLock<u64> = OnceLock::new();
 static RESERVATION_NONCE_COUNTER: AtomicU64 = AtomicU64::new(0);
 static ACTIVE_ATTESTATION_RESERVATIONS: OnceLock<Mutex<BTreeSet<PathBuf>>> = OnceLock::new();
@@ -151,6 +160,11 @@ pub(crate) enum DriverHookError {
         role: DriverCommandRole,
         message: String,
     },
+    #[cfg(unix)]
+    ProcessGroupStateFailed {
+        role: DriverCommandRole,
+        message: String,
+    },
 }
 
 impl DriverHookError {
@@ -232,6 +246,11 @@ impl fmt::Display for DriverHookError {
             Self::TerminationFailed { role, message } => write!(
                 formatter,
                 "deployment hook `{role}` process tree could not be terminated and reaped: {message}"
+            ),
+            #[cfg(unix)]
+            Self::ProcessGroupStateFailed { role, message } => write!(
+                formatter,
+                "deployment hook `{role}` process group state could not be verified: {message}"
             ),
         }
     }
@@ -672,10 +691,10 @@ async fn execute_process(
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
+        #[cfg(unix)]
+        command.process_group(0);
     });
     command.wrap(KillOnDrop);
-    #[cfg(unix)]
-    command.wrap(ProcessGroup::leader());
     #[cfg(windows)]
     {
         command.wrap(JobObject);
@@ -687,6 +706,20 @@ async fn execute_process(
             role,
             message: error.to_string(),
         })?;
+    #[cfg(unix)]
+    // A zero process_group creates a dedicated group whose PGID is the spawned
+    // leader PID. Retain it because the direct-child wait cannot observe a
+    // descendant after that leader exits and the descendant is reparented.
+    let process_group = Pid::from_raw(
+        i32::try_from(
+            child
+                .id()
+                .expect("spawned hook process has a process identifier"),
+        )
+        .expect("hook process identifier fits i32"),
+    );
+    #[cfg(unix)]
+    let mut process_group_guard = ProcessGroupGuard::new(process_group);
     let stdout = child
         .stdout()
         .take()
@@ -697,14 +730,18 @@ async fn execute_process(
         .expect("piped hook stderr is available");
     let mut stdout_task = tokio::spawn(require_empty_stdout(stdout));
     let mut stderr_task = tokio::spawn(read_bounded_stderr(stderr, max_stderr_bytes));
+    #[cfg(unix)]
+    let mut deadline = Instant::now() + Duration::from_millis(timeout_ms);
+    #[cfg(not(unix))]
     let deadline = Instant::now() + Duration::from_millis(timeout_ms);
     let mut status = None;
     let mut stdout_complete = false;
     let mut stderr_bytes = None;
+    #[cfg(windows)]
     let mut process_complete = false;
     let attempt = {
         let mut wait = child.wait();
-        'process: loop {
+        let result = 'process: loop {
             tokio::select! {
                 biased;
                 output = &mut stdout_task, if !stdout_complete => {
@@ -759,8 +796,24 @@ async fn execute_process(
                 process = &mut wait, if status.is_none() => {
                     match process {
                         Ok(exit_status) => {
+                            #[cfg(unix)]
+                            if !exit_status.success() {
+                                deadline = deadline.min(Instant::now() + CHILD_TERMINATION_GRACE);
+                                if let Err(error) = signal_unix_process_group(process_group) {
+                                    break 'process Err(DriverHookError::TerminationFailed {
+                                        role,
+                                        message: format!(
+                                            "after exit code {:?}: send SIGKILL to process group: {error}",
+                                            exit_status.code()
+                                        ),
+                                    });
+                                }
+                            }
                             status = Some(exit_status);
-                            process_complete = true;
+                            #[cfg(windows)]
+                            {
+                                process_complete = true;
+                            }
                         }
                         Err(error) => {
                             break 'process Err(DriverHookError::OutputReadFailed {
@@ -772,6 +825,15 @@ async fn execute_process(
                     }
                 }
                 _ = sleep_until(deadline) => {
+                    if let Some(status) = status
+                        && !status.success()
+                    {
+                        break 'process Err(exit_failure(
+                            role,
+                            status,
+                            stderr_bytes.as_deref().unwrap_or_default(),
+                        ));
+                    }
                     break 'process Err(DriverHookError::Timeout { role, timeout_ms });
                 }
             }
@@ -781,14 +843,43 @@ async fn execute_process(
             {
                 break 'process Ok((status, stderr));
             }
+        };
+        let result = match result {
+            Ok((status, stderr)) => finish_process(role, status, stderr),
+            Err(error) => Err(error),
+        };
+        #[cfg(unix)]
+        match result {
+            Ok(success) => {
+                match wait_for_process_group_empty(process_group, deadline, role, timeout_ms).await
+                {
+                    Ok(()) => Ok(success),
+                    Err(error) => Err(error),
+                }
+            }
+            Err(error) => Err(error),
         }
+        #[cfg(windows)]
+        result
     };
 
     match attempt {
-        Ok((status, stderr)) => finish_process(role, status, stderr),
+        Ok(execution) => {
+            #[cfg(unix)]
+            process_group_guard.disarm();
+            Ok(execution)
+        }
         Err(error) => {
             stdout_task.abort();
             stderr_task.abort();
+            #[cfg(unix)]
+            terminate_unix_process_group(&mut child, process_group)
+                .await
+                .map_err(|message| DriverHookError::TerminationFailed {
+                    role,
+                    message: format!("after `{error}`: {message}"),
+                })?;
+            #[cfg(windows)]
             if !process_complete {
                 terminate_child_without_task(&mut child)
                     .await
@@ -797,6 +888,8 @@ async fn execute_process(
                         message: format!("after `{error}`: {message}"),
                     })?;
             }
+            #[cfg(unix)]
+            process_group_guard.disarm();
             Err(error)
         }
     }
@@ -807,15 +900,20 @@ fn finish_process(
     status: ExitStatus,
     stderr: Vec<u8>,
 ) -> Result<HookExecution, DriverHookError> {
-    let stderr_summary = stderr_summary(&stderr);
     if !status.success() {
-        return Err(DriverHookError::ExitFailure {
-            role,
-            code: status.code(),
-            stderr_summary,
-        });
+        return Err(exit_failure(role, status, &stderr));
     }
-    Ok(HookExecution { stderr_summary })
+    Ok(HookExecution {
+        stderr_summary: stderr_summary(&stderr),
+    })
+}
+
+fn exit_failure(role: DriverCommandRole, status: ExitStatus, stderr: &[u8]) -> DriverHookError {
+    DriverHookError::ExitFailure {
+        role,
+        code: status.code(),
+        stderr_summary: stderr_summary(stderr),
+    }
 }
 
 async fn require_empty_stdout<R>(mut reader: R) -> Result<(), StreamReadError>
@@ -863,6 +961,7 @@ enum StreamReadError {
     Io(String),
 }
 
+#[cfg(windows)]
 async fn terminate_child_without_task(child: &mut Box<dyn ChildWrapper>) -> Result<(), String> {
     let kill = Box::into_pin(child.kill());
     match tokio::time::timeout(CHILD_TERMINATION_GRACE, kill).await {
@@ -872,6 +971,128 @@ async fn terminate_child_without_task(child: &mut Box<dyn ChildWrapper>) -> Resu
             "kill-and-wait exceeded the {} ms cleanup deadline",
             CHILD_TERMINATION_GRACE.as_millis()
         )),
+    }
+}
+
+#[cfg(unix)]
+async fn wait_for_process_group_empty(
+    process_group: Pid,
+    deadline: Instant,
+    role: DriverCommandRole,
+    timeout_ms: u64,
+) -> Result<(), DriverHookError> {
+    loop {
+        if Instant::now() >= deadline {
+            return Err(DriverHookError::Timeout { role, timeout_ms });
+        }
+        match process_group_is_empty(process_group) {
+            Ok(true) => return Ok(()),
+            Ok(false) => {}
+            Err(error) => {
+                return Err(DriverHookError::ProcessGroupStateFailed {
+                    role,
+                    message: error.to_string(),
+                });
+            }
+        }
+        let now = Instant::now();
+        sleep_until((now + PROCESS_GROUP_POLL_INTERVAL).min(deadline)).await;
+    }
+}
+
+#[cfg(unix)]
+async fn terminate_unix_process_group(
+    child: &mut Box<dyn ChildWrapper>,
+    process_group: Pid,
+) -> Result<(), String> {
+    let deadline = Instant::now() + CHILD_TERMINATION_GRACE;
+    signal_unix_process_group(process_group)
+        .map_err(|error| format!("send SIGKILL to process group: {error}"))?;
+    let wait = child.wait();
+    match tokio::time::timeout_at(deadline, wait).await {
+        Ok(Ok(_)) => {}
+        Ok(Err(error)) => return Err(format!("wait for direct child: {error}")),
+        Err(_) => {
+            return Err(format!(
+                "wait for direct child exceeded the {} ms cleanup deadline",
+                CHILD_TERMINATION_GRACE.as_millis()
+            ));
+        }
+    }
+    loop {
+        if Instant::now() >= deadline {
+            return Err(format!(
+                "process group remained alive after the {} ms cleanup deadline",
+                CHILD_TERMINATION_GRACE.as_millis()
+            ));
+        }
+        match process_group_is_empty(process_group) {
+            Ok(true) => return Ok(()),
+            Ok(false) => {}
+            Err(error) => return Err(format!("inspect process group after SIGKILL: {error}")),
+        }
+        let now = Instant::now();
+        sleep_until((now + PROCESS_GROUP_POLL_INTERVAL).min(deadline)).await;
+    }
+}
+
+#[cfg(unix)]
+fn signal_unix_process_group(process_group: Pid) -> Result<(), Errno> {
+    match killpg(process_group, Signal::SIGKILL) {
+        Ok(()) | Err(Errno::ESRCH) => Ok(()),
+        Err(error) => Err(error),
+    }
+}
+
+#[cfg(unix)]
+#[derive(Debug)]
+struct ProcessGroupGuard {
+    process_group: Pid,
+    armed: bool,
+}
+
+#[cfg(unix)]
+impl ProcessGroupGuard {
+    const fn new(process_group: Pid) -> Self {
+        Self {
+            process_group,
+            armed: true,
+        }
+    }
+
+    const fn disarm(&mut self) {
+        self.armed = false;
+    }
+}
+
+#[cfg(unix)]
+impl Drop for ProcessGroupGuard {
+    fn drop(&mut self) {
+        if self.armed {
+            let _ = signal_unix_process_group(self.process_group);
+        }
+    }
+}
+
+#[cfg(unix)]
+fn process_group_is_empty(process_group: Pid) -> Result<bool, Errno> {
+    reap_exited_process_group_members(process_group)?;
+    match killpg(process_group, None::<Signal>) {
+        Ok(()) | Err(Errno::EPERM) => Ok(false),
+        Err(Errno::ESRCH) => Ok(true),
+        Err(error) => Err(error),
+    }
+}
+
+#[cfg(unix)]
+fn reap_exited_process_group_members(process_group: Pid) -> Result<(), Errno> {
+    let members = Pid::from_raw(-process_group.as_raw());
+    loop {
+        match waitpid(members, Some(WaitPidFlag::WNOHANG)) {
+            Ok(WaitStatus::StillAlive) | Err(Errno::ECHILD) => return Ok(()),
+            Ok(_) => {}
+            Err(error) => return Err(error),
+        }
     }
 }
 
@@ -1899,6 +2120,135 @@ mod tests {
         .unwrap();
         assert!(started.elapsed() >= Duration::from_millis(300));
         assert!(marker.exists());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn detached_descendant_that_outlives_deadline_is_killed() {
+        let temp = TempDir::new().unwrap();
+        let marker = temp.path().join("detached-descendant-survived");
+        let marker_text = marker.to_string_lossy();
+        let script = format!(
+            "(exec </dev/null >/dev/null 2>&1; sleep 1; printf complete > '{}') & exit 0",
+            marker_text.replace('\'', "'\\''")
+        );
+        assert!(matches!(
+            block_on(execute_process(
+                Path::new("/bin/sh"),
+                &["-c".to_owned(), script],
+                DriverCommandRole::AttestationSigner,
+                100,
+                4_096,
+            )),
+            Err(DriverHookError::Timeout { .. })
+        ));
+        thread::sleep(Duration::from_millis(1_200));
+        assert!(
+            !marker.exists(),
+            "a detached descendant survived the hook process-group termination"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn nonzero_hook_kills_detached_descendant() {
+        let temp = TempDir::new().unwrap();
+        let marker = temp.path().join("failed-hook-descendant-survived");
+        let marker_text = marker.to_string_lossy();
+        let script = format!(
+            "(exec </dev/null >/dev/null 2>&1; sleep 1; printf complete > '{}') & exit 7",
+            marker_text.replace('\'', "'\\''")
+        );
+        assert!(matches!(
+            block_on(execute_process(
+                Path::new("/bin/sh"),
+                &["-c".to_owned(), script],
+                DriverCommandRole::AttestationSigner,
+                2_000,
+                4_096,
+            )),
+            Err(DriverHookError::ExitFailure { code: Some(7), .. })
+        ));
+        thread::sleep(Duration::from_millis(1_200));
+        assert!(
+            !marker.exists(),
+            "a failed hook's detached descendant survived process-group termination"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn nonzero_hook_kills_descendant_that_holds_standard_streams() {
+        let temp = TempDir::new().unwrap();
+        let marker = temp.path().join("failed-hook-stream-descendant-survived");
+        let marker_text = marker.to_string_lossy();
+        let script = format!(
+            "(sleep 1; printf complete > '{}') & printf boom >&2; exit 7",
+            marker_text.replace('\'', "'\\''")
+        );
+        let error = block_on(execute_process(
+            Path::new("/bin/sh"),
+            &["-c".to_owned(), script],
+            DriverCommandRole::AttestationSigner,
+            2_000,
+            4_096,
+        ))
+        .unwrap_err();
+        assert!(matches!(
+            error,
+            DriverHookError::ExitFailure {
+                code: Some(7),
+                stderr_summary: Some(summary),
+                ..
+            } if summary.contains("boom")
+        ));
+        thread::sleep(Duration::from_millis(1_200));
+        assert!(
+            !marker.exists(),
+            "a failed hook's stream-holding descendant survived process-group termination"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn cancelling_hook_kills_its_process_group() {
+        let temp = TempDir::new().unwrap();
+        let started = temp.path().join("hook-started");
+        let marker = temp.path().join("cancelled-hook-descendant-survived");
+        let started_text = started.to_string_lossy();
+        let marker_text = marker.to_string_lossy();
+        let script = format!(
+            "(exec </dev/null >/dev/null 2>&1; printf started > '{}'; sleep 1; printf complete > '{}') & sleep 10",
+            started_text.replace('\'', "'\\''"),
+            marker_text.replace('\'', "'\\''")
+        );
+        block_on(async {
+            let task = tokio::spawn(async move {
+                execute_process(
+                    Path::new("/bin/sh"),
+                    &["-c".to_owned(), script],
+                    DriverCommandRole::AttestationSigner,
+                    20_000,
+                    4_096,
+                )
+                .await
+            });
+            let started_deadline = Instant::now() + Duration::from_secs(2);
+            while !started.exists() {
+                assert!(
+                    Instant::now() < started_deadline,
+                    "hook did not start before the test deadline"
+                );
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+            task.abort();
+            assert!(task.await.unwrap_err().is_cancelled());
+            tokio::time::sleep(Duration::from_millis(1_200)).await;
+        });
+        assert!(
+            !marker.exists(),
+            "a cancelled hook's descendant survived process-group kill-on-drop"
+        );
     }
 
     fn config_without_hooks() -> T32mcpDriverConfig {

@@ -2759,6 +2759,7 @@ dependencies = [
  "fs2",
  "jiff",
  "jsonschema",
+ "nix",
  "object",
  "predicates",
  "process-wrap",

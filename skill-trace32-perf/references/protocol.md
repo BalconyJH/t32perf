@@ -30,7 +30,7 @@ Fully reload and revalidate deployment from fixed paths before initial/replaceme
 
 `operation_timeout_ms` begins after client initialization and covers execute, collect, poll, workload/fault hooks, and at most one verified replacement abort. Only a wrapper with `<NOT FINISHED>` first, exactly one `<CONTENT>` second, and no later `<NOT FINISHED>`/`<FINISHED>` remains pending; partial content is permitted. Stage every other bounded result unchanged for Host accept or immutable rejection.
 
-The only external commands are `workload` and `trace32_disconnect_at_stop`. Both use closed placeholders, direct argv/no shell, independent executable SHA-256, empty stdout, bounded stderr/timeout, and terminate their process tree on failure. `trace32_disconnect_at_stop` is hook-first. `driver_disconnect_at_export` executes Export once; only strict pending permits forced disconnection of the exact child and one fully revalidated abort-only replacement. Stage a bounded final unchanged and let the Host mark it fault-missed.
+The only external commands are `workload` and `trace32_disconnect_at_stop`. Both use closed placeholders, direct argv/no shell, independent executable SHA-256, empty stdout, bounded stderr/timeout, and terminate their process tree on failure. On Unix, success also waits for the dedicated hook process group to become empty; trusted hooks must not move descendants into another session or process group. `trace32_disconnect_at_stop` is hook-first. `driver_disconnect_at_export` executes Export once; only strict pending permits forced disconnection of the exact child and one fully revalidated abort-only replacement. Stage a bounded final unchanged and let the Host mark it fault-missed.
 
 ## Durable Controller transaction
 

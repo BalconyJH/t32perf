@@ -47,3 +47,6 @@ jsonschema = { version = "0.50.1", default-features = false }
 object = { version = "0.40.0", default-features = false, features = ["write_core", "elf", "std"] }
 predicates = "3.1.4"
 tempfile = "3.27.0"
+
+[target."cfg(unix)".dependencies]
+nix = { version = "0.31.3", default-features = false, features = ["signal"] }

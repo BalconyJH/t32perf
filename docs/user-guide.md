@@ -428,7 +428,7 @@ Hook structure example. Replace both `<..._SHA256>` values with the 64-character
 }
 ```
 
-Hook stdout must be empty. Stderr is bounded by `max_stderr_bytes`, and each hook timeout is additionally constrained by the driver's overall `operation_timeout_ms` deadline. A timeout, stderr overflow, nonzero exit, or read failure terminates the entire process tree. Windows uses a Job Object and Unix a process group; both enable kill-on-drop. Hook stderr is only bounded diagnostics, not evidence that a workload completed or a fault occurred.
+Hook stdout must be empty. Stderr is bounded by `max_stderr_bytes`, and each hook timeout is additionally constrained by the driver's overall `operation_timeout_ms` deadline. A timeout, stderr overflow, nonzero exit, or read failure terminates the entire process tree. Windows uses a Job Object and Unix a process group; both enable kill-on-drop. On Unix, success additionally requires the dedicated hook process group to become empty. Trusted hook executables must not move descendants into another session or process group because those descendants are outside process-group containment. Hook stderr is only bounded diagnostics, not evidence that a workload completed or a fault occurred.
 
 After installation, run the safe preflight first:
 
