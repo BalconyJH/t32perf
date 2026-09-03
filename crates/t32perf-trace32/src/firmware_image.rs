@@ -571,7 +571,7 @@ fn parse_srecord(line: &[u8], expected_type: u8) -> Result<ParsedSRecord, Firmwa
         return Err(invalid("S-record byte count does not match line length"));
     }
     let mut encoded = Vec::with_capacity(usize::from(count));
-    for pair in line[4..].chunks_exact(2) {
+    for pair in line[4..].as_chunks::<2>().0 {
         encoded.push(parse_hex_byte(pair)?);
     }
     let address_bytes = if expected_type == b'0' { 2 } else { 4 };

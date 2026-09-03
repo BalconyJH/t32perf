@@ -17,7 +17,7 @@ capture through deep verification. It does not require TRACE32 hardware.
 
 ## Prerequisites
 
-- Rust stable with Cargo; CI currently resolves Rust `1.95.0`.
+- Rust `1.95.0` with Cargo, selected by the repository toolchain file.
 - A CMake-compatible C toolchain only when running the complete repository checks.
 - [`uv`](https://docs.astral.sh/uv/) only for Python, HIL, benchmark, or documentation workflows.
 

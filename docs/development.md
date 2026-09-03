@@ -153,6 +153,5 @@ The strict build validates internal pages and anchors. Documentation source belo
 ## Continuous integration
 
 CI runs Rust, C SDK, Python/HIL, packaging, and Perfetto importer jobs on the supported
-host matrices. The repository's CI files pin Rust `1.95.0`; local development follows
-`rust-toolchain.toml`, which currently selects stable. Treat those as two explicit
-environments, not interchangeable labels.
+host matrices. The CI workflows and `rust-toolchain.toml` both pin Rust `1.95.0`, so
+local and hosted checks use the same compiler, formatter, and lint policy.

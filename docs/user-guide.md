@@ -59,7 +59,7 @@ For tag releases, the Windows and Linux package jobs in the same workflow run `c
 
 The bundle contains benchmarks, a skill validator, and an optional Perfetto validator under `tools/`. The Python package, trace processor, compiler, and lab tools remain external runtime dependencies; the bundle does not claim to be a self-contained hardware environment.
 
-Building only the host binary requires the repository-pinned Rust stable toolchain. A full `cargo xtask check` additionally requires `uv`, CMake/CTest, and an available C99 compiler. If cargo-nextest is unavailable, the workflow explicitly falls back to `cargo test`.
+Building only the host binary requires the repository-pinned Rust `1.95.0` toolchain. A full `cargo xtask check` additionally requires `uv`, CMake/CTest, and an available C99 compiler. If cargo-nextest is unavailable, the workflow explicitly falls back to `cargo test`.
 
 Reproducible benchmark workflow:
 

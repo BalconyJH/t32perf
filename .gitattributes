@@ -1,0 +1,17 @@
+# Keep repository text deterministic across Windows and Unix CI runners.
+* text=auto eol=lf
+
+# Binary artifacts and executable fixtures must not undergo text conversion.
+*.elf binary
+*.bin binary
+*.exe binary
+*.dll binary
+*.zip binary
+*.gz binary
+*.tar binary
+*.zst binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
