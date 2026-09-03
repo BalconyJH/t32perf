@@ -1,0 +1,76 @@
+name: Benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      events:
+        description: Canonical synthetic observation count
+        required: true
+        type: choice
+        default: "1000000"
+        options:
+          - "1000000"
+          - "10000000"
+      analyzer_extended:
+        description: Include the 10M analyzer Criterion case
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  candidates:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # master
+        with:
+          toolchain: 1.95.0
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+      - run: >-
+          cargo run --release -p t32perf --
+          --artifact-root target/benchmark-data --json
+          capture --provider synthetic --id benchmark --events ${{ inputs.events }}
+      - name: Run SHA-256-conditioned parser candidates
+        run: >-
+          cargo xtask bench
+          --input target/benchmark-data/benchmark/normalized/observations.ndjson
+          > target/parser-candidates-${{ runner.os }}.json
+      - name: Enforce parser regression budgets
+        run: >-
+          uv run --no-project tools/bench/check_regression.py
+          target/parser-candidates-${{ runner.os }}.json
+          > target/parser-regression-${{ runner.os }}.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: ${{ always() }}
+        with:
+          name: parser-candidates-${{ runner.os }}-${{ inputs.events }}
+          path: |
+            target/parser-candidates-${{ runner.os }}.json
+            target/parser-regression-${{ runner.os }}.json
+          if-no-files-found: error
+
+  analyzer:
+    if: ${{ inputs.analyzer_extended }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # master
+        with:
+          toolchain: 1.95.0
+      - run: cargo xtask bench --extended
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: analyzer-criterion-${{ runner.os }}
+          path: target/criterion
+          if-no-files-found: error
