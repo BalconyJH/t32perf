@@ -1,0 +1,11 @@
+interface:
+  display_name: "T32Perf MCP"
+  short_description: "Run and inspect health-gated T32Perf sessions"
+  default_prompt: "Use $t32perf-mcp to run a bounded TRACE32 performance session and return its health-gated summary."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "t32perf"
+      description: "Local T32Perf stdio MCP server"
+      transport: "stdio"
