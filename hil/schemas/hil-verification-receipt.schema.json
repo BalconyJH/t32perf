@@ -1,0 +1,399 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://t32perf.dev/schemas/hil/hil-verification-receipt-v1.schema.json",
+  "title": "T32Perf HIL verification receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "source",
+    "kind",
+    "scenario",
+    "board_id",
+    "session_id",
+    "driver_reference_sha256",
+    "tolerance",
+    "artifact_bindings",
+    "checks",
+    "check_categories",
+    "max_error",
+    "failure_count",
+    "failures",
+    "failures_truncated",
+    "verdict"
+  ],
+  "properties": {
+    "schema": {"const": "t32perf.hil-verification-receipt/v1"},
+    "source": {"const": "host-reconstructed-session-artifacts"},
+    "kind": {"enum": ["native_timeline", "resources", "fault_injection"]},
+    "scenario": {
+      "enum": [
+        null,
+        "trace_overflow",
+        "flow_error",
+        "sampling_buffer_full",
+        "elf_mismatch",
+        "trace32_disconnect_recovery",
+        "driver_disconnect_recovery",
+        "cmm_abort_recovery"
+      ]
+    },
+    "board_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "session_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
+    },
+    "driver_reference_sha256": {"$ref": "#/$defs/sha256"},
+    "recovery_evidence": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/recoveryEvidenceBinding"}
+      ]
+    },
+    "fault_adapter_binding": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/faultAdapterBinding"}
+      ]
+    },
+    "tolerance": {"$ref": "#/$defs/tolerance"},
+    "artifact_bindings": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 11,
+      "items": {"$ref": "#/$defs/artifactBinding"}
+    },
+    "checks": {"$ref": "#/$defs/checkCounts"},
+    "check_categories": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 8,
+      "items": {"$ref": "#/$defs/categoryCounts"}
+    },
+    "max_error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["check", "absolute", "relative"],
+      "properties": {
+        "check": {"type": ["string", "null"], "minLength": 1, "maxLength": 512},
+        "absolute": {"type": "number", "minimum": 0},
+        "relative": {"type": "number", "minimum": 0}
+      }
+    },
+    "failure_count": {"type": "integer", "minimum": 0},
+    "failures": {
+      "type": "array",
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["check", "reason"],
+        "properties": {
+          "check": {"type": "string", "minLength": 1, "maxLength": 512},
+          "reason": {"type": "string", "minLength": 1, "maxLength": 2048}
+        }
+      }
+    },
+    "failures_truncated": {"type": "boolean"},
+    "verdict": {"enum": ["PASS", "FAIL"]}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"kind": {"const": "fault_injection"}}},
+      "then": {
+        "properties": {
+          "scenario": {
+            "enum": [
+              "trace_overflow",
+              "flow_error",
+              "sampling_buffer_full",
+              "elf_mismatch",
+              "trace32_disconnect_recovery",
+              "driver_disconnect_recovery",
+              "cmm_abort_recovery"
+            ]
+          }
+        }
+      },
+      "else": {"properties": {"scenario": {"type": "null"}}}
+    },
+    {
+      "if": {
+        "properties": {
+          "scenario": {
+            "enum": [
+              "trace32_disconnect_recovery",
+              "driver_disconnect_recovery",
+              "cmm_abort_recovery"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": ["recovery_evidence"],
+        "properties": {
+          "recovery_evidence": {"$ref": "#/$defs/recoveryEvidenceBinding"}
+        }
+      },
+      "else": {"properties": {"recovery_evidence": {"type": "null"}}}
+    },
+    {
+      "if": {"properties": {"scenario": {"const": "trace32_disconnect_recovery"}}},
+      "then": {
+        "properties": {
+          "recovery_evidence": {
+            "properties": {
+              "document": {
+                "properties": {"failure_kind": {"const": "trace32_disconnect"}}
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"scenario": {"const": "driver_disconnect_recovery"}}},
+      "then": {
+        "properties": {
+          "recovery_evidence": {
+            "properties": {
+              "document": {
+                "properties": {"failure_kind": {"const": "driver_disconnect"}}
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"scenario": {"const": "cmm_abort_recovery"}}},
+      "then": {
+        "properties": {
+          "recovery_evidence": {
+            "properties": {
+              "document": {
+                "properties": {
+                  "failure_kind": {"const": "cmm_abort"},
+                  "upstream_abort_confirmed": {"const": true},
+                  "upstream_abort_receipt_sha256": {"$ref": "#/$defs/sha256"}
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "recoveryEvidenceBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "document"],
+      "properties": {
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "document": {"$ref": "#/$defs/targetAdapterRecoveryEvidence"}
+      }
+    },
+    "faultAdapterBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scenario",
+        "fault_scenarios_sha256",
+        "adapter_id",
+        "profile_sha256",
+        "profile_file_sha256",
+        "bundle_sha256"
+      ],
+      "properties": {
+        "scenario": {"enum": ["sampling_buffer_full"]},
+        "fault_scenarios_sha256": {"$ref": "#/$defs/sha256"},
+        "adapter_id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "profile_sha256": {"$ref": "#/$defs/sha256"},
+        "profile_file_sha256": {"$ref": "#/$defs/sha256"},
+        "bundle_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "targetAdapterRecoveryEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "profile_sha256",
+        "binding_sha256",
+        "failed_operation",
+        "failure_kind",
+        "initial_target_state",
+        "restored_target_state",
+        "adapter_state_restored",
+        "upstream_abort_confirmed",
+        "upstream_abort_receipt_sha256",
+        "files_deleted",
+        "new_session_required"
+      ],
+      "properties": {
+        "schema": {"const": "t32perf.target-adapter-recovery-evidence/v1"},
+        "profile_sha256": {"$ref": "#/$defs/sha256"},
+        "binding_sha256": {"$ref": "#/$defs/sha256"},
+        "failed_operation": {
+          "enum": [
+            "perf_get_capabilities",
+            "perf_configure",
+            "perf_start",
+            "perf_stop",
+            "perf_get_health",
+            "perf_export",
+            "perf_get_hotspots",
+            "perf_cleanup"
+          ]
+        },
+        "failure_kind": {
+          "enum": [
+            "trace32_disconnect",
+            "driver_disconnect",
+            "cmm_abort",
+            "operation_failure"
+          ]
+        },
+        "initial_target_state": {"enum": ["running", "halted"]},
+        "restored_target_state": {"enum": ["running", "halted"]},
+        "adapter_state_restored": {"const": true},
+        "sampling": {
+          "anyOf": [
+            {"$ref": "#/$defs/targetAdapterSamplingRecoveryEvidence"},
+            {"type": "null"}
+          ]
+        },
+        "upstream_abort_confirmed": {"const": true},
+        "upstream_abort_receipt_sha256": {"$ref": "#/$defs/sha256"},
+        "files_deleted": {"const": false},
+        "new_session_required": {"const": true}
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "initial_target_state": {"const": "running"},
+            "restored_target_state": {"const": "running"}
+          }
+        },
+        {
+          "properties": {
+            "initial_target_state": {"const": "halted"},
+            "restored_target_state": {"const": "halted"}
+          }
+        }
+      ]
+    },
+    "targetAdapterSamplingRecoveryEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "object",
+        "buffer_mode",
+        "state",
+        "requested_rate_ns",
+        "capacity_records",
+        "auto_arm",
+        "auto_init",
+        "zero_reset"
+      ],
+      "properties": {
+        "method": {"const": "real_time"},
+        "object": {"const": "program_counter"},
+        "buffer_mode": {"const": "stack"},
+        "state": {"const": "off"},
+        "requested_rate_ns": {"const": 1000000},
+        "capacity_records": {"const": 65536},
+        "auto_arm": {"const": false},
+        "auto_init": {"const": false},
+        "zero_reset": {"const": true}
+      }
+    },
+    "tolerance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "timestamp_absolute_ns",
+        "timestamp_relative",
+        "continuous_relative",
+        "continuous_absolute",
+        "integer_absolute"
+      ],
+      "properties": {
+        "timestamp_absolute_ns": {"type": "number", "minimum": 0},
+        "timestamp_relative": {"type": "number", "minimum": 0},
+        "continuous_relative": {"type": "number", "minimum": 0},
+        "continuous_absolute": {"type": "number", "minimum": 0},
+        "integer_absolute": {"type": "number", "minimum": 0}
+      }
+    },
+    "artifactBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "artifact_id", "sha256"],
+      "properties": {
+        "role": {
+          "enum": [
+            "manifest",
+            "health",
+            "observations",
+            "analysis_summary",
+            "hotspots",
+            "derived",
+            "static_ram_report",
+            "static_ram_config",
+            "static_ram_source",
+            "resource_source",
+            "normalize_config"
+          ]
+        },
+        "artifact_id": {"type": ["string", "null"], "minLength": 1, "maxLength": 256},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "checkCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "passed", "failed"],
+      "properties": {
+        "total": {"type": "integer", "minimum": 0},
+        "passed": {"type": "integer", "minimum": 0},
+        "failed": {"type": "integer", "minimum": 0}
+      }
+    },
+    "categoryCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["category", "counts"],
+      "properties": {
+        "category": {
+          "enum": [
+            "artifact_binding",
+            "allocator",
+            "stack",
+            "static_ram",
+            "trace_buffer",
+            "clock_alignment",
+            "call_depth",
+            "analysis_summary",
+            "function",
+            "task",
+            "isr",
+            "context_switch",
+            "interrupt",
+            "function_activation",
+            "health",
+            "fault_publication",
+            "recovery"
+          ]
+        },
+        "counts": {"$ref": "#/$defs/checkCounts"}
+      }
+    }
+  }
+}

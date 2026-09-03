@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "t32perf.hil-evidence/v1",
+  "title": "T32Perf HIL evidence matrix",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "source", "coverage", "captures"],
+  "properties": {
+    "schema": {"const": "t32perf.hil-evidence/v1"},
+    "source": {"const": "host-verified-session-artifacts"},
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "boards",
+        "mcu_families",
+        "modes",
+        "rtoses",
+        "probes",
+        "architecture_packages",
+        "combinations"
+      ],
+      "properties": {
+        "boards": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 2, "uniqueItems": true},
+        "mcu_families": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 2, "uniqueItems": true},
+        "modes": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 2, "uniqueItems": true},
+        "rtoses": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1, "uniqueItems": true},
+        "probes": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "architecture_packages": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "combinations": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["board_id", "mode", "capture_count"],
+            "properties": {
+              "board_id": {"type": "string", "minLength": 1},
+              "mode": {"type": "string", "minLength": 1},
+              "capture_count": {"type": "integer", "minimum": 10}
+            }
+          }
+        }
+      }
+    },
+    "captures": {
+      "type": "array",
+      "minItems": 40,
+      "items": {"$ref": "#/$defs/capture"}
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "capture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "board_id",
+        "mcu_family",
+        "rtos",
+        "mode",
+        "initial_state",
+        "session_id",
+        "trace32",
+        "trace_routing",
+        "manifest_sha256",
+        "health_sha256"
+      ],
+      "properties": {
+        "board_id": {"type": "string", "minLength": 1},
+        "mcu_family": {"type": "string", "minLength": 1},
+        "rtos": {"type": ["string", "null"], "minLength": 1},
+        "mode": {"type": "string", "minLength": 1},
+        "initial_state": {"enum": ["running", "halted"]},
+        "session_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"},
+        "trace32": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "release",
+            "build",
+            "probe_id",
+            "architecture_package",
+            "license_features",
+            "capability_evidence_sha256"
+          ],
+          "properties": {
+            "release": {"type": "string", "minLength": 1},
+            "build": {"type": "integer", "minimum": 1},
+            "probe_id": {"type": "string", "minLength": 1},
+            "architecture_package": {"type": "string", "minLength": 1},
+            "license_features": {
+              "type": "array",
+              "items": {"type": "string", "minLength": 1},
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "capability_evidence_sha256": {"$ref": "#/$defs/sha256"}
+          }
+        },
+        "trace_routing": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1},
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "health_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}

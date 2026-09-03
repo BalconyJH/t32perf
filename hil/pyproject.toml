@@ -1,0 +1,30 @@
+[project]
+name = "t32perf-hil"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "jsonschema>=4.26.0",
+    "pytest>=9.1.1",
+    "ruff>=0.16.4,<0.17",
+]
+
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "harness",
+    "resource_verification",
+    "target_adapter_recovery",
+    "sampling_verification",
+    "sampling_board",
+    "stack_board",
+    "stack_verification",
+    "verification_receipt",
+]

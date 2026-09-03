@@ -1,0 +1,57 @@
+[board]
+id = "replace-with-lab-board-id"
+mcu_family = "replace-with-mcu-family"
+rtos = "replace-with-rtos-or-remove"
+covered_cores = [0]
+capture_modes = ["etm", "sampling"]
+lock_file = "../locks/example.lock"
+
+[trace32]
+release = "2026.02"
+build = 190766
+validated_builds = [190766]
+probe_id = "replace-with-probe-asset-id"
+architecture_package = "tricore"
+license_features = ["TriCore"]
+capability_evidence = "../../skill-trace32-perf/scripts/adapters/tc234l-build190766/profile.json"
+capability_evidence_sha256 = "f3f0bc78392c36cbc0c9076dbaa3faa77720bde515a6fec50e786ef3c146f584"
+target_adapter_profile_sha256 = "5f75195dffce414c657e6fad37096e3d3926beff95dbd0a0c4ac11eeb9a6ae81"
+target_adapter_profile = "../../skill-trace32-perf/scripts/adapters/tc234l-build190766/profile.json"
+target_adapter_profile_file_sha256 = "f3f0bc78392c36cbc0c9076dbaa3faa77720bde515a6fec50e786ef3c146f584"
+fault_scenarios = "../../skill-trace32-perf/scripts/adapters/tc234l-build190766/fault-scenarios.json"
+fault_scenarios_sha256 = "8fe90fb5c88576a8091ecca2e25d4aac6b36200c18cc79bea675550572489299"
+trace_routing = ["replace-with-exact-trace-route-and-pins"]
+tick_ns = 10.0
+
+[host]
+t32perf_bin = "../../target/release/t32perf.exe"
+artifact_root = "../artifacts/example"
+recovery_evidence_root = "../recovery-evidence/example"
+# Optional generic PC-sampling evidence root. Enable only with the [sampling]
+# request below and board-specific sidecar wrapper commands.
+# sampling_evidence_root = "../sampling-evidence/example"
+min_free_bytes = 4294967296
+
+# [sampling]
+# capture_request = "../requests/pc-sampling.json"
+# capture_request_sha256 = "replace-with-exact-request-sha256"
+
+[driver.commands]
+doctor = ["replace-with-driver", "doctor", "--config", "{config}"]
+capture = ["replace-with-driver", "capture", "--config", "{config}", "--mode", "{mode}", "--initial-state", "{initial_state}", "--run", "{run}"]
+set_running = ["replace-with-driver", "state", "running", "--config", "{config}"]
+set_halted = ["replace-with-driver", "state", "halted", "--config", "{config}"]
+prepare_recovery_fault = ["replace-with-driver", "prepare-recovery-fault", "--config", "{config}", "--fault-operation", "{fault_operation}", "--initial-state", "{initial_target_state}"]
+sampling_buffer_full_capture = ["replace-with-driver", "capture-sampling-buffer-full", "--config", "{config}"]
+trace32_disconnect_capture = ["replace-with-driver", "capture-disconnect-trace32", "--config", "{config}", "--binding-sha256", "{binding_sha256}"]
+driver_disconnect_capture = ["replace-with-driver", "capture-disconnect-driver", "--config", "{config}", "--binding-sha256", "{binding_sha256}"]
+cmm_abort_capture = ["replace-with-driver", "capture-abort-cmm", "--config", "{config}", "--binding-sha256", "{binding_sha256}"]
+recover = ["replace-with-driver", "recover", "--config", "{config}", "--recovery-evidence", "{recovery_evidence}"]
+native_stats = ["replace-with-driver", "native-stats", "--config", "{config}", "--artifact-root", "{artifact_root}"]
+# sampling_prepare = ["replace-with-driver", "sampling-prepare", "--session", "{session_id}", "--request", "{request}"]
+# sampling_capabilities = ["replace-with-driver", "sampling-capabilities", "--session", "{session_id}"]
+# sampling_capture = ["replace-with-driver", "sampling-capture", "--session", "{session_id}", "--operation", "{operation_id}", "{sidecar_args}"]
+# sampling_ingest = ["replace-with-driver", "sampling-ingest", "--session", "{session_id}", "--staged", "{staged_path}"]
+# sampling_analyze = ["replace-with-driver", "sampling-analyze", "--session", "{session_id}", "--histogram", "{histogram_artifact_id}"]
+# sampling_summary = ["replace-with-driver", "sampling-summary", "--session", "{session_id}", "--heatmap", "{heatmap_artifact_id}"]
+# sampling_render = ["replace-with-driver", "sampling-render", "--session", "{session_id}", "--heatmap", "{heatmap_artifact_id}"]
