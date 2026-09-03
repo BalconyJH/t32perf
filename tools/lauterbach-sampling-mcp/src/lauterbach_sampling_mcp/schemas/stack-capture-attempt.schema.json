@@ -1,0 +1,48 @@
+{
+  "$id": "t32perf.stack-capture-attempt/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Durable proof that one Host Session operation has spent its intrusive capture authorization.",
+  "properties": {
+    "created_at": {
+      "description": "Bounded host timestamp recorded before the first Break intent.",
+      "maxLength": 64,
+      "minLength": 1,
+      "type": "string"
+    },
+    "endpoint_fingerprint": {
+      "description": "Pinned TRACE32 endpoint observed before consumption.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "operation_id": {
+      "description": "Exact Host Session operation identifier.",
+      "pattern": "^[0-9a-f]{32}$",
+      "type": "string"
+    },
+    "request_sha256": {
+      "description": "SHA-256 of the exact immutable Session request bytes.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "schema": {
+      "const": "t32perf.stack-capture-attempt/v1",
+      "description": "Schema version.",
+      "type": "string"
+    },
+    "session_id": {
+      "description": "Session whose operation was consumed.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "session_id",
+    "operation_id",
+    "request_sha256",
+    "endpoint_fingerprint",
+    "created_at"
+  ],
+  "title": "StackCaptureAttempt",
+  "type": "object"
+}

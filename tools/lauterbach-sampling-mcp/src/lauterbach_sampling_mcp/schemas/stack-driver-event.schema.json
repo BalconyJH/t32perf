@@ -1,0 +1,480 @@
+{
+  "$defs": {
+    "EndpointFingerprintScheme": {
+      "description": "Algorithm used to derive a TRACE32 endpoint fingerprint.\n\nThis is independent of the document schema version: it identifies the\ncryptographic endpoint-binding algorithm.",
+      "oneOf": [
+        {
+          "const": "t32perf.endpoint-fingerprint/v2",
+          "description": "Canonical endpoint identity bound to the observed TRACE32 probe.",
+          "type": "string"
+        }
+      ]
+    },
+    "StackDriverOwner": {
+      "description": "Fixed sidecar identity allowed to emit stack-driver events.",
+      "oneOf": [
+        {
+          "const": "lauterbach-stack-sampling-mcp/v1",
+          "description": "Current intrusive stack-sampling MCP sidecar contract.",
+          "type": "string"
+        }
+      ]
+    },
+    "StackDriverTrue": {
+      "const": true,
+      "type": "boolean"
+    }
+  },
+  "$id": "t32perf.stack-driver-event/v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "One append-only event emitted by the intrusive stack-sampling sidecar.",
+  "oneOf": [
+    {
+      "description": "Intent to perform the bounded intrusive capture.",
+      "properties": {
+        "details": {
+          "additionalProperties": false,
+          "properties": {
+            "duration_ms": {
+              "description": "Requested capture duration in milliseconds.",
+              "format": "uint32",
+              "maximum": 60000,
+              "minimum": 100,
+              "type": "integer"
+            },
+            "initial_running": {
+              "$ref": "#/$defs/StackDriverTrue",
+              "description": "The target was initially running before the first mutation."
+            },
+            "max_frames": {
+              "description": "Maximum frames in one walk.",
+              "format": "uint32",
+              "maximum": 8,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "max_samples": {
+              "description": "Maximum permitted samples.",
+              "format": "uint32",
+              "maximum": 512,
+              "minimum": 1,
+              "type": "integer"
+            },
+            "sample_period_ms": {
+              "description": "Requested halt-cycle period in milliseconds.",
+              "format": "uint32",
+              "maximum": 1000,
+              "minimum": 10,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "initial_running",
+            "duration_ms",
+            "sample_period_ms",
+            "max_samples",
+            "max_frames"
+          ],
+          "type": "object"
+        },
+        "event": {
+          "const": "capture_intent",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event",
+        "details"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "Intent to halt for one sample.",
+      "properties": {
+        "details": {
+          "additionalProperties": false,
+          "properties": {
+            "sample_index": {
+              "description": "One-based sample index.",
+              "format": "uint32",
+              "maximum": 512,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "sample_index"
+          ],
+          "type": "object"
+        },
+        "event": {
+          "const": "break_intent",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event",
+        "details"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "The requested halt was observed.",
+      "properties": {
+        "details": {
+          "additionalProperties": false,
+          "properties": {
+            "sample_index": {
+              "description": "One-based sample index.",
+              "format": "uint32",
+              "maximum": 512,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "sample_index"
+          ],
+          "type": "object"
+        },
+        "event": {
+          "const": "break_observed",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event",
+        "details"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "Intent to restart after one sample.",
+      "properties": {
+        "details": {
+          "additionalProperties": false,
+          "properties": {
+            "sample_index": {
+              "description": "One-based sample index.",
+              "format": "uint32",
+              "maximum": 512,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "sample_index"
+          ],
+          "type": "object"
+        },
+        "event": {
+          "const": "go_intent",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event",
+        "details"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "The requested restart was observed.",
+      "properties": {
+        "details": {
+          "additionalProperties": false,
+          "properties": {
+            "sample_index": {
+              "description": "One-based sample index.",
+              "format": "uint32",
+              "maximum": 512,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "sample_index"
+          ],
+          "type": "object"
+        },
+        "event": {
+          "const": "go_observed",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event",
+        "details"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "Capture result counts were observed before cleanup.",
+      "properties": {
+        "details": {
+          "additionalProperties": false,
+          "properties": {
+            "attempted_samples": {
+              "description": "Number of attempted halt cycles.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "collected_samples": {
+              "description": "Number of retained stack samples.",
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "attempted_samples",
+            "collected_samples"
+          ],
+          "type": "object"
+        },
+        "event": {
+          "const": "capture_observed",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event",
+        "details"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "Intent to clean up the temporary target state.",
+      "properties": {
+        "details": {
+          "additionalProperties": false,
+          "properties": {
+            "recovery": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/StackDriverTrue"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Present only as exact true for recovery cleanup."
+            }
+          },
+          "type": "object"
+        },
+        "event": {
+          "const": "cleanup_intent",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event",
+        "details"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "Cleanup completed successfully.",
+      "properties": {
+        "details": {
+          "additionalProperties": false,
+          "type": "object"
+        },
+        "event": {
+          "const": "cleanup_observed",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event",
+        "details"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "Cleanup failed with a bounded durable diagnostic.",
+      "properties": {
+        "details": {
+          "additionalProperties": false,
+          "properties": {
+            "error": {
+              "description": "Bounded diagnostic suitable for durable journals.",
+              "maxLength": 1024,
+              "minLength": 1,
+              "type": "string"
+            },
+            "recovery": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/StackDriverTrue"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Present only as exact true for recovery cleanup."
+            }
+          },
+          "required": [
+            "error"
+          ],
+          "type": "object"
+        },
+        "event": {
+          "const": "cleanup_failed",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event",
+        "details"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "Recovery state was observed after a failed transaction.",
+      "properties": {
+        "details": {
+          "additionalProperties": false,
+          "properties": {
+            "recovery": {
+              "$ref": "#/$defs/StackDriverTrue",
+              "description": "Recovery is explicitly asserted."
+            },
+            "running": {
+              "$ref": "#/$defs/StackDriverTrue",
+              "description": "Target is explicitly asserted running after recovery."
+            }
+          },
+          "required": [
+            "recovery",
+            "running"
+          ],
+          "type": "object"
+        },
+        "event": {
+          "const": "recovery_observed",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event",
+        "details"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "Intent to export the final raw stack artifact.",
+      "properties": {
+        "details": {
+          "additionalProperties": false,
+          "type": "object"
+        },
+        "event": {
+          "const": "export_intent",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event",
+        "details"
+      ],
+      "type": "object"
+    },
+    {
+      "description": "Final raw stack artifact binding was exported.",
+      "properties": {
+        "details": {
+          "additionalProperties": false,
+          "properties": {
+            "relative_path": {
+              "description": "Canonical path relative to the Session artifact directory.",
+              "maxLength": 1024,
+              "minLength": 1,
+              "pattern": "^(?=[\\u0020-\\u007E]+$)(?!/)(?!.*[<>:\"\\\\|?*])(?!.*//)(?!.*(?:^|/)\\.\\.?(?:/|$))(?!.*/$)(?!.*[. ](?:/|$))(?!(?:.*?/)?(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Nn][Ii][Nn]\\$|[Cc][Oo][Nn][Oo][Uu][Tt]\\$|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9]) *(?:\\.[^/]*)?(?:/|$)).+$",
+              "type": "string"
+            },
+            "sha256": {
+              "description": "SHA-256 of exact exported bytes.",
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            "size_bytes": {
+              "description": "Nonzero exported byte size.",
+              "format": "uint64",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "relative_path",
+            "sha256",
+            "size_bytes"
+          ],
+          "type": "object"
+        },
+        "event": {
+          "const": "export_observed",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event",
+        "details"
+      ],
+      "type": "object"
+    }
+  ],
+  "properties": {
+    "endpoint_fingerprint": {
+      "description": "Fingerprint of the exclusively leased TRACE32 endpoint.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "endpoint_fingerprint_scheme": {
+      "$ref": "#/$defs/EndpointFingerprintScheme",
+      "description": "Fixed endpoint fingerprint algorithm."
+    },
+    "observed_at": {
+      "description": "Bounded observed timestamp string.",
+      "maxLength": 64,
+      "minLength": 1,
+      "type": "string"
+    },
+    "owner": {
+      "$ref": "#/$defs/StackDriverOwner",
+      "description": "Fixed stack sidecar identity."
+    },
+    "schema": {
+      "const": "t32perf.stack-driver-event/v1",
+      "description": "Schema version.",
+      "type": "string"
+    },
+    "sequence": {
+      "description": "Strictly positive append-only sequence.",
+      "format": "uint64",
+      "maximum": 2054,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "transaction_id": {
+      "description": "Canonical lowercase UUID v4 transaction identity.",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema",
+    "transaction_id",
+    "endpoint_fingerprint",
+    "endpoint_fingerprint_scheme",
+    "owner",
+    "sequence",
+    "observed_at"
+  ],
+  "title": "StackDriverEvent",
+  "type": "object",
+  "unevaluatedProperties": false
+}
