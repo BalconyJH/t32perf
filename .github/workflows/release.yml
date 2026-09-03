@@ -1,0 +1,79 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # master
+        with:
+          toolchain: 1.95.0
+          components: rustfmt, clippy
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+      - uses: lukka/get-cmake@fffaaafeea488556c2c12dad60690008bc1caacb # latest
+      - name: Run repository checks
+        run: cargo xtask check
+      - name: Generate one-million-observation benchmark input
+        run: >-
+          cargo run --release -p t32perf --
+          --artifact-root target/benchmark-release --json
+          capture --provider synthetic --id benchmark --events 1000000
+      - name: Run SHA-256-conditioned parser candidates
+        run: >-
+          cargo xtask bench
+          --input target/benchmark-release/benchmark/normalized/observations.ndjson
+          > target/parser-candidates-${{ matrix.os }}.json
+      - name: Enforce parser regression budgets
+        run: >-
+          uv run --no-project tools/bench/check_regression.py
+          target/parser-candidates-${{ matrix.os }}.json
+          > target/parser-regression-${{ matrix.os }}.json
+      - name: Upload performance evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: ${{ always() }}
+        with:
+          name: performance-${{ matrix.os }}
+          path: |
+            target/parser-candidates-${{ matrix.os }}.json
+            target/parser-regression-${{ matrix.os }}.json
+          if-no-files-found: warn
+      - name: Build release package
+        run: cargo xtask package --output dist
+        env:
+          T32PERF_COMMIT: ${{ github.sha }}
+      - name: Upload release package
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: package-${{ matrix.os }}
+          path: |
+            dist/*.zip
+            dist/*.tar.gz
+            dist/*.SHA256SUMS
+          if-no-files-found: error
+
+  publish:
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: package-*
+          path: release-assets
+          merge-multiple: true
+      - run: gh release create "$GITHUB_REF_NAME" release-assets/* --generate-notes --verify-tag
+        env:
+          GH_TOKEN: ${{ github.token }}
