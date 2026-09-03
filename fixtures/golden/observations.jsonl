@@ -1,0 +1,8 @@
+{"schema":"t32perf.observation/v1","session_id":"golden-basic","encoding":"ndjson","time_unit":"ns","time_origin":"session_relative"}
+{"type":"DefineContext","id":"task-main","kind":"task","name":"Main","core_id":0,"priority":5}
+{"type":"DefineFunction","id":"fn-main","name":"main","address":4096}
+{"type":"DefineCounter","id":"counter-7f3a","name":"Synthetic gauge","unit":"bytes","semantic":"heap.current_allocated_bytes","subject":{"kind":"allocator","allocator_id":"system"}}
+{"source_id":"synthetic","source_seq":0,"quality":"exact","type":"ContextSwitch","ts_ns":0,"core_id":0,"next_context_id":"task-main"}
+{"source_id":"synthetic","source_seq":1,"quality":"exact","type":"FunctionEnter","ts_ns":10,"core_id":0,"context_id":"task-main","function_id":"fn-main","frame_id":"frame-1"}
+{"source_id":"synthetic","source_seq":2,"quality":"exact","type":"Counter","ts_ns":20,"core_id":0,"context_id":"task-main","counter_id":"counter-7f3a","value":64.0}
+{"source_id":"synthetic","source_seq":3,"quality":"exact","type":"FunctionExit","ts_ns":30,"core_id":0,"context_id":"task-main","function_id":"fn-main","frame_id":"frame-1"}

@@ -1,0 +1,47 @@
+{
+  "schema": "t32perf.golden-artifact-set/v1",
+  "session_id": "golden-pipeline",
+  "event_count": 16,
+  "artifacts": {
+    "analysis/derived.ndjson": {
+      "size_bytes": 473,
+      "sha256": "a801d3207dee717b3669052c97c065b3590d26fd798088e20c4f01d240077668"
+    },
+    "analysis/health.json": {
+      "size_bytes": 795,
+      "sha256": "0b3474f6981a47962cf4b6bd21f5903b93a7d85baddcabbd073cfab12e5c9eff"
+    },
+    "analysis/hotspots.json": {
+      "size_bytes": 414,
+      "sha256": "b665a6b5127f4fc8fa4fe002134c590ae79de6ae82a0816afe17792cc6b64ce5"
+    },
+    "analysis/request.json": {
+      "size_bytes": 1068,
+      "sha256": "dae50df3d9a60cb83405b13d0974d38abbc18f63e1645c1b730c9a95f3df9780"
+    },
+    "analysis/stage.json": {
+      "size_bytes": 4270,
+      "sha256": "574ee1636cdb8bd76ad634838a4c18bcf5fa69b0a85984a26b9d07b5bbc00221"
+    },
+    "analysis/summary.json": {
+      "size_bytes": 4217,
+      "sha256": "971fdbe99c43d9a387ede675434d269f76f36269523dc3d098c2e155c4959bd3"
+    },
+    "capture/capture-config.json": {
+      "size_bytes": 676,
+      "sha256": "7c9ea725a97c07ad38dd2226ffa9ad8858c072265aec2c67513019752b800dae"
+    },
+    "capture/capture-receipt.json": {
+      "size_bytes": 1467,
+      "sha256": "5839d0541318399f9e4a19ed0f1d03f0882b7535adec91a2b91b522957f690a5"
+    },
+    "normalized/observations.ndjson": {
+      "size_bytes": 3501,
+      "sha256": "75b4285d0f9166bd4aecd25ddb12bdb49d0eb0f4691eb26e0a64648a331c7082"
+    },
+    "report/trace.json": {
+      "size_bytes": 5279,
+      "sha256": "019df0533951675b3515ea0328fa04dd792ea310196b49132637c63d945f95fa"
+    }
+  }
+}
