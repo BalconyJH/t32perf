@@ -1,0 +1,35 @@
+{
+  "artifact_bindings": [
+    {"artifact_id": "health-artifact", "role": "health", "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"},
+    {"artifact_id": null, "role": "manifest", "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+  ],
+  "board_id": "tc234l-board",
+  "check_categories": [
+    {"category": "artifact_binding", "counts": {"failed": 0, "passed": 1, "total": 1}},
+    {"category": "health", "counts": {"failed": 0, "passed": 1, "total": 1}},
+    {"category": "fault_publication", "counts": {"failed": 0, "passed": 1, "total": 1}},
+    {"category": "recovery", "counts": {"failed": 0, "passed": 1, "total": 1}}
+  ],
+  "checks": {"failed": 0, "passed": 4, "total": 4},
+  "driver_reference_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "failure_count": 0,
+  "failures": [],
+  "failures_truncated": false,
+  "fault_adapter_binding": {
+    "adapter_id": "tricore-tc234l-snooper-pc-r2026.02-b190766-v1",
+    "bundle_sha256": "a366536ad33ce118eff8a79ebe12367e67bdc02c41f5f8e4457d54b83b6a30e4",
+    "fault_scenarios_sha256": "8fe90fb5c88576a8091ecca2e25d4aac6b36200c18cc79bea675550572489299",
+    "profile_file_sha256": "f3f0bc78392c36cbc0c9076dbaa3faa77720bde515a6fec50e786ef3c146f584",
+    "profile_sha256": "5f75195dffce414c657e6fad37096e3d3926beff95dbd0a0c4ac11eeb9a6ae81",
+    "scenario": "sampling_buffer_full"
+  },
+  "kind": "fault_injection",
+  "max_error": {"absolute": 0.0, "check": null, "relative": 0.0},
+  "recovery_evidence": null,
+  "scenario": "sampling_buffer_full",
+  "schema": "t32perf.hil-verification-receipt/v1",
+  "session_id": "python-hil-sampling-1",
+  "source": "host-reconstructed-session-artifacts",
+  "tolerance": {"continuous_absolute": 1e-12, "continuous_relative": 0.005, "integer_absolute": 0.0, "timestamp_absolute_ns": 10.0, "timestamp_relative": 0.0},
+  "verdict": "PASS"
+}
