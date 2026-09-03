@@ -1,0 +1,68 @@
+; Schema: {"type":"object","properties":{"binding_sha256":{"type":"string"},"machine_evidence_output":{"type":"string"},"initial_target_state":{"enum":["running","halted"]},"scenario":{"type":"string"}},"required":["binding_sha256","machine_evidence_output","initial_target_state","scenario"],"additionalProperties":false}
+; Controller V2 adapter-owned hook. No V1 adapter is dispatched from this file.
+PRIVATE &arg1 &arg2 &arg3 &arg4 &arg5 &binding &machine_evidence &initial &scenario
+PRIVATE &binding_count &machine_evidence_count &initial_count &scenario_count &unknown_count
+ENTRY &arg1 &arg2 &arg3 &arg4 &arg5
+&binding_count=0.
+&machine_evidence_count=0.
+&initial_count=0.
+&scenario_count=0.
+&unknown_count=0.
+GOSUB ParseArgument "&arg1"
+GOSUB ParseArgument "&arg2"
+GOSUB ParseArgument "&arg3"
+GOSUB ParseArgument "&arg4"
+IF "&arg5"!=""||&binding_count!=1.||&machine_evidence_count!=1.||&initial_count!=1.||&scenario_count!=1.||&unknown_count!=0.||STRing.LENgth("&machine_evidence")==0.
+    GOSUB Invalid
+IF ("&initial"!="running")&&("&initial"!="halted")
+    GOSUB Invalid
+GOSUB V2AdapterHook
+ParseArgument:
+(
+    PRIVATE &argument &value
+    ENTRY &argument
+    &value=STRing.SCANAndExtract("&argument","binding_sha256=","")
+    IF "&argument"=="binding_sha256=&value"
+    (
+        &binding="&value"
+        &binding_count=&binding_count+1.
+        RETURN
+    )
+    &value=STRing.SCANAndExtract("&argument","machine_evidence_output=","")
+    IF "&argument"=="machine_evidence_output=&value"
+    (
+        &machine_evidence="&value"
+        &machine_evidence_count=&machine_evidence_count+1.
+        RETURN
+    )
+    &value=STRing.SCANAndExtract("&argument","initial_target_state=","")
+    IF "&argument"=="initial_target_state=&value"
+    (
+        &initial="&value"
+        &initial_count=&initial_count+1.
+        RETURN
+    )
+    &value=STRing.SCANAndExtract("&argument","scenario=","")
+    IF "&argument"=="scenario=&value"
+    (
+        &scenario="&value"
+        &scenario_count=&scenario_count+1.
+        RETURN
+    )
+    &unknown_count=&unknown_count+1.
+    RETURN
+)
+Invalid:
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{\"\"protocol\"\":\"\"t32perf/1\"\",\"\"operation\"\":\"\"perf_start\"\",\"\"status\"\":\"\"INVALID_ARGUMENT\"\",\"\"code\"\":\"\"invalid_arguments\"\",\"\"binding_sha256\"\":\"\"&binding\"\"}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)
+V2AdapterHook:
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{\"\"protocol\"\":\"\"t32perf/1\"\",\"\"operation\"\":\"\"perf_start\"\",\"\"status\"\":\"\"UNSUPPORTED_NEEDS_TRACE32\"\",\"\"code\"\":\"\"v2_adapter_hook_required\"\",\"\"binding_sha256\"\":\"\"&binding\"\"}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)

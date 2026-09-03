@@ -1,0 +1,118 @@
+; Schema:
+; {
+;   "type": "object",
+;   "properties": {
+;     "binding_sha256": {
+;       "type": "string",
+;       "pattern": "^[0-9a-f]{64}$"
+;     },
+;     "mode": {
+;       "type": "string",
+;       "enum": ["raw_ascii", "task_events_elf_orti_verified"]
+;     },
+;     "output": {"type": "string"}
+;   },
+;   "required": ["binding_sha256", "mode", "output"],
+;   "additionalProperties": false
+; }
+;
+; The host must provide a canonical, unique Session artifact path. Official
+; t32mcp always quotes each key=value argument, so ordinary spaces are allowed.
+; Values may not contain '=', quotes, semicolons, control characters, or '&'.
+
+PRIVATE &line &binding &mode &output &valid
+PRIVATE &qbmo &qbom &qmbo &qmob &qobm &qomb
+ENTRY %LINE &line
+
+&binding=STRing.SCANAndExtract("&line","binding_sha256=","")
+&mode=STRing.SCANAndExtract("&line","mode=","")
+&output=STRing.SCANAndExtract("&line","output=","")
+&qbmo="""binding_sha256=&binding"" ""mode=&mode"" ""output=&output"""
+&qbom="""binding_sha256=&binding"" ""output=&output"" ""mode=&mode"""
+&qmbo="""mode=&mode"" ""binding_sha256=&binding"" ""output=&output"""
+&qmob="""mode=&mode"" ""output=&output"" ""binding_sha256=&binding"""
+&qobm="""output=&output"" ""binding_sha256=&binding"" ""mode=&mode"""
+&qomb="""output=&output"" ""mode=&mode"" ""binding_sha256=&binding"""
+&valid=0.
+
+IF "&line"=="&qbmo"
+(
+    &valid=1.
+)
+
+IF "&line"=="&qbom"
+(
+    &valid=1.
+)
+
+IF "&line"=="&qmbo"
+(
+    &valid=1.
+)
+
+IF "&line"=="&qmob"
+(
+    &valid=1.
+)
+
+IF "&line"=="&qobm"
+(
+    &valid=1.
+)
+
+IF "&line"=="&qomb"
+(
+    &valid=1.
+)
+
+IF &valid==0.
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_export"",""status"":""INVALID_ARGUMENT"",""code"":""invalid_arguments"",""binding_sha256"":""&binding""}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)
+
+IF "&mode"==""
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_export"",""status"":""INVALID_ARGUMENT"",""code"":""invalid_arguments"",""binding_sha256"":""&binding""}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)
+
+IF "&output"==""
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_export"",""status"":""INVALID_ARGUMENT"",""code"":""invalid_arguments"",""binding_sha256"":""&binding""}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)
+
+IF ("&mode"=="raw_ascii")&&(VERSION.SOFTWARE()=="R.2026.02.000190766")&&CPUIS("TC234L")
+(
+    DO ~~~~/adapters/tc234l-build190766/perf_export.cmm "&binding" "&output"
+    ENDDO
+)
+
+IF "&mode"=="raw_ascii"
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_export"",""status"":""UNSUPPORTED_NEEDS_TRACE32"",""code"":""raw_ascii_export_failed"",""binding_sha256"":""&binding""}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)
+
+IF "&mode"=="task_events_elf_orti_verified"
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_export"",""status"":""UNSUPPORTED_NEEDS_TRACE32"",""code"":""task_events_export_failed"",""binding_sha256"":""&binding""}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)
+
+PRINT "T32PERF_RESULT_BEGIN"
+PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_export"",""status"":""INVALID_ARGUMENT"",""code"":""unsupported_export_mode"",""binding_sha256"":""&binding""}"
+PRINT "T32PERF_RESULT_END"
+
+ENDDO

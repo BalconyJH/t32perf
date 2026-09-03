@@ -1,0 +1,146 @@
+; Schema: {"type":"object","properties":{"binding_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"evidence_output":{"type":"string"},"stop_evidence_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"pre_stop_state":{"enum":["arm","break"]},"recorded_records":{"type":"string","pattern":"^[0-9]+$"},"capacity_records":{"type":"string","pattern":"^[0-9]+$"},"firmware_s3":{"type":"string"}},"required":["binding_sha256","evidence_output","stop_evidence_sha256","pre_stop_state","recorded_records","capacity_records","firmware_s3"],"additionalProperties":false}
+; Official t32mcp quotes every key=value argument but does not guarantee map order.
+
+PRIVATE &arg1 &arg2 &arg3 &arg4 &arg5 &arg6 &arg7 &arg8
+PRIVATE &binding &evidence &stopsha &prestate &records &capacity &firmware
+PRIVATE &binding_count &evidence_count &stopsha_count &prestate_count &records_count &capacity_count &firmware_count &unknown_count
+PRIVATE &decimal_valid &sha_valid
+ENTRY &arg1 &arg2 &arg3 &arg4 &arg5 &arg6 &arg7 &arg8
+
+&binding_count=0.
+&evidence_count=0.
+&stopsha_count=0.
+&prestate_count=0.
+&records_count=0.
+&capacity_count=0.
+&firmware_count=0.
+&unknown_count=0.
+GOSUB ParseArgument "&arg1"
+GOSUB ParseArgument "&arg2"
+GOSUB ParseArgument "&arg3"
+GOSUB ParseArgument "&arg4"
+GOSUB ParseArgument "&arg5"
+GOSUB ParseArgument "&arg6"
+GOSUB ParseArgument "&arg7"
+
+IF "&arg8"!=""||&binding_count!=1.||&evidence_count!=1.||&stopsha_count!=1.||&prestate_count!=1.||&records_count!=1.||&capacity_count!=1.||&firmware_count!=1.||&unknown_count!=0.
+    GOSUB Invalid
+GOSUB IsSha256 "&binding"
+IF &sha_valid==0.
+    GOSUB Invalid
+GOSUB IsSha256 "&stopsha"
+IF &sha_valid==0.
+    GOSUB Invalid
+IF ("&prestate"!="arm")&&("&prestate"!="break")
+    GOSUB Invalid
+GOSUB IsDecimal "&records"
+IF &decimal_valid==0.
+    GOSUB Invalid
+GOSUB IsDecimal "&capacity"
+IF &decimal_valid==0.
+    GOSUB Invalid
+
+IF (VERSION.SOFTWARE()=="R.2026.02.000190766")&&CPUIS("TC234L")
+(
+    DO ~~~~/adapters/tc234l-build190766/perf_get_health.cmm "&binding" "&evidence" "&stopsha" "&prestate" "&records" "&capacity" "&firmware"
+    ENDDO
+)
+
+PRINT "T32PERF_RESULT_BEGIN"
+PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_get_health"",""status"":""UNSUPPORTED_NEEDS_TRACE32"",""code"":""verified_health_adapter_required"",""binding_sha256"":""&binding""}"
+PRINT "T32PERF_RESULT_END"
+ENDDO
+
+ParseArgument:
+(
+    PRIVATE &argument &value
+    ENTRY &argument
+    &value=STRing.SCANAndExtract("&argument","binding_sha256=","")
+    IF "&argument"=="binding_sha256=&value"
+    (
+        &binding="&value"
+        &binding_count=&binding_count+1.
+        RETURN
+    )
+    &value=STRing.SCANAndExtract("&argument","evidence_output=","")
+    IF "&argument"=="evidence_output=&value"
+    (
+        &evidence="&value"
+        &evidence_count=&evidence_count+1.
+        RETURN
+    )
+    &value=STRing.SCANAndExtract("&argument","stop_evidence_sha256=","")
+    IF "&argument"=="stop_evidence_sha256=&value"
+    (
+        &stopsha="&value"
+        &stopsha_count=&stopsha_count+1.
+        RETURN
+    )
+    &value=STRing.SCANAndExtract("&argument","pre_stop_state=","")
+    IF "&argument"=="pre_stop_state=&value"
+    (
+        &prestate="&value"
+        &prestate_count=&prestate_count+1.
+        RETURN
+    )
+    &value=STRing.SCANAndExtract("&argument","recorded_records=","")
+    IF "&argument"=="recorded_records=&value"
+    (
+        &records="&value"
+        &records_count=&records_count+1.
+        RETURN
+    )
+    &value=STRing.SCANAndExtract("&argument","capacity_records=","")
+    IF "&argument"=="capacity_records=&value"
+    (
+        &capacity="&value"
+        &capacity_count=&capacity_count+1.
+        RETURN
+    )
+    &value=STRing.SCANAndExtract("&argument","firmware_s3=","")
+    IF "&argument"=="firmware_s3=&value"
+    (
+        &firmware="&value"
+        &firmware_count=&firmware_count+1.
+        RETURN
+    )
+    &unknown_count=&unknown_count+1.
+    RETURN
+)
+IsDecimal:
+(
+    PRIVATE &value &index &character
+    ENTRY &value
+    &decimal_valid=(STRing.LENgth("&value")>0.)
+    &index=0.
+    WHILE &index<STRing.LENgth("&value")
+    (
+        &character=STRing.MID("&value",&index,1.)
+        IF STRing.SCAN("0123456789","&character",0.)==-1.
+            &decimal_valid=0.
+        &index=&index+1.
+    )
+    RETURN
+)
+IsSha256:
+(
+    PRIVATE &value &index &character
+    ENTRY &value
+    &sha_valid=(STRing.LENgth("&value")==64.)
+    &index=0.
+    WHILE &index<STRing.LENgth("&value")
+    (
+        &character=STRing.MID("&value",&index,1.)
+        IF STRing.SCAN("0123456789abcdef","&character",0.)==-1.
+            &sha_valid=0.
+        &index=&index+1.
+    )
+    RETURN
+)
+Invalid:
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_get_health"",""status"":""INVALID_ARGUMENT"",""code"":""invalid_arguments"",""binding_sha256"":""&binding""}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)

@@ -1,0 +1,108 @@
+; Schema: {"type":"object","properties":{"binding_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"evidence_output":{"type":"string"},"firmware_s3":{"type":"string"},"initial_target_state":{"enum":["running","halted"]},"scenario":{"enum":["normal","sampling_buffer_full"]}},"required":["binding_sha256","evidence_output","firmware_s3","initial_target_state","scenario"],"additionalProperties":false}
+; Official t32mcp quotes every key=value argument but does not guarantee map order.
+
+PRIVATE &arg1 &arg2 &arg3 &arg4 &arg5 &arg6
+PRIVATE &binding &evidence &firmware &initial &scenario
+PRIVATE &binding_count &evidence_count &firmware_count &initial_count &scenario_count &unknown_count &sha_valid
+ENTRY &arg1 &arg2 &arg3 &arg4 &arg5 &arg6
+
+&binding_count=0.
+&evidence_count=0.
+&firmware_count=0.
+&initial_count=0.
+&scenario_count=0.
+&unknown_count=0.
+GOSUB ParseArgument "&arg1"
+GOSUB ParseArgument "&arg2"
+GOSUB ParseArgument "&arg3"
+GOSUB ParseArgument "&arg4"
+GOSUB ParseArgument "&arg5"
+
+IF "&arg6"!=""||&binding_count!=1.||&evidence_count!=1.||&firmware_count!=1.||&initial_count!=1.||&scenario_count!=1.||&unknown_count!=0.
+    GOSUB Invalid
+GOSUB IsSha256 "&binding"
+IF &sha_valid==0.||STRing.LENgth("&evidence")==0.||STRing.LENgth("&firmware")==0.
+    GOSUB Invalid
+IF ("&initial"!="running")&&("&initial"!="halted")
+    GOSUB Invalid
+IF ("&scenario"!="normal")&&("&scenario"!="sampling_buffer_full")
+    GOSUB Invalid
+
+IF (VERSION.SOFTWARE()=="R.2026.02.000190766")&&CPUIS("TC234L")
+(
+    IF "&scenario"=="normal"
+        DO ~~~~/adapters/tc234l-build190766/perf_configure.cmm "&binding" "&evidence" "&firmware" "&initial"
+    IF "&scenario"=="sampling_buffer_full"
+        DO ~~~~/adapters/tc234l-build190766/faults/perf_configure_sampling_buffer_full.cmm "&binding" "&evidence" "&firmware" "&initial"
+    ENDDO
+)
+
+PRINT "T32PERF_RESULT_BEGIN"
+PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_configure"",""status"":""UNSUPPORTED_NEEDS_TRACE32"",""code"":""target_configuration_required"",""binding_sha256"":""&binding""}"
+PRINT "T32PERF_RESULT_END"
+ENDDO
+
+ParseArgument:
+(
+    PRIVATE &argument &value
+    ENTRY &argument
+    &value=STRing.SCANAndExtract("&argument","binding_sha256=","")
+    IF "&argument"=="binding_sha256=&value"
+    (
+        &binding="&value"
+        &binding_count=&binding_count+1.
+        RETURN
+    )
+    &value=STRing.SCANAndExtract("&argument","evidence_output=","")
+    IF "&argument"=="evidence_output=&value"
+    (
+        &evidence="&value"
+        &evidence_count=&evidence_count+1.
+        RETURN
+    )
+    &value=STRing.SCANAndExtract("&argument","firmware_s3=","")
+    IF "&argument"=="firmware_s3=&value"
+    (
+        &firmware="&value"
+        &firmware_count=&firmware_count+1.
+        RETURN
+    )
+    &value=STRing.SCANAndExtract("&argument","initial_target_state=","")
+    IF "&argument"=="initial_target_state=&value"
+    (
+        &initial="&value"
+        &initial_count=&initial_count+1.
+        RETURN
+    )
+    &value=STRing.SCANAndExtract("&argument","scenario=","")
+    IF "&argument"=="scenario=&value"
+    (
+        &scenario="&value"
+        &scenario_count=&scenario_count+1.
+        RETURN
+    )
+    &unknown_count=&unknown_count+1.
+    RETURN
+)
+IsSha256:
+(
+    PRIVATE &value &index &character
+    ENTRY &value
+    &sha_valid=(STRing.LENgth("&value")==64.)
+    &index=0.
+    WHILE &index<STRing.LENgth("&value")
+    (
+        &character=STRing.MID("&value",&index,1.)
+        IF STRing.SCAN("0123456789abcdef","&character",0.)==-1.
+            &sha_valid=0.
+        &index=&index+1.
+    )
+    RETURN
+)
+Invalid:
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_configure"",""status"":""INVALID_ARGUMENT"",""code"":""invalid_arguments"",""binding_sha256"":""&binding""}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)

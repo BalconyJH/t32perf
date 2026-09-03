@@ -1,0 +1,104 @@
+; Captures SNOOPer state/counts before OFF, then verifies OFF.
+PRIVATE &binding &evidence &expected_capacity &prestate &prestate_name &records &capacity &target_state
+ENTRY &binding &evidence &expected_capacity
+GOSUB Gate
+IF STATE.RUN()
+    &target_state="running"
+ELSE
+    &target_state="halted"
+&prestate=SNOOPer.STATE()
+IF &prestate==1.
+    &prestate_name="arm"
+ELSE IF &prestate==2.
+    &prestate_name="break"
+ELSE
+    GOSUB RecoveryRequired
+ERROR.RESet
+ON ERROR CONTinue
+SNOOPer.OFF
+IF ERROR.OCCURRED()||SNOOPer.STATE()!=0.
+(
+    ON ERROR inherit
+    GOSUB MutationFailure
+)
+&records=SNOOPer.RECORDS()
+&capacity=SNOOPer.SIZE()
+IF (&capacity!=&expected_capacity)||(&records==0.)||(&records>&capacity)
+(
+    ON ERROR inherit
+    GOSUB MutationFailure
+)
+SNOOPer.ZERO SNOOPer.FIRST()
+IF ERROR.OCCURRED()
+(
+    ON ERROR inherit
+    GOSUB MutationFailure
+)
+ON ERROR inherit
+
+OPEN #1 "&evidence" /Create
+WRITE #1 "{"
+WRITE #1 """schema"":""t32perf.controller-stop-evidence/v2"","
+WRITE #1 """operation"":""perf_stop"","
+WRITE #1 """binding_sha256"":""&binding"","
+WRITE #1 """capture_stopped"":true,"
+WRITE #1 """workload_identity"":""external-owner-sampling-window/v1"","
+WRITE #1 """target_state_after_stop"":""&target_state"",""pre_stop_state"":""&prestate_name"","
+WRITE #1 """capacity_records"":"+FORMAT.Decimal(1.,&capacity)+","
+WRITE #1 """recorded_records"":"+FORMAT.Decimal(1.,&records)+","
+WRITE #1 """time_origin_zeroed_to_first_record"":true"
+WRITE #1 "}"
+CLOSE #1
+PRINT "T32PERF_RESULT_BEGIN"
+PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_stop"",""status"":""OK"",""code"":""stopped"",""binding_sha256"":""&binding""}"
+PRINT "T32PERF_RESULT_END"
+ENDDO
+
+Gate:
+(
+    IF VERSION.SOFTWARE()!="R.2026.02.000190766"||VERSION.BUILD()!=190766.||!CPUIS("TC234L")||CHIP.EmulationDevice()
+        GOSUB RecoveryRequired
+    IF INTERFACE.NAME()!="PowerDebug PRO"||VERSION.SERIAL.DEBUG()!="E17090031792"||VERSION.SERIAL.CABLE()!="C23090376246"
+        GOSUB RecoveryRequired
+    IF LICENSE.FAMILY(0.)!="TriCore"||LICENSE.FEATURES(0.)!="'TriCore'"
+        GOSUB RecoveryRequired
+    IF CORE.NUMBER()!=1.||CONFIGNUMBER()!=1.||CORE()!=0.
+        GOSUB RecoveryRequired
+    IF SYStem.JtagClock()!=30000000.||!SYStem.Option.DUALPORT()
+        GOSUB RecoveryRequired
+    IF !STATE.RUN()&&!STATE.HALT()
+        GOSUB RecoveryRequired
+    IF (SNOOPer.STATE()!=1.)&&(SNOOPer.STATE()!=2.)
+        GOSUB RecoveryRequired
+    IF (("&expected_capacity"!="65536")&&("&expected_capacity"!="32"))||SNOOPer.SIZE()!=&expected_capacity
+        GOSUB RecoveryRequired
+    RETURN
+)
+RecoveryRequired:
+(
+    GOSUB MutationFailure
+)
+MutationFailure:
+(
+    ERROR.RESet
+    ON ERROR CONTinue
+    SNOOPer.OFF
+    SNOOPer.RESet
+    SNOOPer.Mode PC
+    SNOOPer.CORE 0.
+    SNOOPer.Mode Stack
+    SNOOPer.METHOD RealTime
+    SNOOPer.SIZE 65536.
+    SNOOPer.Rate 1.ms
+    SNOOPer.Option.ERRORSTOP ON
+    SNOOPer.Option.JITTER OFF
+    SNOOPer.ZERO
+    SNOOPer.AutoArm OFF
+    SNOOPer.AutoInit OFF
+    ON ERROR inherit
+    PRINT "T32PERF_MUTATION_RECOVERY_REQUIRED perf_stop &binding"
+    WHILE TRUE()
+    (
+        WAIT 1.s
+    )
+)

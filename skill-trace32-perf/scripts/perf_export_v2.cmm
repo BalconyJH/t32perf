@@ -1,0 +1,68 @@
+; Schema: {"type":"object","properties":{"binding_sha256":{"type":"string"},"mode":{"const":"task_events_elf_orti_verified"},"trace_export_output":{"type":"string"},"custom_events_output":{"type":"string"}},"required":["binding_sha256","mode","trace_export_output","custom_events_output"],"additionalProperties":false}
+; Controller V2 adapter-owned hook. Export has exactly two ordered output paths.
+PRIVATE &arg1 &arg2 &arg3 &arg4 &arg5 &binding &mode &trace_export &custom_events
+PRIVATE &binding_count &mode_count &trace_export_count &custom_events_count &unknown_count
+ENTRY &arg1 &arg2 &arg3 &arg4 &arg5
+&binding_count=0.
+&mode_count=0.
+&trace_export_count=0.
+&custom_events_count=0.
+&unknown_count=0.
+GOSUB ParseArgument "&arg1"
+GOSUB ParseArgument "&arg2"
+GOSUB ParseArgument "&arg3"
+GOSUB ParseArgument "&arg4"
+IF "&arg5"!=""||&binding_count!=1.||&mode_count!=1.||&trace_export_count!=1.||&custom_events_count!=1.||&unknown_count!=0.||STRing.LENgth("&trace_export")==0.||STRing.LENgth("&custom_events")==0.
+    GOSUB Invalid
+IF "&mode"!="task_events_elf_orti_verified"
+    GOSUB Invalid
+GOSUB V2AdapterHook
+ParseArgument:
+(
+    PRIVATE &argument &value
+    ENTRY &argument
+    &value=STRing.SCANAndExtract("&argument","binding_sha256=","")
+    IF "&argument"=="binding_sha256=&value"
+    (
+        &binding="&value"
+        &binding_count=&binding_count+1.
+        RETURN
+    )
+    &value=STRing.SCANAndExtract("&argument","mode=","")
+    IF "&argument"=="mode=&value"
+    (
+        &mode="&value"
+        &mode_count=&mode_count+1.
+        RETURN
+    )
+    &value=STRing.SCANAndExtract("&argument","trace_export_output=","")
+    IF "&argument"=="trace_export_output=&value"
+    (
+        &trace_export="&value"
+        &trace_export_count=&trace_export_count+1.
+        RETURN
+    )
+    &value=STRing.SCANAndExtract("&argument","custom_events_output=","")
+    IF "&argument"=="custom_events_output=&value"
+    (
+        &custom_events="&value"
+        &custom_events_count=&custom_events_count+1.
+        RETURN
+    )
+    &unknown_count=&unknown_count+1.
+    RETURN
+)
+Invalid:
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{\"\"protocol\"\":\"\"t32perf/1\"\",\"\"operation\"\":\"\"perf_export\"\",\"\"status\"\":\"\"INVALID_ARGUMENT\"\",\"\"code\"\":\"\"invalid_arguments\"\",\"\"binding_sha256\"\":\"\"&binding\"\"}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)
+V2AdapterHook:
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{\"\"protocol\"\":\"\"t32perf/1\"\",\"\"operation\"\":\"\"perf_export\"\",\"\"status\"\":\"\"UNSUPPORTED_NEEDS_TRACE32\"\",\"\"code\"\":\"\"v2_adapter_hook_required\"\",\"\"binding_sha256\"\":\"\"&binding\"\"}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)

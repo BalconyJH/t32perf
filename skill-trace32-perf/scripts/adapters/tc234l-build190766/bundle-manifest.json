@@ -1,0 +1,28 @@
+{
+  "format": "t32perf-target-adapter-bundle-manifest-v1",
+  "files": [
+    {"path": "../../perf_cleanup.cmm", "sha256": "bc31aa49344d2961d1da066259f6ce82ca0de3ba55b451841b31006553294a76"},
+    {"path": "../../perf_configure.cmm", "sha256": "06bcf8ab73039ff39af89f959fb5124a4aee618c3cfbaa0474cd901920601a2e"},
+    {"path": "../../perf_export.cmm", "sha256": "81603712dc01d6c6dfe242bee906dae2e32a8b42f459b0cb319d35a25498fbfd"},
+    {"path": "../../perf_get_capabilities.cmm", "sha256": "81c470e4cb9f8153faf2c6abaac7e2318113637085766fe213435cd7fef82c32"},
+    {"path": "../../perf_get_health.cmm", "sha256": "2625b787299a04fd5b7159601d9438a4eab2577ad1d1e6895df6b5f916d19e17"},
+    {"path": "../../perf_get_hotspots.cmm", "sha256": "2a458359efe0c7bfb5327206b1eb689b4d1433b3be7c0cccacf515b2be4cae22"},
+    {"path": "../../perf_start.cmm", "sha256": "4f56dd869798e27b6a5b414829c5560f033b608cdda703c75951777b31bcab59"},
+    {"path": "../../perf_stop.cmm", "sha256": "c286f9f426494396a3249a7632f4e4c11011b04f6fd1c995ad0521a4d836935d"},
+    {"path": "ADAPTER_VERSION", "sha256": "59854984853104df5c353e2f681a15fc7924742f9a2e468c29af248dce45ce03"},
+    {"path": "capture-config-template.json", "sha256": "b7e387727041ad55353ad47c57af0b57c46134c121d997cc201b0ac717c79cef"},
+    {"path": "fault-scenarios.json", "sha256": "8fe90fb5c88576a8091ecca2e25d4aac6b36200c18cc79bea675550572489299"},
+    {"path": "faults/perf_configure_sampling_buffer_full.cmm", "sha256": "5e23884aac610fecc63eb0ed23bc4acef78def75c732050ccdbded6261edad00"},
+    {"path": "faults/perf_recover_cmm_abort.cmm", "sha256": "ddec7cd1ceb13b82017abbfbbc78de5cee1d8483e747bcdd5739575cd307f63a"},
+    {"path": "faults/perf_start_cmm_abort_target.cmm", "sha256": "9492a423ac563f6a0bbcdc025889fa5c6e80388b9997f9a7a11180bd0183ce7d"},
+    {"path": "immutable-pflash-crc32.json", "sha256": "264d9296f1d54305922e431de467c8a9f5fe39ce2af57ddf02ae60fbd53757d0"},
+    {"path": "perf_cleanup.cmm", "sha256": "b5b95fa361e9b52ee09a1c1cdb3ec2687415bc8bd61cc5670e07a4338a419488"},
+    {"path": "perf_configure.cmm", "sha256": "ae9c95d6b2f7e5613b953259d8250c0187da40a4b66a2993580c8c43fb7e2619"},
+    {"path": "perf_export.cmm", "sha256": "07708aa0b98072d17c17f037d6004c8bd11fe929400693bd91db21f392d8292a"},
+    {"path": "perf_get_capabilities.cmm", "sha256": "5abc4bf23536c9914975ce3b640aa79726f54964b55bb7cb584e870eed7dac7a"},
+    {"path": "perf_get_health.cmm", "sha256": "5f4d81391638d870b6ae18185dd285396843a8e730327bbaaebfda64329c2099"},
+    {"path": "perf_start.cmm", "sha256": "a5572417bff8141b2678a2c2a70d4f8e53b4e7479ad268c49041bfd6fa6f2c7d"},
+    {"path": "perf_stop.cmm", "sha256": "a68aa2909c2366bbe74a97708f343bd49f5fcc7335c5e187c0499557c8b591aa"}
+  ],
+  "bundle_sha256": "a366536ad33ce118eff8a79ebe12367e67bdc02c41f5f8e4457d54b83b6a30e4"
+}

@@ -1,0 +1,27 @@
+; Schema: {"type":"object","properties":{"binding_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"}},"required":["binding_sha256"],"additionalProperties":false}
+
+PRIVATE &line &binding &quoted &valid
+ENTRY %LINE &line
+
+&binding=STRing.SCANAndExtract("&line","binding_sha256=","")
+&quoted="""binding_sha256=&binding"""
+&valid=0.
+
+IF "&line"=="&quoted"
+(
+    &valid=1.
+)
+
+IF &valid==0.
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_get_hotspots"",""status"":""INVALID_ARGUMENT"",""code"":""invalid_arguments"",""binding_sha256"":""&binding""}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)
+
+PRINT "T32PERF_RESULT_BEGIN"
+PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_get_hotspots"",""status"":""HOST_PROCESSING_REQUIRED"",""code"":""raw_trace_analysis_required"",""binding_sha256"":""&binding""}"
+PRINT "T32PERF_RESULT_END"
+
+ENDDO

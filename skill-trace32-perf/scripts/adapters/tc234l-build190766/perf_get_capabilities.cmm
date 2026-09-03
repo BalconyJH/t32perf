@@ -1,0 +1,68 @@
+; Fixed SNOOPer PC adapter for R.2026.02.000190766 / TC234L / core 0.
+PRIVATE &binding &evidence &initial
+ENTRY &binding &evidence
+
+GOSUB Gate
+IF STATE.RUN()
+    &initial="running"
+ELSE
+    &initial="halted"
+
+OPEN #1 "&evidence" /Create
+WRITE #1 "{"
+WRITE #1 """schema"":""t32perf.controller-capabilities-evidence/v2"","
+WRITE #1 """operation"":""perf_get_capabilities"","
+WRITE #1 """binding_sha256"":""&binding"","
+WRITE #1 """trace32_release"":""2026.02"","
+WRITE #1 """trace32_build"":190766,"
+WRITE #1 """architecture_package"":""tricore"","
+WRITE #1 """target_identifier"":""infineon-tc234l-core0"","
+WRITE #1 """probe_identifier"":""powerdebug-pro:E17090031792:C23090376246"","
+WRITE #1 """license_features"":[""TriCore""],"
+WRITE #1 """trace_routing"":[""runtime-pc-access-via-debug-port""],"
+WRITE #1 """capture_modes"":[""snooper-pc-realtime-stack""],"
+WRITE #1 """trace_sinks"":[""host_snooper_buffer""],"
+WRITE #1 """covered_cores"":[0],"
+WRITE #1 """timestamp_supported"":true,"
+WRITE #1 """health_signals"":[""sampling_buffer_full"",""sampling_unexpected_stop"",""elf_mismatch""],"
+WRITE #1 """initial_target_state"":""&initial"""
+WRITE #1 "}"
+CLOSE #1
+
+PRINT "T32PERF_RESULT_BEGIN"
+PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_get_capabilities"",""status"":""OK"",""code"":""capabilities_exported"",""binding_sha256"":""&binding""}"
+PRINT "T32PERF_RESULT_END"
+ENDDO
+
+Gate:
+(
+    IF VERSION.SOFTWARE()!="R.2026.02.000190766"
+        GOSUB Unsupported
+    IF VERSION.BUILD()!=190766.
+        GOSUB Unsupported
+    IF !CPUIS("TC234L")||CHIP.EmulationDevice()
+        GOSUB Unsupported
+    IF INTERFACE.NAME()!="PowerDebug PRO"
+        GOSUB Unsupported
+    IF VERSION.SERIAL.DEBUG()!="E17090031792"||VERSION.SERIAL.CABLE()!="C23090376246"
+        GOSUB Unsupported
+    IF LICENSE.FAMILY(0.)!="TriCore"||LICENSE.FEATURES(0.)!="'TriCore'"
+        GOSUB Unsupported
+    IF CORE.NUMBER()!=1.||CONFIGNUMBER()!=1.||CORE()!=0.
+        GOSUB Unsupported
+    IF SYStem.JtagClock()!=30000000.||!SYStem.Option.DUALPORT()
+        GOSUB Unsupported
+    IF !STATE.RUN()&&!STATE.HALT()
+        GOSUB Unsupported
+    IF SNOOPer.MAXSIZE()<65536.||SNOOPer.STATE()!=0.
+        GOSUB Unsupported
+    RETURN
+)
+
+Unsupported:
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_get_capabilities"",""status"":""UNSUPPORTED_NEEDS_TRACE32"",""code"":""hardware_adapter_required"",""binding_sha256"":""&binding""}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)

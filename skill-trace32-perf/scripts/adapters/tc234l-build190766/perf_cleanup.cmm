@@ -1,0 +1,82 @@
+; Restores only SNOOPer state. Never changes target run state or deletes files.
+PRIVATE &binding &evidence &initial
+ENTRY &binding &evidence &initial
+IF VERSION.SOFTWARE()!="R.2026.02.000190766"||VERSION.BUILD()!=190766.||!CPUIS("TC234L")
+    GOSUB RecoveryRequired
+IF CHIP.EmulationDevice()||INTERFACE.NAME()!="PowerDebug PRO"
+    GOSUB RecoveryRequired
+IF VERSION.SERIAL.DEBUG()!="E17090031792"||VERSION.SERIAL.CABLE()!="C23090376246"
+    GOSUB RecoveryRequired
+IF LICENSE.FAMILY(0.)!="TriCore"||LICENSE.FEATURES(0.)!="'TriCore'"
+    GOSUB RecoveryRequired
+IF CORE.NUMBER()!=1.||CONFIGNUMBER()!=1.||CORE()!=0.
+    GOSUB RecoveryRequired
+IF SYStem.JtagClock()!=30000000.||!SYStem.Option.DUALPORT()
+    GOSUB RecoveryRequired
+IF ("&initial"!="running")&&("&initial"!="halted")
+    GOSUB RecoveryRequired
+IF ("&initial"=="running")&&!STATE.RUN()
+    GOSUB RecoveryRequired
+IF ("&initial"=="halted")&&!STATE.HALT()
+    GOSUB RecoveryRequired
+ERROR.RESet
+ON ERROR CONTinue
+SNOOPer.OFF
+SNOOPer.RESet
+SNOOPer.Mode PC
+SNOOPer.CORE 0.
+SNOOPer.Mode Stack
+SNOOPer.METHOD RealTime
+SNOOPer.SIZE 65536.
+SNOOPer.Rate 1.ms
+SNOOPer.Option.ERRORSTOP ON
+SNOOPer.Option.JITTER OFF
+SNOOPer.ZERO
+SNOOPer.AutoArm OFF
+SNOOPer.AutoInit OFF
+IF ERROR.OCCURRED()||SNOOPer.STATE()!=0.||SNOOPer.SIZE()!=65536.
+(
+    ON ERROR inherit
+    GOSUB MutationFailure
+)
+ON ERROR inherit
+IF ("&initial"=="running")&&!STATE.RUN()
+    GOSUB MutationFailure
+IF ("&initial"=="halted")&&!STATE.HALT()
+    GOSUB MutationFailure
+OPEN #1 "&evidence" /Create
+WRITE #1 "{""schema"":""t32perf.controller-cleanup-evidence/v2"",""operation"":""perf_cleanup"",""binding_sha256"":""&binding"",""initial_target_state"":""&initial"",""adapter_state_restored"":true,""target_state_restored"":true,""sampling"":{""method"":""real_time"",""object"":""program_counter"",""buffer_mode"":""stack"",""state"":""off"",""requested_rate_ns"":1000000,""capacity_records"":65536,""auto_arm"":false,""auto_init"":false,""zero_reset"":true},""files_deleted"":false}"
+CLOSE #1
+PRINT "T32PERF_RESULT_BEGIN"
+PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_cleanup"",""status"":""OK"",""code"":""cleanup_completed"",""binding_sha256"":""&binding"",""files_deleted"":false}"
+PRINT "T32PERF_RESULT_END"
+ENDDO
+
+RecoveryRequired:
+(
+    GOSUB MutationFailure
+)
+MutationFailure:
+(
+    ERROR.RESet
+    ON ERROR CONTinue
+    SNOOPer.OFF
+    SNOOPer.RESet
+    SNOOPer.Mode PC
+    SNOOPer.CORE 0.
+    SNOOPer.Mode Stack
+    SNOOPer.METHOD RealTime
+    SNOOPer.SIZE 65536.
+    SNOOPer.Rate 1.ms
+    SNOOPer.Option.ERRORSTOP ON
+    SNOOPer.Option.JITTER OFF
+    SNOOPer.ZERO
+    SNOOPer.AutoArm OFF
+    SNOOPer.AutoInit OFF
+    ON ERROR inherit
+    PRINT "T32PERF_MUTATION_RECOVERY_REQUIRED perf_cleanup &binding"
+    WHILE TRUE()
+    (
+        WAIT 1.s
+    )
+)

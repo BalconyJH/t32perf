@@ -1,0 +1,64 @@
+; Deployment-only recovery after the official two-phase abort receipt is durable.
+PRIVATE &binding &evidence &profile_sha &abort_receipt_sha &initial
+ENTRY &binding &evidence &profile_sha &abort_receipt_sha &initial
+
+IF VERSION.SOFTWARE()!="R.2026.02.000190766"||VERSION.BUILD()!=190766.||!CPUIS("TC234L")
+    GOSUB Unsupported
+IF CHIP.EmulationDevice()||LICENSE.FAMILY(0.)!="TriCore"||LICENSE.FEATURES(0.)!="'TriCore'"
+    GOSUB Unsupported
+IF INTERFACE.NAME()!="PowerDebug PRO"||VERSION.SERIAL.DEBUG()!="E17090031792"||VERSION.SERIAL.CABLE()!="C23090376246"
+    GOSUB Unsupported
+IF CORE.NUMBER()!=1.||CONFIGNUMBER()!=1.||CORE()!=0.
+    GOSUB Unsupported
+IF SYStem.JtagClock()!=30000000.||!SYStem.Option.DUALPORT()
+    GOSUB Unsupported
+IF ("&initial"=="running")&&!STATE.RUN()
+    GOSUB Unsupported
+IF ("&initial"=="halted")&&!STATE.HALT()
+    GOSUB Unsupported
+IF ("&initial"!="running")&&("&initial"!="halted")
+    GOSUB Unsupported
+
+ERROR.RESet
+ON ERROR CONTinue
+SNOOPer.OFF
+SNOOPer.RESet
+SNOOPer.Mode PC
+SNOOPer.CORE 0.
+SNOOPer.Mode Stack
+SNOOPer.METHOD RealTime
+SNOOPer.SIZE 65536.
+SNOOPer.Rate 1.ms
+SNOOPer.Option.ERRORSTOP ON
+SNOOPer.Option.JITTER OFF
+SNOOPer.ZERO
+SNOOPer.AutoArm OFF
+SNOOPer.AutoInit OFF
+IF ERROR.OCCURRED()||SNOOPer.STATE()!=0.||SNOOPer.SIZE()!=65536.
+(
+    ON ERROR inherit
+    GOSUB Unsupported
+)
+ON ERROR inherit
+IF ("&initial"=="running")&&!STATE.RUN()
+    GOSUB Unsupported
+IF ("&initial"=="halted")&&!STATE.HALT()
+    GOSUB Unsupported
+
+OPEN #1 "&evidence" /Create
+WRITE #1 "{""schema"":""t32perf.target-adapter-recovery-evidence/v1"",""profile_sha256"":""&profile_sha"",""binding_sha256"":""&binding"",""failed_operation"":""perf_start"",""failure_kind"":""cmm_abort"",""initial_target_state"":""&initial"",""restored_target_state"":""&initial"",""adapter_state_restored"":true,""sampling"":{""method"":""real_time"",""object"":""program_counter"",""buffer_mode"":""stack"",""state"":""off"",""requested_rate_ns"":1000000,""capacity_records"":65536,""auto_arm"":false,""auto_init"":false,""zero_reset"":true},""upstream_abort_confirmed"":true,""upstream_abort_receipt_sha256"":""&abort_receipt_sha"",""files_deleted"":false,""new_session_required"":true}"
+CLOSE #1
+PRINT "T32PERF_RECOVERY_ABORT_RECEIPT &abort_receipt_sha"
+PRINT "T32PERF_RESULT_BEGIN"
+PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_cleanup"",""status"":""OK"",""code"":""cmm_abort_recovered"",""binding_sha256"":""&binding"",""files_deleted"":false}"
+PRINT "T32PERF_RESULT_END"
+ENDDO
+
+Unsupported:
+(
+    ON ERROR inherit
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_cleanup"",""status"":""UNSUPPORTED_NEEDS_TRACE32"",""code"":""cmm_abort_recovery_required"",""binding_sha256"":""&binding"",""files_deleted"":false}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)

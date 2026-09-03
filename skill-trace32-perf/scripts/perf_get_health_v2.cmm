@@ -1,0 +1,66 @@
+; Schema: {"type":"object","properties":{"binding_sha256":{"type":"string"},"machine_evidence_output":{"type":"string"},"stop_evidence_sha256":{"type":"string"},"firmware_s3":{"type":"string"}},"required":["binding_sha256","machine_evidence_output","stop_evidence_sha256","firmware_s3"],"additionalProperties":false}
+; Controller V2 adapter-owned hook. This is a closed four-key contract.
+PRIVATE &arg1 &arg2 &arg3 &arg4 &arg5 &binding &machine_evidence &stopsha &firmware
+PRIVATE &binding_count &machine_evidence_count &stopsha_count &firmware_count &unknown_count
+ENTRY &arg1 &arg2 &arg3 &arg4 &arg5
+&binding_count=0.
+&machine_evidence_count=0.
+&stopsha_count=0.
+&firmware_count=0.
+&unknown_count=0.
+GOSUB ParseArgument "&arg1"
+GOSUB ParseArgument "&arg2"
+GOSUB ParseArgument "&arg3"
+GOSUB ParseArgument "&arg4"
+IF "&arg5"!=""||&binding_count!=1.||&machine_evidence_count!=1.||&stopsha_count!=1.||&firmware_count!=1.||&unknown_count!=0.||STRing.LENgth("&machine_evidence")==0.||STRing.LENgth("&firmware")==0.
+    GOSUB Invalid
+GOSUB V2AdapterHook
+ParseArgument:
+(
+    PRIVATE &argument &value
+    ENTRY &argument
+    &value=STRing.SCANAndExtract("&argument","binding_sha256=","")
+    IF "&argument"=="binding_sha256=&value"
+    (
+        &binding="&value"
+        &binding_count=&binding_count+1.
+        RETURN
+    )
+    &value=STRing.SCANAndExtract("&argument","machine_evidence_output=","")
+    IF "&argument"=="machine_evidence_output=&value"
+    (
+        &machine_evidence="&value"
+        &machine_evidence_count=&machine_evidence_count+1.
+        RETURN
+    )
+    &value=STRing.SCANAndExtract("&argument","stop_evidence_sha256=","")
+    IF "&argument"=="stop_evidence_sha256=&value"
+    (
+        &stopsha="&value"
+        &stopsha_count=&stopsha_count+1.
+        RETURN
+    )
+    &value=STRing.SCANAndExtract("&argument","firmware_s3=","")
+    IF "&argument"=="firmware_s3=&value"
+    (
+        &firmware="&value"
+        &firmware_count=&firmware_count+1.
+        RETURN
+    )
+    &unknown_count=&unknown_count+1.
+    RETURN
+)
+Invalid:
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{\"\"protocol\"\":\"\"t32perf/1\"\",\"\"operation\"\":\"\"perf_get_health\"\",\"\"status\"\":\"\"INVALID_ARGUMENT\"\",\"\"code\"\":\"\"invalid_arguments\"\",\"\"binding_sha256\"\":\"\"&binding\"\"}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)
+V2AdapterHook:
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{\"\"protocol\"\":\"\"t32perf/1\"\",\"\"operation\"\":\"\"perf_get_health\"\",\"\"status\"\":\"\"UNSUPPORTED_NEEDS_TRACE32\"\",\"\"code\"\":\"\"v2_adapter_hook_required\"\",\"\"binding_sha256\"\":\"\"&binding\"\"}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)

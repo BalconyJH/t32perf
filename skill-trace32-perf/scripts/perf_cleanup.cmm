@@ -1,0 +1,43 @@
+; Schema: {"type":"object","properties":{"binding_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"evidence_output":{"type":"string"},"initial_target_state":{"enum":["running","halted"]}},"required":["binding_sha256","evidence_output","initial_target_state"],"additionalProperties":false}
+; This script never deletes files or changes target execution state.
+
+PRIVATE &line &binding &evidence &initial &valid
+PRIVATE &qbei &qbie &qebi &qeib &qibe &qieb
+ENTRY %LINE &line
+
+&binding=STRing.SCANAndExtract("&line","binding_sha256=","")
+&evidence=STRing.SCANAndExtract("&line","evidence_output=","")
+&initial=STRing.SCANAndExtract("&line","initial_target_state=","")
+&qbei="""binding_sha256=&binding"" ""evidence_output=&evidence"" ""initial_target_state=&initial"""
+&qbie="""binding_sha256=&binding"" ""initial_target_state=&initial"" ""evidence_output=&evidence"""
+&qebi="""evidence_output=&evidence"" ""binding_sha256=&binding"" ""initial_target_state=&initial"""
+&qeib="""evidence_output=&evidence"" ""initial_target_state=&initial"" ""binding_sha256=&binding"""
+&qibe="""initial_target_state=&initial"" ""binding_sha256=&binding"" ""evidence_output=&evidence"""
+&qieb="""initial_target_state=&initial"" ""evidence_output=&evidence"" ""binding_sha256=&binding"""
+&valid=0.
+
+IF ("&line"=="&qbei")||("&line"=="&qbie")||("&line"=="&qebi")||("&line"=="&qeib")||("&line"=="&qibe")||("&line"=="&qieb")
+(
+    &valid=1.
+)
+IF ("&initial"!="running")&&("&initial"!="halted")
+    &valid=0.
+
+IF &valid==0.
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_cleanup"",""status"":""INVALID_ARGUMENT"",""code"":""invalid_arguments"",""binding_sha256"":""&binding""}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)
+
+IF (VERSION.SOFTWARE()=="R.2026.02.000190766")&&CPUIS("TC234L")
+(
+    DO ~~~~/adapters/tc234l-build190766/perf_cleanup.cmm "&binding" "&evidence" "&initial"
+    ENDDO
+)
+
+PRINT "T32PERF_RESULT_BEGIN"
+PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_cleanup"",""status"":""UNSUPPORTED_NEEDS_TRACE32"",""code"":""target_cleanup_required"",""binding_sha256"":""&binding"",""files_deleted"":false}"
+PRINT "T32PERF_RESULT_END"
+ENDDO

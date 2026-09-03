@@ -1,0 +1,40 @@
+; Schema: {"type":"object","properties":{"binding_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"evidence_output":{"type":"string"}},"required":["binding_sha256","evidence_output"],"additionalProperties":false}
+
+PRIVATE &line &binding &evidence &qbe &qeb &valid
+ENTRY %LINE &line
+
+&binding=STRing.SCANAndExtract("&line","binding_sha256=","")
+&evidence=STRing.SCANAndExtract("&line","evidence_output=","")
+&qbe="""binding_sha256=&binding"" ""evidence_output=&evidence"""
+&qeb="""evidence_output=&evidence"" ""binding_sha256=&binding"""
+&valid=0.
+
+IF "&line"=="&qbe"
+(
+    &valid=1.
+)
+
+IF "&line"=="&qeb"
+(
+    &valid=1.
+)
+
+IF &valid==0.
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_get_capabilities"",""status"":""INVALID_ARGUMENT"",""code"":""invalid_arguments"",""binding_sha256"":""&binding""}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)
+
+IF (VERSION.SOFTWARE()=="R.2026.02.000190766")&&CPUIS("TC234L")
+(
+    DO ~~~~/adapters/tc234l-build190766/perf_get_capabilities.cmm "&binding" "&evidence"
+    ENDDO
+)
+
+PRINT "T32PERF_RESULT_BEGIN"
+PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_get_capabilities"",""status"":""UNSUPPORTED_NEEDS_TRACE32"",""code"":""hardware_adapter_required"",""binding_sha256"":""&binding""}"
+PRINT "T32PERF_RESULT_END"
+
+ENDDO

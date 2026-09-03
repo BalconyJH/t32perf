@@ -1,0 +1,113 @@
+{
+  "schema": "t32perf.target-adapter-profile/v1",
+  "adapter_id": "tricore-tc234l-snooper-pc-r2026.02-b190766-v1",
+  "adapter_version": "1.0.0",
+  "implementation_sha256": "a366536ad33ce118eff8a79ebe12367e67bdc02c41f5f8e4457d54b83b6a30e4",
+  "build_gate": {
+    "trace32_release": "2026.02",
+    "minimum_build": 190766,
+    "maximum_build": 190766,
+    "architecture_package": "tricore"
+  },
+  "target_identifier": "infineon-tc234l-core0",
+  "probe_identifier": "powerdebug-pro:E17090031792:C23090376246",
+  "license_features": ["TriCore"],
+  "trace_routing": ["runtime-pc-access-via-debug-port"],
+  "firmware_elf_sha256": "7daae3ae027ab270c30de38530f83458a682d3e13c45deb69217048d8f449798",
+  "health_signals": ["sampling_buffer_full", "sampling_unexpected_stop", "elf_mismatch"],
+  "capabilities": {
+    "function_events": {"support": "unavailable", "reasons": ["pc_sampling_has_no_function_boundaries"]},
+    "context_switches": {"support": "unavailable", "reasons": ["pc_sampling_has_no_context_switch_events"]},
+    "interrupt_events": {"support": "unavailable", "reasons": ["pc_sampling_has_no_interrupt_events"]},
+    "samples": {"support": "statistical", "reasons": ["snooper_rate_is_not_guaranteed"]},
+    "custom_events": {"support": "unavailable", "reasons": ["pc_sampling_has_no_custom_events"]},
+    "counters": {"support": "unavailable", "reasons": ["pc_sampling_has_no_resource_counters"]}
+  },
+  "controller_protocol": "v1",
+  "custom_event_collector": null,
+  "scenarios": [
+    {
+      "scenario": "normal",
+      "capture": {
+        "configuration_sha256_by_initial_state": {
+          "running": "45ad2a31dcf8558e0155446871c1b4a684f4e769767dc0fcaffa70277eff1dd6",
+          "halted": "a4a59ed9aa03965154148ef84c91d0529b99ae41990661ada7f0f83c36bd5a32"
+        },
+        "capture_mode": "snooper-pc-realtime-stack",
+        "trace_sink": "host_snooper_buffer",
+        "capacity_records": 65536,
+        "timestamp_enabled": true,
+        "workload_identity": "external-owner-sampling-window/v1",
+        "covered_cores": [0],
+        "supported_initial_states": ["running", "halted"]
+      }
+    },
+    {
+      "scenario": "sampling_buffer_full",
+      "capture": {
+        "configuration_sha256_by_initial_state": {
+          "running": "94c2642c43670a1dc80711a319549438bc20680a843d3f213a1cac2f2ef205f0",
+          "halted": "b3863046a6e770fa7e2915324082fff047ac280e0e9ef37c169d6ae60a1cf427"
+        },
+        "capture_mode": "snooper-pc-realtime-stack",
+        "trace_sink": "host_snooper_buffer",
+        "capacity_records": 32,
+        "timestamp_enabled": true,
+        "workload_identity": "external-owner-sampling-window/v1",
+        "covered_cores": [0],
+        "supported_initial_states": ["running", "halted"]
+      }
+    },
+    {
+      "scenario": "trace32_disconnect",
+      "fault_point": "stop",
+      "capture": {
+        "configuration_sha256_by_initial_state": {
+          "running": "45ad2a31dcf8558e0155446871c1b4a684f4e769767dc0fcaffa70277eff1dd6",
+          "halted": "a4a59ed9aa03965154148ef84c91d0529b99ae41990661ada7f0f83c36bd5a32"
+        },
+        "capture_mode": "snooper-pc-realtime-stack",
+        "trace_sink": "host_snooper_buffer",
+        "capacity_records": 65536,
+        "timestamp_enabled": true,
+        "workload_identity": "external-owner-sampling-window/v1",
+        "covered_cores": [0],
+        "supported_initial_states": ["running", "halted"]
+      }
+    },
+    {
+      "scenario": "driver_disconnect",
+      "fault_point": "export",
+      "capture": {
+        "configuration_sha256_by_initial_state": {
+          "running": "45ad2a31dcf8558e0155446871c1b4a684f4e769767dc0fcaffa70277eff1dd6",
+          "halted": "a4a59ed9aa03965154148ef84c91d0529b99ae41990661ada7f0f83c36bd5a32"
+        },
+        "capture_mode": "snooper-pc-realtime-stack",
+        "trace_sink": "host_snooper_buffer",
+        "capacity_records": 65536,
+        "timestamp_enabled": true,
+        "workload_identity": "external-owner-sampling-window/v1",
+        "covered_cores": [0],
+        "supported_initial_states": ["running", "halted"]
+      }
+    },
+    {
+      "scenario": "cmm_abort",
+      "fault_point": "start",
+      "capture": {
+        "configuration_sha256_by_initial_state": {
+          "running": "45ad2a31dcf8558e0155446871c1b4a684f4e769767dc0fcaffa70277eff1dd6",
+          "halted": "a4a59ed9aa03965154148ef84c91d0529b99ae41990661ada7f0f83c36bd5a32"
+        },
+        "capture_mode": "snooper-pc-realtime-stack",
+        "trace_sink": "host_snooper_buffer",
+        "capacity_records": 65536,
+        "timestamp_enabled": true,
+        "workload_identity": "external-owner-sampling-window/v1",
+        "covered_cores": [0],
+        "supported_initial_states": ["running", "halted"]
+      }
+    }
+  ]
+}

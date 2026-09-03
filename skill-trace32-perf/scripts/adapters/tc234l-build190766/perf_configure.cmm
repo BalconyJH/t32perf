@@ -1,0 +1,131 @@
+; Fixed normal SNOOPer PC configuration. Never changes target run state.
+PRIVATE &binding &evidence &firmware &initial &current &configsha &firmware_match
+ENTRY &binding &evidence &firmware &initial
+
+GOSUB Gate
+GOSUB VerifyFirmware
+IF &firmware_match==0.
+    GOSUB PreflightUnsupported
+IF "&initial"=="running"
+(
+    &configsha="45ad2a31dcf8558e0155446871c1b4a684f4e769767dc0fcaffa70277eff1dd6"
+)
+ELSE
+(
+    &configsha="a4a59ed9aa03965154148ef84c91d0529b99ae41990661ada7f0f83c36bd5a32"
+)
+GOSUB StateGate
+ERROR.RESet
+ON ERROR CONTinue
+SNOOPer.RESet
+SNOOPer.Mode PC
+SNOOPer.CORE 0.
+SNOOPer.Mode Stack
+SNOOPer.METHOD RealTime
+SNOOPer.SIZE 65536.
+SNOOPer.Rate 1.ms
+SNOOPer.Option.ERRORSTOP ON
+SNOOPer.Option.JITTER OFF
+SNOOPer.AutoArm OFF
+SNOOPer.AutoInit OFF
+IF ERROR.OCCURRED()
+(
+    ON ERROR inherit
+    GOSUB MutationFailure
+)
+ON ERROR inherit
+IF SNOOPer.SIZE()!=65536.||SNOOPer.STATE()!=0.
+    GOSUB MutationFailure
+
+OPEN #1 "&evidence" /Create
+WRITE #1 "{""schema"":""t32perf.controller-configure-evidence/v1"",""operation"":""perf_configure"",""binding_sha256"":""&binding"",""configuration_sha256"":""&configsha"",""capture_mode"":""snooper-pc-realtime-stack"",""trace_sink"":""host_snooper_buffer"",""timestamp_enabled"":true,""filters_verified"":true,""trigger_verified"":true,""initial_target_state"":""&initial"",""workload_identity"":""external-owner-sampling-window/v1"",""covered_cores"":[0]}"
+CLOSE #1
+PRINT "T32PERF_RESULT_BEGIN"
+PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_configure"",""status"":""OK"",""code"":""configured"",""binding_sha256"":""&binding""}"
+PRINT "T32PERF_RESULT_END"
+ENDDO
+
+Gate:
+(
+    IF VERSION.SOFTWARE()!="R.2026.02.000190766"||VERSION.BUILD()!=190766.||!CPUIS("TC234L")||CHIP.EmulationDevice()
+        GOSUB PreflightUnsupported
+    IF INTERFACE.NAME()!="PowerDebug PRO"||VERSION.SERIAL.DEBUG()!="E17090031792"||VERSION.SERIAL.CABLE()!="C23090376246"
+        GOSUB PreflightUnsupported
+    IF LICENSE.FAMILY(0.)!="TriCore"||LICENSE.FEATURES(0.)!="'TriCore'"
+        GOSUB PreflightUnsupported
+    IF CORE.NUMBER()!=1.||CONFIGNUMBER()!=1.||CORE()!=0.
+        GOSUB PreflightUnsupported
+    IF SYStem.JtagClock()!=30000000.||!SYStem.Option.DUALPORT()
+        GOSUB PreflightUnsupported
+    IF !STATE.RUN()&&!STATE.HALT()
+        GOSUB PreflightUnsupported
+    IF SNOOPer.MAXSIZE()<65536.||SNOOPer.STATE()!=0.
+        GOSUB PreflightUnsupported
+    RETURN
+)
+PreflightUnsupported:
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_configure"",""status"":""UNSUPPORTED_NEEDS_TRACE32"",""code"":""target_configuration_required"",""binding_sha256"":""&binding""}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)
+StateDrift:
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_configure"",""status"":""INVALID_ARGUMENT"",""code"":""initial_target_state_drift"",""binding_sha256"":""&binding"",""expected_initial_target_state"":""&initial"",""observed_target_state"":""&current""}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)
+StateGate:
+(
+    &current="unavailable"
+    IF STATE.RUN()
+        &current="running"
+    IF STATE.HALT()
+        &current="halted"
+    IF ("&initial"!="running"&&"&initial"!="halted")||"&current"!="&initial"
+        GOSUB StateDrift
+    RETURN
+)
+MutationFailure:
+(
+    GOSUB Recover
+    ON ERROR inherit
+    PRINT "T32PERF_MUTATION_RECOVERY_REQUIRED perf_configure &binding"
+    WHILE TRUE()
+    (
+        WAIT 1.s
+    )
+)
+Recover:
+(
+    ERROR.RESet
+    ON ERROR CONTinue
+    SNOOPer.OFF
+    SNOOPer.RESet
+    SNOOPer.Mode PC
+    SNOOPer.CORE 0.
+    SNOOPer.Mode Stack
+    SNOOPer.METHOD RealTime
+    SNOOPer.SIZE 65536.
+    SNOOPer.Rate 1.ms
+    SNOOPer.Option.ERRORSTOP ON
+    SNOOPer.Option.JITTER OFF
+    SNOOPer.ZERO
+    SNOOPer.AutoArm OFF
+    SNOOPer.AutoInit OFF
+    ON ERROR inherit
+    RETURN
+)
+VerifyFirmware:
+(
+    &firmware_match=0.
+    ERROR.RESet
+    ON ERROR CONTinue
+    Data.LOAD.S3record "&firmware" /DIFF
+    IF !ERROR.OCCURRED()
+        &firmware_match=1.
+    ON ERROR inherit
+    RETURN
+)

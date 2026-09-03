@@ -1,0 +1,24 @@
+{
+  "schema": "t32perf.trace32-immutable-pflash-crc32/v1",
+  "firmware_elf_sha256": "7daae3ae027ab270c30de38530f83458a682d3e13c45deb69217048d8f449798",
+  "algorithm": "pkzip_crc32",
+  "address_space": "P",
+  "sections": [
+    {"name": ".BMD", "start": "0x80000000", "end": "0x8000001f", "crc32": "0xda48086c"},
+    {"name": ".startup", "start": "0x80000020", "end": "0x80000027", "crc32": "0x7ce59876"},
+    {"name": ".trap", "start": "0x80000100", "end": "0x800001ff", "crc32": "0x115c7fbb"},
+    {"name": ".inttab_16a0", "start": "0x800016a0", "end": "0x800016ad", "crc32": "0xa69ee5ae"},
+    {"name": ".inttab_16c0", "start": "0x800016c0", "end": "0x800016cd", "crc32": "0xf687b231"},
+    {"name": ".inttab_16e0", "start": "0x800016e0", "end": "0x800016ed", "crc32": "0x75370984"},
+    {"name": ".inttab_1700", "start": "0x80001700", "end": "0x8000170d", "crc32": "0x252e5e1b"},
+    {"name": ".inttab_1720", "start": "0x80001720", "end": "0x8000172d", "crc32": "0xd505a6ba"},
+    {"name": ".inttab_1800", "start": "0x80001800", "end": "0x8000180d", "crc32": "0xa077aef9"},
+    {"name": ".inttab_1c80", "start": "0x80001c80", "end": "0x80001c8d", "crc32": "0xbd9c5bf4"},
+    {"name": ".inttab_1ca0", "start": "0x80001ca0", "end": "0x80001cad", "crc32": "0xed850c6b"},
+    {"name": ".SoftVersion", "start": "0x80002000", "end": "0x8000200f", "crc32": "0x6c1ae27a"},
+    {"name": ".CPU0_PRIVATE_CODE", "start": "0x80002010", "end": "0x80008203", "crc32": "0x76b10f93"},
+    {"name": ".DEFAULT_CODE", "start": "0x80008204", "end": "0x8000ee2f", "crc32": "0x73dc718b"},
+    {"name": ".clear_sec", "start": "0x8000f338", "end": "0x8000f35f", "crc32": "0xfc4fe0ae"},
+    {"name": ".copy_sec", "start": "0x8000f360", "end": "0x8000f3a7", "crc32": "0xa6551d10"}
+  ]
+}

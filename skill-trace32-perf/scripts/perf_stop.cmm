@@ -1,0 +1,55 @@
+; Schema: {"type":"object","properties":{"binding_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"evidence_output":{"type":"string"},"capacity_records":{"enum":["32","65536"]}},"required":["binding_sha256","evidence_output","capacity_records"],"additionalProperties":false}
+
+PRIVATE &line &binding &evidence &capacity &valid &sha_valid
+PRIVATE &qbec &qbce &qebc &qecb &qcbe &qceb
+ENTRY %LINE &line
+
+&binding=STRing.SCANAndExtract("&line","binding_sha256=","")
+&evidence=STRing.SCANAndExtract("&line","evidence_output=","")
+&capacity=STRing.SCANAndExtract("&line","capacity_records=","")
+&qbec="""binding_sha256=&binding"" ""evidence_output=&evidence"" ""capacity_records=&capacity"""
+&qbce="""binding_sha256=&binding"" ""capacity_records=&capacity"" ""evidence_output=&evidence"""
+&qebc="""evidence_output=&evidence"" ""binding_sha256=&binding"" ""capacity_records=&capacity"""
+&qecb="""evidence_output=&evidence"" ""capacity_records=&capacity"" ""binding_sha256=&binding"""
+&qcbe="""capacity_records=&capacity"" ""binding_sha256=&binding"" ""evidence_output=&evidence"""
+&qceb="""capacity_records=&capacity"" ""evidence_output=&evidence"" ""binding_sha256=&binding"""
+&valid=("&line"=="&qbec")||("&line"=="&qbce")||("&line"=="&qebc")||("&line"=="&qecb")||("&line"=="&qcbe")||("&line"=="&qceb")
+GOSUB IsSha256 "&binding"
+IF &sha_valid==0.||STRing.LENgth("&evidence")==0.||(("&capacity"!="32")&&("&capacity"!="65536"))
+    &valid=0.
+
+IF &valid==0.
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_stop"",""status"":""INVALID_ARGUMENT"",""code"":""invalid_arguments"",""binding_sha256"":""&binding""}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)
+
+IF (VERSION.SOFTWARE()=="R.2026.02.000190766")&&CPUIS("TC234L")
+(
+    DO ~~~~/adapters/tc234l-build190766/perf_stop.cmm "&binding" "&evidence" "&capacity"
+    ENDDO
+)
+
+PRINT "T32PERF_RESULT_BEGIN"
+PRINT "{""protocol"":""t32perf/1"",""operation"":""perf_stop"",""status"":""UNSUPPORTED_NEEDS_TRACE32"",""code"":""target_stop_required"",""binding_sha256"":""&binding""}"
+PRINT "T32PERF_RESULT_END"
+
+ENDDO
+
+IsSha256:
+(
+    PRIVATE &value &index &character
+    ENTRY &value
+    &sha_valid=(STRing.LENgth("&value")==64.)
+    &index=0.
+    WHILE &index<STRing.LENgth("&value")
+    (
+        &character=STRing.MID("&value",&index,1.)
+        IF STRing.SCAN("0123456789abcdef","&character",0.)==-1.
+            &sha_valid=0.
+        &index=&index+1.
+    )
+    RETURN
+)

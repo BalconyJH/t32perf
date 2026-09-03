@@ -1,0 +1,32 @@
+{
+  "schema": "t32perf.capture-config-template/v1",
+  "adapter": {
+    "id": "tricore-tc234l-snooper-pc-r2026.02-b190766-v1",
+    "version": "1.0.0"
+  },
+  "mode": "snooper-pc-realtime-stack",
+  "covered_cores": [0],
+  "sink_kind": "host_snooper_buffer",
+  "timestamp_clock_id": "snooper_host_time",
+  "workload_identity": "external-owner-sampling-window/v1",
+  "export_profile": "t32perf.trace32-ascii-profile/tc234l-build190766-v1",
+  "firmware_elf_sha256": "7daae3ae027ab270c30de38530f83458a682d3e13c45deb69217048d8f449798",
+  "firmware_elf_artifact_id": "firmware-elf",
+  "firmware_measurement_artifact_id": "trace32-firmware-s3",
+  "firmware_measurement_method": "tricore_sparse_s3_pt_load_paddr/v1",
+  "firmware_measurement_sha256": "26753910bfc091b113dbed562ebbf989f810504810d81260db4a7067e524e347",
+  "firmware_measurement_size_bytes": 148955,
+  "parameters": {
+    "initial_target_state": ["running", "halted"],
+    "capacity_records": [65536, 32],
+    "requested_rate_ns": 1000000,
+    "snooper_object": "pc",
+    "snooper_method": "realtime",
+    "snooper_buffer_mode": "stack",
+    "errorstop": true,
+    "jitter": false,
+    "autoarm": false,
+    "autoinit": false,
+    "time_origin": "first_record_zero"
+  }
+}

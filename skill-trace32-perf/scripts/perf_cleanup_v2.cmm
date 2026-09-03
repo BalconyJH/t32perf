@@ -1,0 +1,58 @@
+; Schema: {"type":"object","properties":{"binding_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"machine_evidence_output":{"type":"string"},"initial_target_state":{"enum":["running","halted"]}},"required":["binding_sha256","machine_evidence_output","initial_target_state"],"additionalProperties":false}
+; Controller V2 adapter-owned hook. This script deliberately has no TC234L dispatch.
+PRIVATE &arg1 &arg2 &arg3 &arg4 &binding &machine_evidence &initial &binding_count &machine_evidence_count &initial_count &unknown_count
+ENTRY &arg1 &arg2 &arg3 &arg4
+&binding_count=0.
+&machine_evidence_count=0.
+&initial_count=0.
+&unknown_count=0.
+GOSUB ParseArgument "&arg1"
+GOSUB ParseArgument "&arg2"
+GOSUB ParseArgument "&arg3"
+IF "&arg4"!=""||&binding_count!=1.||&machine_evidence_count!=1.||&initial_count!=1.||&unknown_count!=0.||STRing.LENgth("&machine_evidence")==0.
+    GOSUB Invalid
+IF ("&initial"!="running")&&("&initial"!="halted")
+    GOSUB Invalid
+GOSUB V2AdapterHook
+ParseArgument:
+(
+    PRIVATE &argument &value
+    ENTRY &argument
+    &value=STRing.SCANAndExtract("&argument","binding_sha256=","")
+    IF "&argument"=="binding_sha256=&value"
+    (
+        &binding="&value"
+        &binding_count=&binding_count+1.
+        RETURN
+    )
+    &value=STRing.SCANAndExtract("&argument","machine_evidence_output=","")
+    IF "&argument"=="machine_evidence_output=&value"
+    (
+        &machine_evidence="&value"
+        &machine_evidence_count=&machine_evidence_count+1.
+        RETURN
+    )
+    &value=STRing.SCANAndExtract("&argument","initial_target_state=","")
+    IF "&argument"=="initial_target_state=&value"
+    (
+        &initial="&value"
+        &initial_count=&initial_count+1.
+        RETURN
+    )
+    &unknown_count=&unknown_count+1.
+    RETURN
+)
+Invalid:
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{\"\"protocol\"\":\"\"t32perf/1\"\",\"\"operation\"\":\"\"perf_cleanup\"\",\"\"status\"\":\"\"INVALID_ARGUMENT\"\",\"\"code\"\":\"\"invalid_arguments\"\",\"\"binding_sha256\"\":\"\"&binding\"\"}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)
+V2AdapterHook:
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{\"\"protocol\"\":\"\"t32perf/1\"\",\"\"operation\"\":\"\"perf_cleanup\"\",\"\"status\"\":\"\"UNSUPPORTED_NEEDS_TRACE32\"\",\"\"code\"\":\"\"v2_adapter_hook_required\"\",\"\"binding_sha256\"\":\"\"&binding\"\"}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)

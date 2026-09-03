@@ -1,0 +1,47 @@
+; Schema: {"type":"object","properties":{"binding_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},"machine_evidence_output":{"type":"string"}},"required":["binding_sha256","machine_evidence_output"],"additionalProperties":false}
+; Controller V2 adapter-owned hook. This script deliberately has no TC234L dispatch.
+PRIVATE &arg1 &arg2 &arg3 &binding &machine_evidence &binding_count &machine_evidence_count &unknown_count
+ENTRY &arg1 &arg2 &arg3
+&binding_count=0.
+&machine_evidence_count=0.
+&unknown_count=0.
+GOSUB ParseArgument "&arg1"
+GOSUB ParseArgument "&arg2"
+IF "&arg3"!=""||&binding_count!=1.||&machine_evidence_count!=1.||&unknown_count!=0.||STRing.LENgth("&machine_evidence")==0.
+    GOSUB Invalid
+GOSUB V2AdapterHook
+ParseArgument:
+(
+    PRIVATE &argument &value
+    ENTRY &argument
+    &value=STRing.SCANAndExtract("&argument","binding_sha256=","")
+    IF "&argument"=="binding_sha256=&value"
+    (
+        &binding="&value"
+        &binding_count=&binding_count+1.
+        RETURN
+    )
+    &value=STRing.SCANAndExtract("&argument","machine_evidence_output=","")
+    IF "&argument"=="machine_evidence_output=&value"
+    (
+        &machine_evidence="&value"
+        &machine_evidence_count=&machine_evidence_count+1.
+        RETURN
+    )
+    &unknown_count=&unknown_count+1.
+    RETURN
+)
+Invalid:
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{\"\"protocol\"\":\"\"t32perf/1\"\",\"\"operation\"\":\"\"perf_stop\"\",\"\"status\"\":\"\"INVALID_ARGUMENT\"\",\"\"code\"\":\"\"invalid_arguments\"\",\"\"binding_sha256\"\":\"\"&binding\"\"}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)
+V2AdapterHook:
+(
+    PRINT "T32PERF_RESULT_BEGIN"
+    PRINT "{\"\"protocol\"\":\"\"t32perf/1\"\",\"\"operation\"\":\"\"perf_stop\"\",\"\"status\"\":\"\"UNSUPPORTED_NEEDS_TRACE32\"\",\"\"code\"\":\"\"v2_adapter_hook_required\"\",\"\"binding_sha256\"\":\"\"&binding\"\"}"
+    PRINT "T32PERF_RESULT_END"
+    ENDDO
+)

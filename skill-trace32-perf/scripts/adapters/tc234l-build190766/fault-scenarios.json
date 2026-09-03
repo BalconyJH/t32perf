@@ -1,0 +1,56 @@
+{
+  "schema": "t32perf.trace32-fault-scenarios/v1",
+  "adapter_id": "tricore-tc234l-snooper-pc-r2026.02-b190766-v1",
+  "scenarios": [
+    {
+      "scenario": "sampling_buffer_full",
+      "support": "candidate",
+      "evidence_status": "pending_hardware_evidence",
+      "reason": "fixed_32_record_snooper_stack_injector_requires_exact_tc234l_hil_evidence",
+      "configure_script": "faults/perf_configure_sampling_buffer_full.cmm",
+      "capacity_records": 32,
+      "driver_end_condition": "snooper_state_break_and_records_equal_capacity",
+      "expected_health_issue": "sampling_buffer_full"
+    },
+    {
+      "scenario": "trace32_disconnect",
+      "fault_point": "stop",
+      "driver_action": "close_exact_rcl_transport_after_start_v2",
+      "recovery_requires_new_session": true
+    },
+    {
+      "scenario": "driver_disconnect",
+      "fault_point": "export",
+      "driver_action": "close_target_specific_controller_transport_before_export_collect",
+      "recovery_requires_new_session": true
+    },
+    {
+      "scenario": "cmm_abort",
+      "fault_point": "start",
+      "target_script": "faults/perf_start_cmm_abort_target.cmm",
+      "recovery_script": "faults/perf_recover_cmm_abort.cmm",
+      "driver_action": "official_two_phase_abort_after_snooper_arm",
+      "recovery_requires_new_session": true
+    },
+    {
+      "scenario": "trace_overflow",
+      "support": "unsupported",
+      "reason": "snooper_pc_sampling_has_no_trace_stream_or_trace_overflow_signal"
+    },
+    {
+      "scenario": "flow_error",
+      "support": "unsupported",
+      "reason": "snooper_pc_sampling_has_no_flow_decoder_or_taskevents_export"
+    },
+    {
+      "scenario": "sampling_unexpected_stop",
+      "support": "unsupported",
+      "reason": "no_deterministic_non_destructive_break_before_capacity_injector"
+    },
+    {
+      "scenario": "elf_mismatch",
+      "support": "unsupported",
+      "reason": "firmware_flash_mutation_is_deferred_until_board_hil_is_authorized"
+    }
+  ]
+}
