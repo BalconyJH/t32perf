@@ -155,3 +155,15 @@ The strict build validates internal pages and anchors. Documentation source belo
 CI runs Rust, C SDK, Python/HIL, packaging, and Perfetto importer jobs on the supported
 host matrices. The CI workflows and `rust-toolchain.toml` both pin Rust `1.95.0`, so
 local and hosted checks use the same compiler, formatter, and lint policy.
+
+The workflow has two explicit stages:
+
+1. `rust`, `c-sdk`, `python`, `docs`, and `perfetto-import` validate independent repository
+   surfaces in parallel.
+2. `package` starts only after every validation job and every matrix leg succeeds, then creates
+   and smoke-tests the native Linux and Windows bundles.
+
+This dependency is intentional. The package contains the Rust binary, documentation, C SDK,
+HIL harness, tools, and skills, so a focused validation failure must prevent package creation.
+Jobs within the validation stage remain independent to preserve complete diagnostics without
+inventing dependencies between unrelated repository surfaces.

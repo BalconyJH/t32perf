@@ -77,21 +77,6 @@ jobs:
           enable-cache: false
       - run: uvx --from zensical==0.0.57 zensical build --clean --strict
 
-  package:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
-        with:
-          toolchain: 1.95.0
-      - run: cargo xtask package --output target/package-ci
-
   perfetto-import:
     runs-on: ubuntu-latest
     steps:
@@ -120,3 +105,25 @@ jobs:
           uv run --no-project --with perfetto==0.57.2
           tools/validate_perfetto.py
           target/perfetto-smoke/perfetto-smoke/report/trace.json
+
+  # Package only after every bundled surface passes its focused validation.
+  package:
+    needs:
+      - rust
+      - c-sdk
+      - python
+      - docs
+      - perfetto-import
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master
+        with:
+          toolchain: 1.95.0
+      - run: cargo xtask package --output target/package-ci
